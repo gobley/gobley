@@ -46,11 +46,15 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
-    abstract val jvmDependentDynamicLibraries: ListProperty<String>
+    abstract val jvmDynamicLibraryDependencies: ListProperty<String>
 
     @get:Input
     @get:Optional
-    abstract val androidDependentDynamicLibraries: ListProperty<String>
+    abstract val androidDynamicLibraryDependencies: ListProperty<String>
+
+    @get:Input
+    @get:Optional
+    abstract val dynamicLibraryDependencies: ListProperty<String>
 
     @get:OutputFile
     abstract val outputConfig: RegularFileProperty
@@ -67,14 +71,18 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
             generateSerializableTypes = originalConfig.generateSerializableTypes
                 ?: useKotlinXSerialization.orNull,
-            jvmDependentDynamicLibraries = mergeSet(
-                originalConfig.jvmDependentDynamicLibraries,
-                jvmDependentDynamicLibraries.orNull,
+            jvmDynamicLibraryDependencies = mergeSet(
+                originalConfig.jvmDynamicLibraryDependencies,
+                jvmDynamicLibraryDependencies.orNull,
             ),
-            androidDependentDynamicLibraries = mergeSet(
-                originalConfig.androidDependentDynamicLibraries,
-                androidDependentDynamicLibraries.orNull,
+            androidDynamicLibraryDependencies = mergeSet(
+                originalConfig.androidDynamicLibraryDependencies,
+                androidDynamicLibraryDependencies.orNull,
             ),
+            dynamicLibraryDependencies = mergeSet(
+                originalConfig.dynamicLibraryDependencies,
+                dynamicLibraryDependencies.orNull,
+            )
         )
         outputConfig.get().asFile.writeText(toml.encodeToString(result), Charsets.UTF_8)
     }

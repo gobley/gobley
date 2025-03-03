@@ -24,9 +24,9 @@ internal data class Config(
     @SerialName("kotlin_target_version") val kotlinTargetVersion: String? = null,
     @SerialName("disable_java_cleaner") val disableJavaCleaner: Boolean? = false,
     @SerialName("generate_serializable_types") val generateSerializableTypes: Boolean? = null,
-    @SerialName("jvm_dependent_dynamic_libraries") val jvmDependentDynamicLibraries: List<String>? = null,
-    @SerialName("android_dependent_dynamic_libraries") val androidDependentDynamicLibraries: List<String>? = null,
-    @SerialName("dependent_dynamic_libraries") val dependentDynamicLibraries: List<String>? = null,
+    @SerialName("jvm_dynamic_library_dependencies") val jvmDynamicLibraryDependencies: List<String>? = null,
+    @SerialName("android_dynamic_library_dependencies") val androidDynamicLibraryDependencies: List<String>? = null,
+    @SerialName("dynamic_library_dependencies") val dynamicLibraryDependencies: List<String>? = null,
 ) {
     @Serializable
     internal data class CustomType(
