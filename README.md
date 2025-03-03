@@ -78,6 +78,17 @@ This project contains three Gradle plugins:
 - The UniFFI plugin (`dev.gobley.uniffi`)
 - The Rust plugin (`dev.gobley.rust`)
 
+These plugins are published in Maven Central. In your `settings.gradle.kts`, put `mavenCentral()` in the
+`pluginManagement {}` block.
+
+```
+pluginManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+```
+
 ### The Cargo plugin
 
 The Cargo plugin is responsible for building and linking the Rust library to your Kotlin project. You can use it even
