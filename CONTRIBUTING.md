@@ -20,8 +20,8 @@ To build this project locally, you'll need:
 - Visual C++ x64 & ARM64 (Windows)
 - Xcode (macOS)
 
-See [`.meta/build-image/Dockerfile`](./.meta/build-image/Dockerfile) for more
-details.
+See [`.github/workflows/dependency-image.Dockerfile`](.github/workflows/dependency-image.Dockerfile)
+for more details.
 
 For faster development, you can disable some unit tests and examples. Use the
 following Gradle properties to choose tests and examples to turn on and off.
