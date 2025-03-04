@@ -1045,4 +1045,4 @@ Here is how `gobley-uniffi-bindgen` versions are tied to `uniffi-rs` are tied:
 
 | gobley-uniffi-bindgen version | uniffi-rs version |
 |-------------------------------|-------------------|
-| v0.1.0                        | v0.25.2           |
+| v0.1.0                        | v0.28.3           |
