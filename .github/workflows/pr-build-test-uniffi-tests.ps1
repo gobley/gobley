@@ -10,4 +10,5 @@ try {
     ./gradlew clean `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false";
+    ./.github/workflows/pr-build-test-change-file-owner.ps1;
 }

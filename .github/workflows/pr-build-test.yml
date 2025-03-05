@@ -27,8 +27,6 @@ jobs:
           - uniffi-tests
     steps:
       - uses: actions/checkout@v4
-      - name: Enable Docker CLI experimental features
-        run: echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
       - name: Docker login to GitHub Container Registry
         run: docker login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
       - name: Run tests in container
@@ -36,6 +34,7 @@ jobs:
           docker run --rm \
             -v "${GITHUB_WORKSPACE}":/home/pr-build-test/workspace \
             -w /home/pr-build-test/workspace \
+            -e GOBLEY_PR_BUILD_TEST_USER="$(id -u):$(id -g)" \
             ${{ needs.build-image.outputs.build-image }} \
             /usr/bin/pwsh -c ./.github/workflows/pr-build-test-${{ matrix.test-name }}.ps1
       - name: Report test results
