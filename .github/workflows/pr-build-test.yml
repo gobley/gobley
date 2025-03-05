@@ -43,4 +43,4 @@ jobs:
         if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
         with:
           check_name: 'JUnit test report (${{ matrix.test-name }})'
-          report_paths: './.github/workflows/pr-build-test/**/test-results/*Test/*.xml'
+          report_paths: './.github/workflows/pr-build-test/**/test-results/*est/TEST-*.xml'
