@@ -94,6 +94,21 @@
 {{ " "|repeat(indent) }}{{ '}' }}
 {% endmacro %}
 
+{%- macro func_decl_with_stub(func_decl, callable, indent) %}
+                        {%- call docstring(callable, indent) %}
+{{ " "|repeat(indent) }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
+                        {%- if callable.is_async() -%}suspend {% endif -%}
+                        fun {{ callable.name()|fn_name }}(
+                            {%- call arg_list(callable, false) -%}
+                        )
+                        {%- match callable.return_type() -%}
+                        {%-     when Some with (return_type) %}: {{ return_type|type_name(ci) -}}
+                        {%-     else -%}
+                        {%- endmatch %} {
+{{ " "|repeat(indent) }}    TODO()
+{{ " "|repeat(indent) }}{{ '}' }}
+{% endmacro %}
+
 {%- macro call_async(callable, indent) -%}
                         uniffiRustCallAsync(
                             {%- if callable.takes_self() %}
