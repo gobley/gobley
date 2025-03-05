@@ -37,9 +37,10 @@ jobs:
             -e GOBLEY_PR_BUILD_TEST_USER="$(id -u):$(id -g)" \
             ${{ needs.build-image.outputs.build-image }} \
             /usr/bin/pwsh -c ./.github/workflows/pr-build-test-${{ matrix.test-name }}.ps1
-      - name: Report test results
-        uses: mikepenz/action-junit-report@v5
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
         if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
         with:
-          check_name: 'JUnit test report (${{ matrix.test-name }})'
-          report_paths: './.github/workflows/pr-build-test/**/test-results/*est/TEST-*.xml'
+          name: junit-test-results-${{ matrix.test-name }}
+          path: './.github/workflows/pr-build-test/**/test-results/*est/TEST-*.xml'
+          retention-days: 1

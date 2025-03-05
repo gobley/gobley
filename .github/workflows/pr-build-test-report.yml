@@ -1,0 +1,35 @@
+name: Report test results
+
+on:
+  workflow_run:
+    workflows: [ 'Build and run tests' ]
+    types: [ completed ]
+
+permissions:
+  actions: read
+  checks: write
+
+jobs:
+  report:
+    name: Report test results
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-name:
+          - examples
+          - gradle-plugin-tests
+          - gradle-tests
+          - uniffi-tests
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: junit-test-results-${{ matrix.test-name }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Report test results
+        uses: mikepenz/action-junit-report@v5
+        with:
+          check_name: 'JUnit test report (${{ matrix.test-name }})'
+          report_paths: '**/test-results/*est/TEST-*.xml'
