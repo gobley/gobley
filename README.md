@@ -572,7 +572,7 @@ complicated build system.
 The minimum Rust version required to install `gobley-uniffi-bindgen` is `1.72`. Newer Rust versions should
 also work fine. The source code of the bindgen for Kotlin Multiplatform is in [`bindgen`](./bindgen). See comments in
 [`bindgen/src/main.rs`](./bindgen/src/main.rs) or
-[`BuildBindingsTask.kt`](./build-logic/gradle-plugin/src/main/kotlin/io/gitlab/trixnity/gradle/uniffi/tasks/BuildBindingsTask.kt)
+[`BuildBindingsTask.kt`](./build-logic/gobley-gradle-uniffi/src/main/kotlin/tasks/BuildBindingsTask.kt)
 to see how to use the bindgen from the command line.
 
 To install the bindgen, run:
@@ -621,7 +621,7 @@ When the bindings are generated correctly, it has a directory structure like the
 
 Various settings used by the bindgen can be configured in `<manifest dir>/uniffi.toml`. For more
 details, see [`bindgen/src/gen_kotlin_multiplatform/mod.rs`](./bindgen/src/gen_kotlin_multiplatform/mod.rs)
-or [`Config.kt`](./build-logic/gradle-plugin/src/main/kotlin/io/gitlab/trixnity/gradle/uniffi/Config.kt).
+or [`Config.kt`](./build-logic/gobley-gradle-uniffi/src/main/kotlin/Config.kt).
 
 | Configuration Name                     | Type         | Description                                                                                                                                                                                                                                               |
 |----------------------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
