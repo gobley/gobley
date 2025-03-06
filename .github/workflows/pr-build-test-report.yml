@@ -32,4 +32,5 @@ jobs:
         uses: mikepenz/action-junit-report@v5
         with:
           check_name: 'JUnit test report (${{ matrix.test-name }})'
+          commit: ${{ github.event.workflow_run.head_sha }}
           report_paths: '**/test-results/*est/TEST-*.xml'
