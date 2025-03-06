@@ -31,6 +31,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Docker login to GitHub Container Registry
         run: docker login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
+      - name: Build without pushing the image if not present
+        if: ${{ needs.build-image.outputs.build-image-hash == 'pr-latest' }}
+        run: |
+          docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
+        env:
+          BUILD_IMAGE: ${{ needs.build-image.outputs.build-image }}
       - name: Run tests in container
         run: |
           docker run --rm \

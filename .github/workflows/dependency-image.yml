@@ -9,6 +9,12 @@ on:
       build-image:
         description: "The name of the Docker image"
         value: ${{ jobs.build-image.outputs.build-image }}
+      build-image-name:
+        description: "The name of the Docker image without the hash"
+        value: ${{ jobs.build-image.outputs.build-image-name }}
+      build-image-hash:
+        description: "The hash or the tag of the Docker image"
+        value: ${{ jobs.build-image.outputs.build-image-hash }}
 
 jobs:
   build-image:
@@ -17,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build-image: ${{ steps.build-image.outputs.build-image }}
+      build-image-name: ${{ steps.build-image.outputs.build-image-name }}
+      build-image-hash: ${{ steps.build-image.outputs.build-image-hash }}
     steps:
       - uses: actions/checkout@v4
       - name: Enable Docker CLI experimental features
@@ -41,5 +49,7 @@ jobs:
             fi
           fi
           echo "build-image=$BUILD_IMAGE" >> $GITHUB_OUTPUT
+          echo "build-image-name=$BUILD_IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "build-image-hash=$BUILD_IMAGE_HASH" >> $GITHUB_OUTPUT
         env:
           BUILD_IMAGE_TRIGGER_EVENT: ${{ inputs.trigger-event }}
