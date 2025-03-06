@@ -74,9 +74,9 @@ reboot. Try restart your Mac if you still have the disk space issue after removi
 
 This project contains three Gradle plugins:
 
-- The Cargo plugin (`dev.gobley.cargo`)
-- The UniFFI plugin (`dev.gobley.uniffi`)
-- The Rust plugin (`dev.gobley.rust`)
+- [The Cargo plugin (`dev.gobley.cargo`)](#the-cargo-plugin)
+- [The UniFFI plugin (`dev.gobley.uniffi`)](#the-uniffi-plugin)
+- [The Rust plugin (`dev.gobley.rust`)](#the-rust-plugin)
 
 These plugins are published in Maven Central. In your `settings.gradle.kts`, put `mavenCentral()` in the
 `pluginManagement {}` block.
@@ -510,6 +510,12 @@ uniffi {
     formatCode = true
 }
 ```
+
+When you use Kotlin targets not supported by the UniFFI plugin like `js()`, `wasmJs()`, or `wasmWasi()`,
+the UniFFI plugin generates stubs. This ensures that the Kotlin code is compiled successfully for all
+platforms. However, all generated functions except for `RustObject(NoPointer)` constructors will throw
+`kotlin.NotImplementedError`. We are trying to support as many platforms as possible. If you need to
+target WASM/JS, please use these stubs until WASM/JS support is released.
 
 ### The Rust plugin
 
