@@ -2,6 +2,9 @@ name: Build Docker image containing required dependencies
 
 on:
   workflow_call:
+    inputs:
+      trigger-event:
+        type: string
     outputs:
       build-image:
         description: "The name of the Docker image"
@@ -24,9 +27,19 @@ jobs:
         id: build-image
         run: |
           BUILD_IMAGE_HASH=$(echo -n "$(cat Cargo.lock .github/workflows/dependency-image.Dockerfile gradle/libs.versions.toml)" | md5sum | cut -c1-8)
-          BUILD_IMAGE="ghcr.io/${{ github.repository }}/dependency-image:$BUILD_IMAGE_HASH"
-          echo "build-image=$BUILD_IMAGE" >> $GITHUB_OUTPUT
+          BUILD_IMAGE_NAME="ghcr.io/${{ github.repository }}/dependency-image"
+          BUILD_IMAGE="$BUILD_IMAGE_NAME:$BUILD_IMAGE_HASH"
           if ! docker manifest inspect $BUILD_IMAGE; then
-            docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
-            docker push $BUILD_IMAGE
+            if [ "$BUILD_IMAGE_TRIGGER_EVENT" = "pull_request" ]; then
+              BUILD_IMAGE_HASH="pr-latest"
+              BUILD_IMAGE="$BUILD_IMAGE_NAME:$BUILD_IMAGE_HASH"
+            else
+              docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
+              docker push $BUILD_IMAGE
+              docker tag $BUILD_IMAGE $BUILD_IMAGE_NAME:pr-latest
+              docker push $BUILD_IMAGE_NAME:pr-latest
+            fi
           fi
+          echo "build-image=$BUILD_IMAGE" >> $GITHUB_OUTPUT
+        env:
+          BUILD_IMAGE_TRIGGER_EVENT: ${{ inputs.trigger-event }}

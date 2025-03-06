@@ -9,6 +9,8 @@ jobs:
     name: Build Docker image containing required dependencies
     uses: ./.github/workflows/dependency-image.yml
     secrets: inherit
+    with:
+      trigger-event: ${{ github.event_name }}
   publish:
     name: Publish Gobley to Maven Central and crates.io
     timeout-minutes: 120
