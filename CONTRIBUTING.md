@@ -17,6 +17,7 @@ To build this project locally, you'll need:
 - Android SDK 35 with CMake (CMake is used by `:tests:gradle:android-linking`)
 - Android NDK
 - Perl (Used to build OpenSSL by `:examples:tokio-blake3-app`)
+- Chrome (Used by WASM/JS tests in `:tests:uniffi:coverall`)
 - Visual C++ x64 & ARM64 (Windows)
 - Xcode (macOS)
 
