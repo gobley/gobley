@@ -20,6 +20,18 @@ RUN apt update && \
       wget \
       # For packages that builds OpenSSL from the source like blake3 used in examples
       perl && \
+    # Use Chrome for WASM/JS testing
+    apt install -y \
+      fonts-liberation \
+      libatk-bridge2.0-0 \
+      libatk1.0-0 \
+      libatspi2.0-0 \
+      libcurl4 \
+      xdg-utils && \
+    wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+      dpkg -i google-chrome-stable_current_amd64.deb && \
+      rm google-chrome-stable_current_amd64.deb && \
+    apt install -y google-chrome-stable && \
     # Use PowerShell for complex scripting
     . /etc/os-release && \
       wget -q https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb && \

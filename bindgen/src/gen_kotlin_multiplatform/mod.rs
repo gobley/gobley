@@ -202,6 +202,7 @@ pub struct MultiplatformBindings {
     pub jvm: String,
     pub android: String,
     pub native: String,
+    pub stub: String,
     pub header: String,
 }
 
@@ -226,6 +227,10 @@ pub fn generate_bindings(
         .render()
         .context("failed to render Kotlin/Native bindings")?;
 
+    let stub = StubKotlinWrapper::new("stub", config.clone(), ci)
+        .render()
+        .context("failed to render stub bindings")?;
+
     let header = HeadersKotlinWrapper::new("headers", config.clone(), ci)
         .render()
         .context("failed to render Kotlin/Native headers")?;
@@ -235,6 +240,7 @@ pub fn generate_bindings(
         jvm,
         android,
         native,
+        stub,
         header,
     })
 }
@@ -396,6 +402,9 @@ kotlin_wrapper!(
 
 kotlin_type_renderer!(NativeTypeRenderer, "native/Types.kt");
 kotlin_wrapper!(NativeKotlinWrapper, NativeTypeRenderer, "native/wrapper.kt");
+
+kotlin_type_renderer!(StubTypeRenderer, "stub/Types.kt");
+kotlin_wrapper!(StubKotlinWrapper, StubTypeRenderer, "stub/wrapper.kt");
 
 kotlin_type_renderer!(HeadersTypeRenderer, "headers/Types.h");
 kotlin_wrapper!(

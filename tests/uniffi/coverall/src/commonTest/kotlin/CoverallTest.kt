@@ -44,31 +44,32 @@ import io.kotest.matchers.floats.FloatToleranceMatcher
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newFixedThreadPoolContext
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 expect fun runGC()
+expect fun blockingDelay(delay: Long)
+expect val gcSupported: Boolean
+expect val uniffiSupported: Boolean
+expect val multithreadedCoroutineContext: CoroutineContext
 
 class CoverallTest {
     private val gcDelay: Long = 100
 
     private fun runGCWithDelay() {
         runGC()
-        runBlocking { delay(gcDelay) }
+        blockingDelay(gcDelay)
     }
 
     // Ensures getNumAlive() always returns deterministic value
@@ -82,7 +83,12 @@ class CoverallTest {
 
     private inline fun <T> withCoverallLock(block: CoverallLockScope.() -> T) {
         coverallLock.withLock {
-            CoverallLockScope(getNumAlive()).block()
+            CoverallLockScope(
+                when {
+                    uniffiSupported && gcSupported -> getNumAlive()
+                    else -> 0UL
+                }
+            ).block()
         }
     }
 
@@ -99,6 +105,8 @@ class CoverallTest {
 
         infix fun Double.almostEquals(other: Double) =
             shouldBe(ToleranceMatcher(other, 0.000001))
+
+        if (!uniffiSupported) return
 
         createSomeDict().use { d ->
             d.text shouldBe "text"
@@ -155,6 +163,8 @@ class CoverallTest {
 
     @Test
     fun coverallTests() = withCoverallLock {
+        if (!uniffiSupported) return
+
         Coveralls("test_arcs").use { coveralls ->
             getNumAlive() shouldBe 1UL
             // One ref held by the foreign-language code, one created for this method call.
@@ -308,6 +318,8 @@ class CoverallTest {
 
     @Test
     fun gc() = withCoverallLock {
+        if (!uniffiSupported || !gcSupported) return
+
         // The GC test; we should have 1000 alive by the end of the loop.
         //
         // Later on, nearer the end of the script, we'll test again, when the cleaner
@@ -390,15 +402,19 @@ class CoverallTest {
 
     @Test
     fun getters() {
-        // Test traits implemented in Rust
-        makeRustGetters().let { rustGetters ->
-            testGetters(rustGetters)
-            testGettersFromKotlin(rustGetters)
+        if (uniffiSupported) {
+            // Test traits implemented in Rust
+            makeRustGetters().let { rustGetters ->
+                testGetters(rustGetters)
+                testGettersFromKotlin(rustGetters)
+            }
         }
 
         // Test traits implemented in Kotlin
         KotlinGetters().let { kotlinGetters ->
-            testGetters(kotlinGetters)
+            if (uniffiSupported) {
+                testGetters(kotlinGetters)
+            }
             testGettersFromKotlin(kotlinGetters)
         }
     }
@@ -458,6 +474,8 @@ class CoverallTest {
 
     @Test
     fun nodeTrait() {
+        if (!uniffiSupported) return
+
         // Test NodeTrait
         getTraits().let { traits ->
             traits[0].name() shouldBe "node-1"
@@ -506,6 +524,8 @@ class CoverallTest {
 
     @Test
     fun stringUtil() {
+        if (!uniffiSupported) return
+
         getStringUtilTraits().let { traits ->
             traits[0].concat("cow", "boy") shouldBe "cowboy"
             traits[1].concat("cow", "boy") shouldBe "cowboy"
@@ -521,10 +541,10 @@ class CoverallTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun threadSafe() = runTest {
+        if (!uniffiSupported) return@runTest
+
         ThreadsafeCounter().use { counter ->
-            val coroutineScope = CoroutineScope(
-                newFixedThreadPoolContext(3, "CoverallTest.threadSafe Thread Pool")
-            )
+            val coroutineScope = CoroutineScope(multithreadedCoroutineContext)
             try {
                 val busyWaiting = coroutineScope.launch {
                     // 300 ms should be long enough for the other thread to easily finish
@@ -566,6 +586,8 @@ class CoverallTest {
 
     @Test
     fun bytes() = withCoverallLock {
+        if (!uniffiSupported) return
+
         Coveralls("test_bytes").use { coveralls ->
             coveralls.reverse("123".encodeToByteArray()).decodeToString() shouldBe "321"
         }
@@ -604,6 +626,8 @@ class CoverallTest {
             shouldThrowAny { FalliblePatch() }
             shouldThrowAny { FalliblePatch.secondary() }
         }
+
+        if (!uniffiSupported) return
 
         Coveralls("using_fakes_with_real_objects_crashes").use { coveralls ->
             val patch = FakePatch(Color.RED)

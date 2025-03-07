@@ -42,6 +42,7 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -321,6 +322,8 @@ class UniFfiPlugin : Plugin<Project> {
                     dummyDefFile,
                     generateDummyDefFileTask,
                 )
+
+                else -> configureUnsupportedTarget(this)
             }
         }
     }
@@ -405,6 +408,12 @@ class UniFfiPlugin : Plugin<Project> {
             }
         }
     }
+
+    private fun Project.configureUnsupportedTarget(kotlinTarget: KotlinTarget) {
+        kotlinTarget.compilations.getByName("main").defaultSourceSet {
+            kotlin.srcDir(stubBindingsDirectory)
+        }
+    }
 }
 
 private val Project.bindingsDirectory: Provider<Directory>
@@ -421,6 +430,9 @@ private val Project.androidBindingsDirectory: Provider<Directory>
 
 private val Project.nativeBindingsDirectory: Provider<Directory>
     get() = bindingsDirectory.map { it.dir("nativeMain/kotlin") }
+
+private val Project.stubBindingsDirectory: Provider<Directory>
+    get() = bindingsDirectory.map { it.dir("stubMain/kotlin") }
 
 private val Project.nativeBindingsCInteropDirectory: Provider<Directory>
     get() = bindingsDirectory.map { it.dir("nativeInterop/cinterop") }
