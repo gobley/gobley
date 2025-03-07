@@ -7,12 +7,24 @@ plugins {
 kotlin {
     js {
         nodejs()
-        browser()
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadlessNoSandbox()
+                }
+            }
+        }
     }
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         nodejs()
-        browser()
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadlessNoSandbox()
+                }
+            }
+        }
     }
     // Not supported by io.kotest:kotest-assertions-core:5.9.1
     // @OptIn(ExperimentalWasmDsl::class)
