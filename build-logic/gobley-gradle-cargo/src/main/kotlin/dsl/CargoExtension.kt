@@ -16,6 +16,8 @@ import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
+import gobley.gradle.utils.RustVersionUtils
+import io.github.z4kn4fein.semver.Version
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.internal.plugins.DslObject
@@ -47,6 +49,11 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
     internal val toolchainDirectory: Provider<File> = project.provider {
         project.extensions.findByType<RustExtension>()?.toolchainDirectory?.get()
             ?: GobleyHost.current.platform.defaultToolchainDirectory
+    }
+
+    @OptIn(InternalGobleyGradleApi::class)
+    internal val rustVersion: Provider<Version> = project.provider {
+        RustVersionUtils.getRustVersion(project, toolchainDirectory.get())
     }
 
     /**

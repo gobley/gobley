@@ -20,6 +20,7 @@ dependencies {
     compileOnly(plugin(libs.plugins.android.library))
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.semver)
     compileOnly(libs.jna)
 
     api(project(":gobley-gradle"))
