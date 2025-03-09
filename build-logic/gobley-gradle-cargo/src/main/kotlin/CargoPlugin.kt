@@ -214,7 +214,7 @@ class CargoPlugin : Plugin<Project> {
                 tasks.register<RustUpTargetAddTask>({ +cargoBuild.rustTarget }) {
                     group = TASK_GROUP
                     this.rustTarget.set(cargoBuild.rustTarget)
-                    this.rustVersion.set(cargoExtension.rustVersion.map { it.toString() })
+                    this.rustVersion.set(cargoExtension.rustVersion)
                 }
             for (cargoBuildVariant in cargoBuild.variants) {
                 val projectLayout = layout
