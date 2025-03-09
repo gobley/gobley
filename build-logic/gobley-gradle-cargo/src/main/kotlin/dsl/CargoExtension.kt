@@ -52,9 +52,15 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    internal val rustVersion: Provider<Version> = project.provider {
-        RustVersionUtils.getRustVersion(project, toolchainDirectory.get())
-    }
+    internal val rustVersion: Provider<Version> =
+        project.objects.property<Version>().value(
+            project.provider {
+                RustVersionUtils.getRustVersion(project, toolchainDirectory.get())
+            },
+        ).apply {
+            disallowChanges()
+            finalizeValueOnRead()
+        }
 
     /**
      * The parsed metadata and manifest of the package.

@@ -10,6 +10,7 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.tasks.GloballyLockedTask
 import gobley.gradle.tasks.globalLock
+import io.github.z4kn4fein.semver.Version
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
@@ -21,6 +22,9 @@ abstract class RustUpTargetAddTask : RustUpTask(), GloballyLockedTask {
     @get:Input
     abstract val rustTarget: Property<RustTarget>
 
+    @get:Input
+    abstract val rustVersion: Property<String>
+
     init {
         outputs.upToDateWhen {
             it as RustUpTargetAddTask
@@ -29,6 +33,12 @@ abstract class RustUpTargetAddTask : RustUpTask(), GloballyLockedTask {
     }
 
     private fun isToolchainInstalled(): Boolean {
+        val tier = rustTarget.get().tier(rustVersion.get())
+        // Don't rustup target add if the target tier is 3
+        if (tier >= 3) {
+            return true
+        }
+
         val installedTargets = rustUp("target", "list") {
             captureStandardOutput()
         }.get().run {
