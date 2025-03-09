@@ -676,10 +676,14 @@ When the bindings are generated correctly, it has a directory structure like the
 │   └── headers
 │       └── <namespace name>
 │           └── <namespace name>.h
-└── nativeMain
+├── nativeMain
+│   └── kotlin
+│       └── <namespace name>
+│           └── <namespace name>.native.kt
+└── stubMain
     └── kotlin
         └── <namespace name>
-            └── <namespace name>.native.kt
+            └── <namespace name>.stub.kt
 ```
 
 ### Bindgen configuration
