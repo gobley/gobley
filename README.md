@@ -91,6 +91,8 @@ pluginManagement {
 
 ### The Cargo plugin
 
+#### Basic usage
+
 The Cargo plugin is responsible for building and linking the Rust library to your Kotlin project. You can use it even
 when you are not using UniFFI. If the `Cargo.toml` is located in the project root, you can simply apply the
 `dev.gobley.cargo` the plugin.
@@ -101,6 +103,8 @@ plugins {
     id("dev.gobley.cargo") version "0.1.0"
 }
 ```
+
+#### Configuring Cargo package not in the project root
 
 If the Cargo package is located in another directory, you can configure the path in the `cargo {}` block.
 
@@ -121,6 +125,8 @@ cargo {
     packageDirectory = layout.projectDirectory.dir("rust/src")
 }
 ```
+
+#### Configuring Cargo to use different Cargo features or build profiles
 
 If you want to use Cargo features or
 customized [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html),
@@ -193,6 +199,8 @@ cargo {
 }
 ```
 
+#### The Cargo plugin only builds for required platforms
+
 Cargo build tasks are configured as the corresponding Kotlin target is added in the `kotlin {}` block. For example, if
 you don't invoke `androidTarget()` in `kotlin {}`, the Cargo plugin won't configure the Android build task as well.
 
@@ -214,6 +222,8 @@ The Cargo plugin scans all the Rust dependencies
 using [`cargo metadata`](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html). If you modify Rust source files
 including those in dependencies defined in the Cargo manifest, the Cargo plugin will rebuild the Cargo project.
 
+#### Changing the NDK version used to build Android binaries
+
 For Android builds, the Cargo plugin automatically determines the SDK and the NDK to use based on the property values of
 the `android {}` block. To use different a NDK version, set `ndkVersion` to that version.
 
@@ -234,6 +244,8 @@ android {
     }
 }
 ```
+
+#### Changing the environment variables used during the build
 
 The Cargo plugin automatically configures environment variables like `ANDROID_HOME` or `CC_<target>` for you, but if you
 need finer control, you can directly configure the properties of the build task. The build task is accessible in the
@@ -264,6 +276,8 @@ cargo {
     }
 }
 ```
+
+#### Configuring the platforms used by the JVM target
 
 For JVM builds, the Cargo plugin tries to build all the targets, whether the required toolchains are installed on the
 current system or not. The list of such targets by the build host is as follows.
@@ -342,6 +356,8 @@ cdylib_name = "bar"
 The JVM `loadIndirect()` function in the bindings allow users to override the `cdylib_name` value using the
 `uniffi.component.<namespace name>.libraryOverride` system property as well. See the
 [`:tests:uniffi:ext-types:ext-types`](./tests/uniffi/ext-types/ext-types) test to see how this works. 
+
+#### Configuring the platforms used by Android local unit tests
 
 Android local unit tests requires JVM targets to be built, as they run in the host machine's JVM. The Cargo plugin
 automatically copies the Rust shared library targeting the host machine into Android local unit tests. It also finds
@@ -439,11 +455,13 @@ kotlin {
 }
 ```
 
+#### Configuring external dynamic libraries your Rust code depends on
+
 If your Rust library is dependent on other shared libraries, you have to ensure that they are also available during
 runtime. For JVM and Android builds, you can use the `dynamicLibraries` and the `dynamicLibrarySearchPaths` properties.
 The specified libraries will be embedded into the resulting JAR or the Android bundle.
 
-```
+```kotlin
 cargo {
     builds.android {
         // Copies libaaudio.so and libc++_shared.so from NDK
@@ -458,6 +476,39 @@ cargo {
 
 Some directories like the NDK installation directory or the Cargo build output directory are already registered in
 `dynamicLibrarySearchPaths`. If your build system uses another directory, add that to this property.
+
+#### Enabling the nightly mode and building tier 3 Rust targets
+
+Some targets like tvOS and watchOS are tier 3 in the Rust world (they are tier 2 in the Kotlin side). Pre-built standard libraries are not available for these targets. To use the standard library, you
+must pass the `-Zbuild-std` flag to the `cargo build` command (See [here](https://doc.rust-lang.org/cargo/reference/unstable.html#build-std)
+for the official documentation). Since this flag is available only on the nightly channel, you
+should configure the Cargo plugin to do so.
+
+First, download the source code of the standard library using the following command.
+
+```
+rustup component add rust-src --toolchain nightly
+```
+
+To get the tier of a `RustTarget`, you can use the `fun RustTarget.tier(version: String): Int`
+function. We can instruct Cargo to build the standard library for tier 3 targets only with it.
+
+```kotlin
+cargo {
+    builds.appleMobile {
+        variants {
+            if (rustTarget.tier(project.rustVersion.get()) >= 3) {
+                buildTaskProvider.configure {
+                    // Pass +nightly to `cargo rustc` (or `cargo build`) to use `-Zbuild-std`.
+                    nightly = true
+                    // Make Cargo build the standard library
+                    extraArguments.add("-Zbuild-std")
+                }
+            }
+        }
+    }
+}
+```
 
 ### The UniFFI plugin
 
@@ -538,7 +589,7 @@ rust {
 ```
 
 The Rust plugin also defines two extension functions `KotlinMultiplatformExtension.hostNativeTarget`
-and `KotlinNativeCompilation.useRustUpLinker`.
+and `KotlinNativeCompilation.useRustUpLinker` and one extension property `Project.rustVersion`.
 
 `hostNativeTarget` can be invoked in `kotlin {}` and adds the Kotlin Native target for the build host; it invokes
 `mingwX64` on Windows, `macosX64` or `macosArm64` on macOS, and `linuxX64` or `linuxArm64` on Linux, though Linux Arm64
@@ -566,6 +617,14 @@ kotlin {
         useRustUpLinker()
     }
 }
+```
+
+`rustVersion` retrieves the current Rust version via `rustc --version`.
+
+```kotlin
+import gobley.gradle.rust.dsl.*
+
+println(rustVersion.get()) // e.g. 1.81.0
 ```
 
 ## The Bindgen
