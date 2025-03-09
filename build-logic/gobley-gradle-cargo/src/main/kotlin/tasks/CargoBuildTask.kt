@@ -13,6 +13,7 @@ import gobley.gradle.rust.targets.RustNativeTarget
 import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
@@ -35,6 +36,9 @@ abstract class CargoBuildTask : CargoPackageTask() {
     @get:Input
     abstract val features: SetProperty<String>
 
+    @get:Input
+    abstract val extraArguments: ListProperty<String>
+
     @OutputFiles
     val libraryFileByCrateType: Provider<Map<CrateType, RegularFile>> =
         profile.zip(target, ::Pair).zip(cargoPackage) { (profile, target), cargoPackage ->
@@ -51,7 +55,7 @@ abstract class CargoBuildTask : CargoPackageTask() {
 
     @TaskAction
     @OptIn(InternalGobleyGradleApi::class)
-    fun buildBindings() {
+    fun build() {
         val profile = profile.get()
         val target = target.get()
         val result = cargo("rustc") {
@@ -63,6 +67,9 @@ abstract class CargoBuildTask : CargoPackageTask() {
                 }
             }
             arguments("--lib")
+            for (extraArgument in extraArguments.get()) {
+                arguments(extraArgument)
+            }
             arguments("--")
             if (nativeStaticLibsDefFile.isPresent) {
                 arguments("--print", "native-static-libs")
