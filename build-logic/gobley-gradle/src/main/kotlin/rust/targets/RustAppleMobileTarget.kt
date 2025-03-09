@@ -34,6 +34,11 @@ enum class RustAppleMobileTarget(
         cinteropName = "ios",
         tier = 2,
     ),
+    TvOsArm64(
+        rustTriple = "aarch64-apple-tvos-sim",
+        cinteropName = "tvos",
+        tier = 3,
+    ),
     WatchOsSimulatorArm64(
         rustTriple = "aarch64-apple-watchos-sim",
         cinteropName = "watchos",

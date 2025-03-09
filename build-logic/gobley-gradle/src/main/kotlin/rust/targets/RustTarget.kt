@@ -67,6 +67,7 @@ fun RustTarget(konanTarget: KonanTarget): RustTarget = when (konanTarget) {
     KonanTarget.MINGW_X64 -> RustPosixTarget.MinGWX64
     // MinGW x86 is not supported
     // TODO: add tvOS targets
+    KonanTarget.TVOS_SIMULATOR_ARM64 -> RustAppleMobileTarget.TvOsArm64
     // WASM targets are not supported
     // TODO: add watchOS targets
     KonanTarget.WATCHOS_SIMULATOR_ARM64 -> RustAppleMobileTarget.WatchOsSimulatorArm64
