@@ -10,6 +10,7 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.tasks.CommandTask
 import gobley.gradle.utils.CommandSpec
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
@@ -23,6 +24,10 @@ abstract class CargoTask : CommandTask() {
     @get:PathSensitive(PathSensitivity.ABSOLUTE)
     abstract val cargo: Property<File>
 
+    @get:Input
+    @get:Optional
+    abstract val nightly: Property<Boolean>
+
     @InternalGobleyGradleApi
     fun cargo(
         vararg argument: String,
@@ -30,11 +35,17 @@ abstract class CargoTask : CommandTask() {
     ) = cargo.map { it as Any }.orElse("cargo").flatMap { cargo ->
         if (cargo is File) {
             command(cargo) {
+                if (nightly.orNull == true) {
+                    arguments("+nightly")
+                }
                 arguments(*argument)
                 action()
             }
         } else {
             command("cargo") {
+                if (nightly.orNull == true) {
+                    arguments("+nightly")
+                }
                 arguments(*argument)
                 action()
             }
