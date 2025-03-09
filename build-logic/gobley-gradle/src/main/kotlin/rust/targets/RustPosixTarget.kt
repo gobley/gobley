@@ -14,36 +14,47 @@ enum class RustPosixTarget(
     override val rustTriple: String,
     override val jnaResourcePrefix: String,
     override val cinteropName: String,
+    private val tier: Int,
 ) : RustJvmTarget, RustNativeTarget, Serializable {
     MinGWX64(
         rustTriple = "x86_64-pc-windows-gnu",
         jnaResourcePrefix = "win32-x86-64",
         cinteropName = "mingw",
+        tier = 1,
     ),
     MacOSX64(
         rustTriple = "x86_64-apple-darwin",
         jnaResourcePrefix = "darwin-x86-64",
         cinteropName = "osx",
+        tier = 1,
     ),
     MacOSArm64(
         rustTriple = "aarch64-apple-darwin",
         jnaResourcePrefix = "darwin-aarch64",
         cinteropName = "osx",
+        tier = 1,
     ),
     LinuxX64(
         rustTriple = "x86_64-unknown-linux-gnu",
         jnaResourcePrefix = "linux-x86-64",
         cinteropName = "linux",
+        tier = 1,
     ),
     LinuxArm64(
         rustTriple = "aarch64-unknown-linux-gnu",
         jnaResourcePrefix = "linux-aarch64",
         cinteropName = "linux",
+        tier = 1,
     );
 
     override val friendlyName = name
 
     override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.jvm, KotlinPlatformType.native)
+
+    override fun tier(rustVersion: String?): Int {
+        return tier
+    }
+
     override fun outputFileName(crateName: String, crateType: CrateType): String? {
         return when {
             isWindows() -> crateType.outputFileNameForMinGW(crateName)

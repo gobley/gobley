@@ -13,19 +13,27 @@ import java.io.Serializable
 enum class RustWindowsTarget(
     override val rustTriple: String,
     override val jnaResourcePrefix: String,
+    private val tier: Int,
 ) : RustJvmTarget, Serializable {
     X64(
         rustTriple = "x86_64-pc-windows-msvc",
         jnaResourcePrefix = "win32-x86-64",
+        tier = 1,
     ),
     Arm64(
         rustTriple = "aarch64-pc-windows-msvc",
         jnaResourcePrefix = "win32-aarch64",
+        tier = 2,
     );
 
     override val friendlyName: String = "Windows$name"
 
     override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.jvm)
+
+    override fun tier(rustVersion: String?): Int {
+        return tier
+    }
+
     override fun outputFileName(crateName: String, crateType: CrateType): String? =
         crateType.outputFileNameForMsvc(crateName)
 
