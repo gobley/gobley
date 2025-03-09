@@ -69,8 +69,14 @@ kotlin {
             iosX64(),
             macosArm64(),
             macosX64(),
+            tvosArm64(),
             tvosSimulatorArm64(),
+            tvosX64(),
             watchosSimulatorArm64(),
+            watchosDeviceArm64(),
+            watchosX64(),
+            watchosArm64(),
+            watchosArm32(),
         ).forEach {
             it.binaries.framework {
                 baseName = "ExamplesAppKotlin"
