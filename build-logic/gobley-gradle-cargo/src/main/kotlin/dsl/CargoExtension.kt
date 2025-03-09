@@ -11,6 +11,7 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.cargo.CargoPackage
 import gobley.gradle.rust.dsl.RustExtension
+import gobley.gradle.rust.dsl.rustVersion
 import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
@@ -51,13 +52,8 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
             ?: GobleyHost.current.platform.defaultToolchainDirectory
     }
 
-    @OptIn(InternalGobleyGradleApi::class)
     internal val rustVersion: Provider<String> =
-        project.objects.property<String>().value(
-            project.provider {
-                RustVersionUtils.getRustVersion(project, toolchainDirectory.get()).toString()
-            },
-        ).apply {
+        project.objects.property<String>().value(project.rustVersion).apply {
             disallowChanges()
             finalizeValueOnRead()
         }

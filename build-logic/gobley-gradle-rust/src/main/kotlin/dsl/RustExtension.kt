@@ -10,9 +10,11 @@ import gobley.gradle.PluginIds
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.utils.PluginUtils
+import gobley.gradle.utils.RustVersionUtils
 import gobley.gradle.utils.command
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.property
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -78,10 +80,7 @@ fun KotlinNativeCompilation.useRustUpLinker() {
                 PluginIds.GOBLEY_CARGO,
             ),
         )
-        val toolchainDirectory = project.extensions.findByType<RustExtension>()?.toolchainDirectory
-        val rustUpLinker = project.rustUpLinker(
-            toolchainDirectory?.get() ?: GobleyHost.current.platform.defaultToolchainDirectory
-        ).absolutePath
+        val rustUpLinker = project.rustUpLinker(project.rustToolchainDirectory.get()).absolutePath
         val konanTarget = this@useRustUpLinker.target.konanTarget
         compilerOptions.freeCompilerArgs.add(
             "-Xoverride-konan-properties=linker.${GobleyHost.current.konanName}-${konanTarget.name}=$rustUpLinker"
@@ -93,6 +92,12 @@ fun KotlinNativeCompilation.useRustUpLinker() {
         }
     }
 }
+
+private val Project.rustToolchainDirectory: Provider<File>
+    get() = project.providers.provider {
+        project.extensions.findByType<RustExtension>()?.toolchainDirectory?.get()
+            ?: GobleyHost.current.platform.defaultToolchainDirectory
+    }
 
 @OptIn(InternalGobleyGradleApi::class)
 private fun Project.rustUpLinker(toolchainDirectory: File): File {
@@ -120,3 +125,9 @@ private fun Project.rustUpLinker(toolchainDirectory: File): File {
             .resolve(GobleyHost.current.rustTarget.rustTriple).resolve("bin/gcc-ld/ld.lld")
     )
 }
+
+val Project.rustVersion: Provider<String>
+    get() = rustToolchainDirectory.map { toolchainDirectory ->
+        @OptIn(InternalGobleyGradleApi::class)
+        RustVersionUtils.getRustVersion(project, toolchainDirectory).toString()
+    }

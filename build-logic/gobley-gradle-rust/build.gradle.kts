@@ -15,6 +15,9 @@ gobleyGradleBuild {
 dependencies {
     compileOnly(gradleKotlinDsl())
     compileOnly(plugin(libs.plugins.kotlin.multiplatform))
+
+    implementation(libs.semver)
+
     api(project(":gobley-gradle"))
 
     testImplementation(kotlin("test"))
