@@ -6,53 +6,65 @@
 
 package gobley.gradle.rust.targets
 
+import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.rust.CrateType
+import gobley.gradle.utils.SemVerConstraintMap
+import io.github.z4kn4fein.semver.constraints.toConstraint
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import java.io.Serializable
 
+@OptIn(InternalGobleyGradleApi::class)
 enum class RustPosixTarget(
     override val rustTriple: String,
     override val jnaResourcePrefix: String,
     override val cinteropName: String,
-    private val tier: Int,
+    private val tierByVersion: SemVerConstraintMap<Int>,
 ) : RustJvmTarget, RustNativeTarget, Serializable {
     MinGWX64(
         rustTriple = "x86_64-pc-windows-gnu",
         jnaResourcePrefix = "win32-x86-64",
         cinteropName = "mingw",
-        tier = 1,
+        tierByVersion = SemVerConstraintMap(1),
     ),
     MacOSX64(
         rustTriple = "x86_64-apple-darwin",
         jnaResourcePrefix = "darwin-x86-64",
         cinteropName = "osx",
-        tier = 1,
+        tierByVersion = SemVerConstraintMap(1),
     ),
     MacOSArm64(
         rustTriple = "aarch64-apple-darwin",
         jnaResourcePrefix = "darwin-aarch64",
         cinteropName = "osx",
-        tier = 1,
+        tierByVersion = SemVerConstraintMap(
+            default = 2,
+            // https://blog.rust-lang.org/2024/10/17/Rust-1.82.0.html
+            ">=1.82".toConstraint() to 1,
+        ),
     ),
     LinuxX64(
         rustTriple = "x86_64-unknown-linux-gnu",
         jnaResourcePrefix = "linux-x86-64",
         cinteropName = "linux",
-        tier = 1,
+        tierByVersion = SemVerConstraintMap(1),
     ),
     LinuxArm64(
         rustTriple = "aarch64-unknown-linux-gnu",
         jnaResourcePrefix = "linux-aarch64",
         cinteropName = "linux",
-        tier = 1,
+        tierByVersion = SemVerConstraintMap(
+            default = 2,
+            // https://blog.rust-lang.org/2020/12/31/Rust-1.49.0.html
+            ">=1.49".toConstraint() to 1,
+        ),
     );
 
     override val friendlyName = name
 
     override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.jvm, KotlinPlatformType.native)
 
-    override fun tier(rustVersion: String?): Int {
-        return tier
+    override fun tier(rustVersion: String): Int {
+        return tierByVersion[rustVersion]
     }
 
     override fun outputFileName(crateName: String, crateType: CrateType): String? {

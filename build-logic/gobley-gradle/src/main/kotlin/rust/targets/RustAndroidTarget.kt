@@ -62,7 +62,7 @@ enum class RustAndroidTarget(
 
     override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.androidJvm)
 
-    override fun tier(rustVersion: String?) = 2
+    override fun tier(rustVersion: String) = 2
 
     override fun outputFileName(crateName: String, crateType: CrateType): String? =
         crateType.outputFileNameForLinux(crateName)

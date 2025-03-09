@@ -39,7 +39,7 @@ enum class RustAppleMobileTarget(
 
     override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.native)
 
-    override fun tier(rustVersion: String?): Int {
+    override fun tier(rustVersion: String): Int {
         return tier
     }
 

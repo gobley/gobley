@@ -22,6 +22,7 @@ dependencies {
     compileOnly(gradleKotlinDsl())
     compileOnly(plugin(libs.plugins.kotlin.multiplatform))
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.semver)
 }
 
 buildConfig {

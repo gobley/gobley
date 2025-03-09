@@ -35,7 +35,7 @@ sealed interface RustTarget {
      * The target tier as stated in [Platform Support](https://doc.rust-lang.org/stable/rustc/platform-support.html)
      * in the official documentation.
      */
-    fun tier(rustVersion: String? = null): Int
+    fun tier(rustVersion: String): Int
 
     /**
      * The name of the output file by the name of the crate and the type.

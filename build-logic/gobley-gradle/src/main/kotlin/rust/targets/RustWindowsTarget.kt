@@ -30,7 +30,7 @@ enum class RustWindowsTarget(
 
     override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.jvm)
 
-    override fun tier(rustVersion: String?): Int {
+    override fun tier(rustVersion: String): Int {
         return tier
     }
 
