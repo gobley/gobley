@@ -593,7 +593,7 @@ and `KotlinNativeCompilation.useRustUpLinker` and one extension property `Projec
 
 `hostNativeTarget` can be invoked in `kotlin {}` and adds the Kotlin Native target for the build host; it invokes
 `mingwX64` on Windows, `macosX64` or `macosArm64` on macOS, and `linuxX64` or `linuxArm64` on Linux, though Linux Arm64
-build host is not supported yet.
+build host is not supported by Kotlin/Native yet.
 
 ```kotlin
 import gobley.gradle.rust.dsl.*
