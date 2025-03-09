@@ -33,6 +33,11 @@ enum class RustAppleMobileTarget(
         rustTriple = "x86_64-apple-ios",
         cinteropName = "ios",
         tier = 2,
+    ),
+    WatchOsSimulatorArm64(
+        rustTriple = "aarch64-apple-watchos-sim",
+        cinteropName = "watchos",
+        tier = 3,
     );
 
     override val friendlyName = name

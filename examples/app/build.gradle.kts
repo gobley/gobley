@@ -67,6 +67,7 @@ kotlin {
             iosArm64(),
             iosSimulatorArm64(),
             iosX64(),
+            watchosSimulatorArm64(),
             macosArm64(),
             macosX64(),
         ).forEach {

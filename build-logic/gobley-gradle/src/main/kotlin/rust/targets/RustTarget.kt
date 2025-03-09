@@ -69,6 +69,7 @@ fun RustTarget(konanTarget: KonanTarget): RustTarget = when (konanTarget) {
     // TODO: add tvOS targets
     // WASM targets are not supported
     // TODO: add watchOS targets
+    KonanTarget.WATCHOS_SIMULATOR_ARM64 -> RustAppleMobileTarget.WatchOsSimulatorArm64
     else -> throw IllegalArgumentException("KonanTarget $konanTarget is not supported")
 }
 
