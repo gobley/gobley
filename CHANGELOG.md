@@ -6,6 +6,7 @@
 
 - Stub generation for unsupported JS/WASM targets ([#29](https://github.com/gobley/gobley/pull/29)).
 - Kotlin/Native tvOS & watchOS support ([#35](https://github.com/gobley/gobley/pull/35)).
+- Kotlin JVM and Kotlin Android Gradle plugins support by `CargoPlugin` ([#44](https://github.com/gobley/gobley/pull/44)).
 
 ## [0.1.0](https://github.com/gobley/gobley/releases/tag/v0.1.0) - 2025-03-03
 
