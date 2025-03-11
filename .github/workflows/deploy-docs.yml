@@ -19,7 +19,7 @@ jobs:
         run: npm run build
         working-directory: docs
       - name: Upload build results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         if: ${{ github.event_name != 'pull_request' }}
         with:
           path: docs/build
@@ -27,6 +27,7 @@ jobs:
     name: Deploy documentation
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
+    needs: build
     permissions:
       contents: read
       pages: write
@@ -42,10 +43,6 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Setup pages
         uses: actions/configure-pages@v5
-      - name: Upload build result
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
       - name: Deploy documentation to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
