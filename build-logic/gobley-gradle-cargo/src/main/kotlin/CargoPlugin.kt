@@ -25,6 +25,10 @@ import gobley.gradle.cargo.tasks.CargoTask
 import gobley.gradle.cargo.tasks.RustUpTargetAddTask
 import gobley.gradle.cargo.tasks.RustUpTask
 import gobley.gradle.cargo.utils.register
+import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustJvmTarget
@@ -47,13 +51,11 @@ import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.listProperty
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.language.jvm.tasks.ProcessResources
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
@@ -67,7 +69,9 @@ class CargoPlugin : Plugin<Project> {
     }
 
     private lateinit var cargoExtension: CargoExtension
-    private lateinit var kotlinMultiplatformExtension: KotlinMultiplatformExtension
+
+    @OptIn(InternalGobleyGradleApi::class)
+    private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
     private lateinit var androidDelegate: CargoPluginAndroidDelegate
 
     override fun apply(target: Project) {
@@ -114,8 +118,16 @@ class CargoPlugin : Plugin<Project> {
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.watchPluginChanges() {
         plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
-            kotlinMultiplatformExtension = extensions.getByType()
-            kotlinMultiplatformExtension.targets.configureEach { planBuilds() }
+            kotlinExtensionDelegate = GobleyKotlinMultiplatformExtensionDelegate(project)
+            kotlinExtensionDelegate.targets.configureEach { planBuilds() }
+        }
+        plugins.withId(PluginIds.KOTLIN_ANDROID) {
+            kotlinExtensionDelegate = GobleyKotlinAndroidExtensionDelegate(project)
+            kotlinExtensionDelegate.targets.configureEach { planBuilds() }
+        }
+        plugins.withId(PluginIds.KOTLIN_JVM) {
+            kotlinExtensionDelegate = GobleyKotlinJvmExtensionDelegate(project)
+            kotlinExtensionDelegate.targets.configureEach { planBuilds() }
         }
 
         val androidPluginAction = Action<Plugin<*>> {
@@ -139,8 +151,18 @@ class CargoPlugin : Plugin<Project> {
         @OptIn(InternalGobleyGradleApi::class)
         PluginUtils.ensurePluginIsApplied(
             this,
-            "Kotlin Multiplatform",
-            PluginIds.KOTLIN_MULTIPLATFORM
+            PluginUtils.PluginInfo(
+                "Kotlin Multiplatform",
+                PluginIds.KOTLIN_MULTIPLATFORM
+            ),
+            PluginUtils.PluginInfo(
+                "Kotlin Android",
+                PluginIds.KOTLIN_ANDROID,
+            ),
+            PluginUtils.PluginInfo(
+                "Kotlin JVM",
+                PluginIds.KOTLIN_JVM,
+            ),
         )
     }
 
@@ -159,21 +181,22 @@ class CargoPlugin : Plugin<Project> {
         }
     }
 
+    @OptIn(InternalGobleyGradleApi::class)
     private fun Project.checkKotlinTargets() {
         val hasJsTargets =
-            kotlinMultiplatformExtension.targets.any { it.platformType == KotlinPlatformType.js }
+            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.js }
         if (hasJsTargets) {
             project.logger.warn("JS targets are added, but UniFFI KMP bindings does not support JS targets yet.")
         }
 
         val hasWasmTargets =
-            kotlinMultiplatformExtension.targets.any { it.platformType == KotlinPlatformType.wasm }
+            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.wasm }
         if (hasWasmTargets) {
             project.logger.warn("WASM targets are added, but UniFFI KMP bindings does not support WASM targets yet.")
         }
 
         val hasAndroidJvmTargets =
-            kotlinMultiplatformExtension.targets.any { it.platformType == KotlinPlatformType.androidJvm }
+            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.androidJvm }
         if (hasAndroidJvmTargets && !::androidDelegate.isInitialized) {
             throw GradleException("Android JVM targets are added, but Android Gradle Plugin is not found.")
         }

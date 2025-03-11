@@ -20,6 +20,8 @@ gobleyGradleBuild {
 
 dependencies {
     compileOnly(gradleKotlinDsl())
+    compileOnly(plugin(libs.plugins.kotlin.android))
+    compileOnly(plugin(libs.plugins.kotlin.jvm))
     compileOnly(plugin(libs.plugins.kotlin.multiplatform))
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.semver)
@@ -61,6 +63,8 @@ buildConfig {
     }
 
     forClass("PluginIds") {
+        buildConfigField("String", "KOTLIN_ANDROID", "\"${libs.plugins.kotlin.android.get().pluginId}\"")
+        buildConfigField("String", "KOTLIN_JVM", "\"${libs.plugins.kotlin.jvm.get().pluginId}\"")
         buildConfigField("String", "KOTLIN_MULTIPLATFORM", "\"${libs.plugins.kotlin.multiplatform.get().pluginId}\"")
         buildConfigField("String", "KOTLIN_ATOMIC_FU", "\"${libs.plugins.kotlin.atomicfu.get().pluginId}\"")
         buildConfigField("String", "KOTLIN_SERIALIZATION", "\"${libs.plugins.kotlin.serialization.get().pluginId}\"")
