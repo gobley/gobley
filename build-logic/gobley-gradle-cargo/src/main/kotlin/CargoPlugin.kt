@@ -60,6 +60,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import java.io.File
 
@@ -174,7 +175,7 @@ class CargoPlugin : Plugin<Project> {
 
     private fun KotlinTarget.requiredRustTargets(): List<RustTarget> {
         return when (this) {
-            is KotlinJvmTarget -> GobleyHost.current.platform.supportedTargets.filterIsInstance<RustJvmTarget>()
+            is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> GobleyHost.current.platform.supportedTargets.filterIsInstance<RustJvmTarget>()
             is KotlinAndroidTarget -> RustAndroidTarget.values().toList()
             is KotlinNativeTarget -> listOf(RustTarget(konanTarget))
             else -> listOf()
@@ -262,7 +263,7 @@ class CargoPlugin : Plugin<Project> {
             }
             for (kotlinTarget in cargoBuild.kotlinTargets) {
                 when (kotlinTarget) {
-                    is KotlinJvmTarget -> {
+                    is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
                         cargoBuild as CargoJvmBuild<*>
                         cargoBuild.variants {
                             configureJvmPostBuildTasks(
@@ -303,7 +304,7 @@ class CargoPlugin : Plugin<Project> {
     }
 
     private fun Project.configureJvmPostBuildTasks(
-        kotlinTarget: KotlinJvmTarget,
+        kotlinTarget: KotlinTarget,
         cargoBuildVariant: CargoJvmBuildVariant<*>,
         androidTarget: KotlinAndroidTarget?,
     ) {
