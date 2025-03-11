@@ -6,6 +6,7 @@ members = [
 
     "tests/gradle/android-linking",
     "tests/gradle/cargo-only",
+    "tests/gradle/jvm-only",
 
     "tests/uniffi/callbacks",
     "tests/uniffi/chronological",
