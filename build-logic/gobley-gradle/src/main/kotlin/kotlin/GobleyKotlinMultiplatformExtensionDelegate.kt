@@ -7,6 +7,7 @@
 package gobley.gradle.kotlin
 
 import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.PluginIds
 import org.gradle.api.DomainObjectCollection
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.Project
@@ -21,6 +22,8 @@ class GobleyKotlinMultiplatformExtensionDelegate(
 ) : GobleyKotlinExtensionDelegate {
     private val kotlinMultiplatformExtension: KotlinMultiplatformExtension =
         project.extensions.getByType()
+
+    override val pluginId = PluginIds.KOTLIN_MULTIPLATFORM
 
     override val targets: DomainObjectCollection<KotlinTarget>
         get() = kotlinMultiplatformExtension.targets

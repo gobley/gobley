@@ -7,6 +7,7 @@
 package gobley.gradle.kotlin
 
 import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.PluginIds
 import org.gradle.api.DomainObjectCollection
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.Project
@@ -21,6 +22,8 @@ class GobleyKotlinJvmExtensionDelegate(
 ) : GobleyKotlinExtensionDelegate {
     private val kotlinJvmExtension: KotlinJvmProjectExtension =
         project.extensions.getByType()
+
+    override val pluginId = PluginIds.KOTLIN_JVM
 
     override val targets: DomainObjectCollection<KotlinTarget> =
         project.container(KotlinTarget::class.java)

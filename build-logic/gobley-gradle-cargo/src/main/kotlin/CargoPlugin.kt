@@ -350,7 +350,12 @@ class CargoPlugin : Plugin<Project> {
                 resources.srcDir(resourceDirectory)
             }
             tasks.withType<ProcessResources> {
-                if (name.contains(kotlinTarget.name)) {
+                @OptIn(InternalGobleyGradleApi::class)
+                if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
+                    if (name == "processResources") {
+                        dependsOn(copyTask)
+                    }
+                } else if (name.contains(kotlinTarget.name)) {
                     dependsOn(copyTask)
                 }
             }

@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 
 @InternalGobleyGradleApi
 interface GobleyKotlinExtensionDelegate {
+    val pluginId: String
     val targets: DomainObjectCollection<KotlinTarget>
     val sourceSets: NamedDomainObjectCollection<KotlinSourceSet>
     val implementationVersion: String?
