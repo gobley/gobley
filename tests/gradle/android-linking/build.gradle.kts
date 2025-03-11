@@ -5,7 +5,7 @@ import gobley.gradle.rust.targets.RustAndroidTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("multiplatform")
+    kotlin("android")
     id("dev.gobley.cargo")
     alias(libs.plugins.android.library)
 }
@@ -75,13 +75,11 @@ cargo {
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
-        }
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
     }
     sourceSets {
-        getByName("androidInstrumentedTest") {
+        androidTest {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.androidx.core)

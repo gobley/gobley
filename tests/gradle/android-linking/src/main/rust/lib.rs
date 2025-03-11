@@ -14,7 +14,7 @@ use libc::{dlclose, dlerror, dlopen, RTLD_LAZY, RTLD_LOCAL};
 use log::LevelFilter;
 
 #[no_mangle]
-pub extern "system" fn Java_dev_gobley_uniffi_tests_gradle_androidlinking_AndroidLinkingLibrary_libraryExists(
+pub extern "system" fn Java_gobley_uniffi_tests_gradle_androidlinking_AndroidLinkingLibrary_libraryExists(
     mut env: JNIEnv,
     _class: JClass,
     library_name: JString,

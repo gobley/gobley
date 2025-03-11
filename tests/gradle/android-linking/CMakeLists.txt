@@ -6,4 +6,4 @@ cmake_minimum_required(VERSION 3.10)
 
 project(android-linking-cpp)
 
-add_library(android-linking-cpp SHARED src/androidMain/cpp/android-linking-cpp.cpp)
+add_library(android-linking-cpp SHARED src/main/cpp/android-linking-cpp.cpp)

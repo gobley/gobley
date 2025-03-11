@@ -7,7 +7,7 @@ publish = false
 [lib]
 name = "gobley_fixture_gradle_android_linking"
 crate-type = ["cdylib"]
-path = "src/androidMain/rust/lib.rs"
+path = "src/main/rust/lib.rs"
 
 [dependencies]
 android_logger = "0.13"
