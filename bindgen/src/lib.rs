@@ -96,10 +96,10 @@ fn write_bindings_target(
     target: &str,
     content: String,
 ) {
-    let source_set_name = if config.single_kotlin_target() {
-        String::from("main")
-    } else {
+    let source_set_name = if config.kotlin_multiplatform {
         format!("{}Main", target)
+    } else {
+        String::from("main")
     };
     let package_path: Utf8PathBuf = config.package_name().split('.').collect();
     let file_name = format!("{}.{}.kt", ci.namespace(), target);

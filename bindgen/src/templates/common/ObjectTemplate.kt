@@ -6,7 +6,7 @@
 {%- let ffi_converter_name = obj|ffi_converter_name %}
 
 {%- include "Interface.kt" %}
-{% if !config.single_kotlin_target() %}
+{% if config.kotlin_multiplatform %}
 {% call kt::docstring(obj, 0) %}
 {% if (is_error) %}
 expect open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {

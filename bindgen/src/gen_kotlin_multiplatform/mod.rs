@@ -105,6 +105,8 @@ pub struct Config {
     pub(super) package_name: Option<String>,
     pub(super) cdylib_name: Option<String>,
     #[serde(default)]
+    pub(super) kotlin_multiplatform: bool,
+    #[serde(default)]
     kotlin_targets: Vec<ConfigKotlinTarget>,
     generate_immutable_records: Option<bool>,
     #[serde(default)]

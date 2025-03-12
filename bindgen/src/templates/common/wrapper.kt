@@ -25,7 +25,7 @@ package {{ config.package_name() }}
 // Public interface members begin here.
 {{ type_helper_code }}
 
-{%- if !config.single_kotlin_target() -%}
+{%- if config.kotlin_multiplatform -%}
 {%- for func in ci.function_definitions() %}
 {% include "TopLevelFunctionTemplate.kt" %}
 {%- endfor -%}

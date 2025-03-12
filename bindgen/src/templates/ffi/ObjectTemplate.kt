@@ -6,19 +6,19 @@
 {%- let is_error = ci.is_name_used_as_error(name) %}
 {%- let ffi_converter_name = obj|ffi_converter_name %}
 {%- let actual -%}
-{%- if config.single_kotlin_target() -%}
-{%-     let actual = "" -%}
-{%- else -%}
+{%- if config.kotlin_multiplatform -%}
 {%-     let actual = "actual" -%}
+{%- else -%}
+{%-     let actual = "" -%}
 {%- endif %}
 {%- let actual_override -%}
-{%- if config.single_kotlin_target() -%}
-{%-     let actual_override = "override" -%}
-{%- else -%}
+{%- if config.kotlin_multiplatform -%}
 {%-     let actual_override = "actual override" -%}
+{%- else -%}
+{%-     let actual_override = "override" -%}
 {%- endif %}
 
-{%- macro emit_actual %}{% if !config.single_kotlin_target() %}actual {% endif %}{% endmacro -%}
+{%- macro emit_actual %}{% if config.kotlin_multiplatform %}actual {% endif %}{% endmacro -%}
 
 {%- call kt::docstring(obj, 0) %}
 {% if (is_error) %}
