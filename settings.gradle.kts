@@ -41,6 +41,7 @@ if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
     include(":tests:uniffi:callbacks")
     include(":tests:uniffi:chronological")
     include(":tests:uniffi:coverall")
+    include(":tests:uniffi:coverall-android")
     include(":tests:uniffi:coverall-jvm")
     include(":tests:uniffi:docstring")
     include(":tests:uniffi:docstring-proc-macro")
