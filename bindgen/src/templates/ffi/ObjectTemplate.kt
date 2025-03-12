@@ -5,12 +5,26 @@
 {%- let interface_docstring = obj.docstring() %}
 {%- let is_error = ci.is_name_used_as_error(name) %}
 {%- let ffi_converter_name = obj|ffi_converter_name %}
+{%- let actual -%}
+{%- if config.single_kotlin_target() -%}
+{%-     let actual = "" -%}
+{%- else -%}
+{%-     let actual = "actual" -%}
+{%- endif %}
+{%- let actual_override -%}
+{%- if config.single_kotlin_target() -%}
+{%-     let actual_override = "override" -%}
+{%- else -%}
+{%-     let actual_override = "actual override" -%}
+{%- endif %}
+
+{%- macro emit_actual %}{% if !config.single_kotlin_target() %}actual {% endif %}{% endmacro -%}
 
 {%- call kt::docstring(obj, 0) %}
 {% if (is_error) %}
-actual open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
+{% call emit_actual %}open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
+{% call emit_actual %}open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
 {%- endif %}
 
     constructor(pointer: Pointer) {
@@ -23,7 +37,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
      * attempt to actually use an object constructed this way will fail as there is no
      * connected Rust object.
      */
-    actual constructor(noPointer: NoPointer) {
+    {% call emit_actual %}constructor(noPointer: NoPointer) {
         this.pointer = null
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(null))
     }
@@ -35,7 +49,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
     {%-     else %}
     {%- call kt::docstring(cons, 4) %}
 
-    actual constructor({% call kt::arg_list(cons, false) -%}) : this(
+    {% call emit_actual %}constructor({% call kt::arg_list(cons, false) -%}) : this(
         {% call kt::to_ffi_call(cons, 8) %}
     )
     {%-     endif %}
@@ -59,7 +73,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
         }
     }
 
-    actual override fun destroy() {
+    {% call emit_actual %}override fun destroy() {
         // Only allow a single call to this method.
         // TODO: maybe we should log a warning if called more than once?
         if (this.wasDestroyed.compareAndSet(false, true)) {
@@ -70,7 +84,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
         }
     }
 
-    actual override fun close() {
+    {% call emit_actual %}override fun close() {
         synchronized { this.destroy() }
     }
 
@@ -116,24 +130,24 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
     }
 
     {% for meth in obj.methods() -%}
-    {%- call kt::func_decl_with_body("actual override", meth, 4) -%}
+    {%- call kt::func_decl_with_body(actual_override, meth, 4) -%}
     {% endfor %}
 
     {%- for tm in obj.uniffi_traits() %}
     {%-     match tm %}
     {%         when UniffiTrait::Display { fmt } %}
-    actual override fun toString(): String {
+    {% call emit_actual %}override fun toString(): String {
         return {{ fmt.return_type().unwrap()|lift_fn }}({% call kt::to_ffi_call(fmt, 8) %})
     }
     {%         when UniffiTrait::Eq { eq, ne } %}
     {# only equals used #}
-    actual override fun equals(other: Any?): Boolean {
+    {% call emit_actual %}override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is {{ impl_class_name}}) return false
         return {{ eq.return_type().unwrap()|lift_fn }}({% call kt::to_ffi_call(eq, 8) %})
     }
     {%         when UniffiTrait::Hash { hash } %}
-    actual override fun hashCode(): Int {
+    {% call emit_actual %}override fun hashCode(): Int {
         return {{ hash.return_type().unwrap()|lift_fn }}({%- call kt::to_ffi_call(hash, 8) %}).toInt()
     }
     {%-         else %}
@@ -142,13 +156,13 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
 
     {# XXX - "companion object" confusion? How to have alternate constructors *and* be an error? #}
     {% if !obj.alternate_constructors().is_empty() -%}
-    actual companion object {
+    {% call emit_actual %}companion object {
         {% for cons in obj.alternate_constructors() -%}
-        {%- call kt::func_decl_with_body("actual", cons, 8) %}
+        {%- call kt::func_decl_with_body(actual, cons, 8) %}
         {% endfor %}
     }
     {% else %}
-    actual companion object
+    {% call emit_actual %}companion object
     {% endif %}
 }
 
