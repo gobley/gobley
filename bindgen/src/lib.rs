@@ -67,12 +67,23 @@ impl BindingGenerator for KotlinBindingGenerator {
             let bindings = generate_bindings(config, ci)?;
 
             write_bindings_target(ci, settings, config, "common", bindings.common);
-            write_bindings_target(ci, settings, config, "jvm", bindings.jvm);
-            write_bindings_target(ci, settings, config, "android", bindings.android);
-            write_bindings_target(ci, settings, config, "native", bindings.native);
-            write_bindings_target(ci, settings, config, "stub", bindings.stub);
 
-            write_cinterop(ci, &settings.out_dir, bindings.header);
+            if let Some(jvm) = bindings.jvm {
+                write_bindings_target(ci, settings, config, "jvm", jvm);
+            }
+            if let Some(android) = bindings.android {
+                write_bindings_target(ci, settings, config, "android", android);
+            }
+            if let Some(native) = bindings.native {
+                write_bindings_target(ci, settings, config, "native", native);
+            }
+            if let Some(stub) = bindings.stub {
+                write_bindings_target(ci, settings, config, "stub", stub);
+            }
+
+            if let Some(header) = bindings.header {
+                write_cinterop(ci, &settings.out_dir, header);
+            }
         }
         Ok(())
     }
@@ -85,7 +96,11 @@ fn write_bindings_target(
     target: &str,
     content: String,
 ) {
-    let source_set_name = format!("{}Main", target);
+    let source_set_name = if config.single_kotlin_target() {
+        String::from("main")
+    } else {
+        format!("{}Main", target)
+    };
     let package_path: Utf8PathBuf = config.package_name().split('.').collect();
     let file_name = format!("{}.{}.kt", ci.namespace(), target);
 

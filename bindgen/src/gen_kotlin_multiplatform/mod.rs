@@ -87,11 +87,25 @@ trait CodeType: Debug {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum ConfigKotlinTarget {
+    #[serde(rename = "jvm")]
+    Jvm,
+    #[serde(rename = "android")]
+    Android,
+    #[serde(rename = "native")]
+    Native,
+    #[serde(rename = "stub")]
+    Stub,
+}
+
 // config options to customize the generated Kotlin.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub(super) package_name: Option<String>,
     pub(super) cdylib_name: Option<String>,
+    #[serde(default)]
+    kotlin_targets: Vec<ConfigKotlinTarget>,
     generate_immutable_records: Option<bool>,
     #[serde(default)]
     custom_types: HashMap<String, CustomTypeConfig>,
@@ -132,6 +146,14 @@ impl Config {
             .as_ref()
             .expect("cdylib name should have been set in update_component_configs")
             .clone()
+    }
+
+    /// `true` if the bindgen should not use expect/actual declarations.
+    pub fn single_kotlin_target(&self) -> bool {
+        matches!(
+            self.kotlin_targets.as_slice(),
+            [ConfigKotlinTarget::Android | ConfigKotlinTarget::Jvm]
+        )
     }
 
     /// Whether to generate immutable records (`val` instead of `var`)
@@ -199,11 +221,11 @@ impl Config {
 
 pub struct MultiplatformBindings {
     pub common: String,
-    pub jvm: String,
-    pub android: String,
-    pub native: String,
-    pub stub: String,
-    pub header: String,
+    pub jvm: Option<String>,
+    pub android: Option<String>,
+    pub native: Option<String>,
+    pub stub: Option<String>,
+    pub header: Option<String>,
 }
 
 // Generate kotlin bindings for the given ComponentInterface, as a string.
@@ -215,25 +237,47 @@ pub fn generate_bindings(
         .render()
         .context("failed to render common Kotlin bindings")?;
 
-    let jvm = AndroidJvmKotlinWrapper::new("jvm", config.clone(), ci)
-        .render()
-        .context("failed to render Kotlin/JVM bindings")?;
+    fn run_with_target(
+        config: &Config,
+        target: ConfigKotlinTarget,
+        f: impl FnOnce() -> Result<String>,
+    ) -> Result<Option<String>> {
+        config
+            .kotlin_targets
+            .contains(&target)
+            .then(f)
+            .map_or(Ok(None), |v| v.map(Some))
+    }
 
-    let android = AndroidJvmKotlinWrapper::new("android", config.clone(), ci)
-        .render()
-        .context("failed to render Android Kotlin/JVM bindings")?;
+    let jvm = run_with_target(config, ConfigKotlinTarget::Jvm, || {
+        AndroidJvmKotlinWrapper::new("jvm", config.clone(), ci)
+            .render()
+            .context("failed to render Kotlin/JVM bindings")
+    })?;
 
-    let native = NativeKotlinWrapper::new("native", config.clone(), ci)
-        .render()
-        .context("failed to render Kotlin/Native bindings")?;
+    let android = run_with_target(config, ConfigKotlinTarget::Android, || {
+        AndroidJvmKotlinWrapper::new("android", config.clone(), ci)
+            .render()
+            .context("failed to render Android Kotlin/JVM bindings")
+    })?;
 
-    let stub = StubKotlinWrapper::new("stub", config.clone(), ci)
-        .render()
-        .context("failed to render stub bindings")?;
+    let native = run_with_target(config, ConfigKotlinTarget::Native, || {
+        NativeKotlinWrapper::new("native", config.clone(), ci)
+            .render()
+            .context("failed to render Kotlin/Native bindings")
+    })?;
 
-    let header = HeadersKotlinWrapper::new("headers", config.clone(), ci)
-        .render()
-        .context("failed to render Kotlin/Native headers")?;
+    let stub = run_with_target(config, ConfigKotlinTarget::Stub, || {
+        StubKotlinWrapper::new("stub", config.clone(), ci)
+            .render()
+            .context("failed to render stub bindings")
+    })?;
+
+    let header = run_with_target(config, ConfigKotlinTarget::Native, || {
+        HeadersKotlinWrapper::new("headers", config.clone(), ci)
+            .render()
+            .context("failed to render Kotlin/Native headers")
+    })?;
 
     Ok(MultiplatformBindings {
         common,

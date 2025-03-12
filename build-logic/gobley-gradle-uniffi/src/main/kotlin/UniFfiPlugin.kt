@@ -369,13 +369,16 @@ class UniFfiPlugin : Plugin<Project> {
             kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID
             || kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM
         ) {
-            kotlinExtensionDelegate.sourceSets.getByName("main")
+            kotlinExtensionDelegate.sourceSets.getByName("main").apply {
+                kotlin.srcDir(mainBindingsDirectory)
+            }
         } else {
-            kotlinCommonTarget.compilations.getByName("main").defaultSourceSet
+            kotlinCommonTarget.compilations.getByName("main").defaultSourceSet.apply {
+                kotlin.srcDir(commonBindingsDirectory)
+            }
         }
 
         with(mainSourceSet) {
-            kotlin.srcDir(commonBindingsDirectory)
             dependencies {
                 implementation("com.squareup.okio:okio:${DependencyVersions.OKIO}")
                 implementation("org.jetbrains.kotlinx:atomicfu:${DependencyVersions.KOTLINX_ATOMICFU}")
@@ -390,11 +393,12 @@ class UniFfiPlugin : Plugin<Project> {
         val mainSourceSet = if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
             kotlinExtensionDelegate.sourceSets.getByName("main")
         } else {
-            kotlinJvmTarget.compilations.getByName("main").defaultSourceSet
+            kotlinJvmTarget.compilations.getByName("main").defaultSourceSet.apply {
+                kotlin.srcDir(jvmBindingsDirectory)
+            }
         }
 
         with(mainSourceSet) {
-            kotlin.srcDir(jvmBindingsDirectory)
             dependencies {
                 implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}")
             }
@@ -407,11 +411,12 @@ class UniFfiPlugin : Plugin<Project> {
         val mainSourceSet = if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
             kotlinExtensionDelegate.sourceSets.getByName("main")
         } else {
-            kotlinExtensionDelegate.sourceSets.getByName("${kotlinAndroidTarget.name}Main")
+            kotlinExtensionDelegate.sourceSets.getByName("${kotlinAndroidTarget.name}Main").apply {
+                kotlin.srcDir(androidBindingsDirectory)
+            }
         }
 
         with(mainSourceSet) {
-            kotlin.srcDir(androidBindingsDirectory)
             dependencies {
                 implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}@aar")
                 implementation("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")
@@ -473,6 +478,9 @@ class UniFfiPlugin : Plugin<Project> {
 
 private val Project.bindingsDirectory: Provider<Directory>
     get() = layout.buildDirectory.dir("generated/uniffi")
+
+private val Project.mainBindingsDirectory: Provider<Directory>
+    get() = bindingsDirectory.map { it.dir("main/kotlin") }
 
 private val Project.commonBindingsDirectory: Provider<Directory>
     get() = bindingsDirectory.map { it.dir("commonMain/kotlin") }

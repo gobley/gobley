@@ -18,6 +18,7 @@ import kotlinx.serialization.Serializable
 internal data class Config(
     @SerialName("package_name") val packageName: String? = null,
     @SerialName("cdylib_name") val cdylibName: String? = null,
+    @SerialName("kotlin_targets") val kotlinTargets: List<String>? = null,
     @SerialName("generate_immutable_records") val generateImmutableRecords: Boolean? = null,
     @SerialName("custom_types") val customTypes: Map<String, CustomType>? = null,
     @SerialName("external_packages") val externalPackages: Map<String, String>? = null,
