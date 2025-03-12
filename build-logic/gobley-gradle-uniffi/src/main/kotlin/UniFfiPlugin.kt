@@ -182,6 +182,22 @@ class UniFfiPlugin : Plugin<Project> {
             )
 
             @OptIn(InternalGobleyGradleApi::class)
+            kotlinMultiplatform.set(kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM)
+
+            @OptIn(InternalGobleyGradleApi::class)
+            kotlinTargets.set(
+                kotlinExtensionDelegate.targets.mapNotNull {
+                    when (it) {
+                        is KotlinMetadataTarget -> null
+                        is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> "jvm"
+                        is KotlinAndroidTarget -> "android"
+                        is KotlinNativeTarget -> "native"
+                        else -> "stub"
+                    }
+                }
+            )
+
+            @OptIn(InternalGobleyGradleApi::class)
             DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
                 if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
                     && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)

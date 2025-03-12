@@ -34,6 +34,14 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
+    abstract val kotlinMultiplatform: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val kotlinTargets: ListProperty<String>
+
+    @get:Input
+    @get:Optional
     abstract val externalPackageConfigByCrateName: MapProperty<String, File>
 
     @get:Input
@@ -63,6 +71,11 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     fun mergeConfig() {
         val originalConfig = originalConfig.orNull?.asFile?.let(::loadConfig) ?: Config()
         val result = originalConfig.copy(
+            kotlinMultiplatform = originalConfig.kotlinMultiplatform ?: kotlinMultiplatform.orNull,
+            kotlinTargets = mergeSet(
+                originalConfig.kotlinTargets,
+                kotlinTargets.orNull,
+            ),
             externalPackages = mergeMap(
                 originalConfig.externalPackages,
                 externalPackageConfigByCrateName.orNull?.let(::retrieveExternalPackageNames),
