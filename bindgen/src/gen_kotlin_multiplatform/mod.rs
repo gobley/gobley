@@ -150,14 +150,6 @@ impl Config {
             .clone()
     }
 
-    /// `true` if the bindgen should not use expect/actual declarations.
-    pub fn single_kotlin_target(&self) -> bool {
-        matches!(
-            self.kotlin_targets.as_slice(),
-            [ConfigKotlinTarget::Android | ConfigKotlinTarget::Jvm]
-        )
-    }
-
     /// Whether to generate immutable records (`val` instead of `var`)
     pub fn generate_immutable_records(&self) -> bool {
         self.generate_immutable_records.unwrap_or(false)
