@@ -48,6 +48,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -146,7 +147,7 @@ class UniFfiPlugin : Plugin<Project> {
 
         val availableVariants = build.kotlinTargets.flatMap {
             when (it) {
-                is KotlinJvmTarget -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
+                is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
                 is KotlinAndroidTarget -> Variant.values().toList()
                 is KotlinNativeTarget -> listOf((build as CargoNativeBuild<*>).nativeVariant.get())
                 else -> emptyList<Variant>()
@@ -336,9 +337,21 @@ class UniFfiPlugin : Plugin<Project> {
         @OptIn(InternalGobleyGradleApi::class)
         kotlinExtensionDelegate.targets.configureEach {
             when (this) {
-                is KotlinMetadataTarget -> configureKotlinMetadataTarget(this)
-                is KotlinJvmTarget -> configureKotlinJvmTarget(this)
-                is KotlinAndroidTarget -> configureKotlinAndroidTarget(this)
+                is KotlinMetadataTarget -> configureKotlinCommonTarget(this)
+                is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
+                    if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
+                        configureKotlinCommonTarget(this)
+                    }
+                    configureKotlinJvmTarget(this)
+                }
+
+                is KotlinAndroidTarget -> {
+                    if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
+                        configureKotlinCommonTarget(this)
+                    }
+                    configureKotlinAndroidTarget(this)
+                }
+
                 is KotlinNativeTarget -> configureKotlinNativeTarget(
                     this,
                     dummyDefFile,
@@ -351,8 +364,17 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinMetadataTarget(kotlinMetadataTarget: KotlinMetadataTarget) {
-        kotlinMetadataTarget.compilations.getByName("main").defaultSourceSet {
+    private fun Project.configureKotlinCommonTarget(kotlinCommonTarget: KotlinTarget) {
+        val mainSourceSet = if (
+            kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID
+            || kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM
+        ) {
+            kotlinExtensionDelegate.sourceSets.getByName("main")
+        } else {
+            kotlinCommonTarget.compilations.getByName("main").defaultSourceSet
+        }
+
+        with(mainSourceSet) {
             kotlin.srcDir(commonBindingsDirectory)
             dependencies {
                 implementation("com.squareup.okio:okio:${DependencyVersions.OKIO}")
@@ -364,8 +386,14 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinJvmTarget(kotlinJvmTarget: KotlinJvmTarget) {
-        kotlinJvmTarget.compilations.getByName("main").defaultSourceSet {
+    private fun Project.configureKotlinJvmTarget(kotlinJvmTarget: KotlinTarget) {
+        val mainSourceSet = if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
+            kotlinExtensionDelegate.sourceSets.getByName("main")
+        } else {
+            kotlinJvmTarget.compilations.getByName("main").defaultSourceSet
+        }
+
+        with(mainSourceSet) {
             kotlin.srcDir(jvmBindingsDirectory)
             dependencies {
                 implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}")
@@ -376,8 +404,12 @@ class UniFfiPlugin : Plugin<Project> {
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.configureKotlinAndroidTarget(kotlinAndroidTarget: KotlinAndroidTarget) {
         @OptIn(InternalGobleyGradleApi::class)
-        val mainSourceSet =
+        val mainSourceSet = if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
+            kotlinExtensionDelegate.sourceSets.getByName("main")
+        } else {
             kotlinExtensionDelegate.sourceSets.getByName("${kotlinAndroidTarget.name}Main")
+        }
+
         with(mainSourceSet) {
             kotlin.srcDir(androidBindingsDirectory)
             dependencies {
