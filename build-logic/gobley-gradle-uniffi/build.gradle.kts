@@ -15,6 +15,8 @@ gobleyGradleBuild {
 
 dependencies {
     compileOnly(gradleKotlinDsl())
+    compileOnly(plugin(libs.plugins.kotlin.android))
+    compileOnly(plugin(libs.plugins.kotlin.jvm))
     compileOnly(plugin(libs.plugins.kotlin.multiplatform))
 
     implementation(libs.kotlinx.serialization.json)

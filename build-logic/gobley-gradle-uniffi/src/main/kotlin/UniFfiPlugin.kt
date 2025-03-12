@@ -14,6 +14,10 @@ import gobley.gradle.cargo.dsl.CargoAndroidBuild
 import gobley.gradle.cargo.dsl.CargoExtension
 import gobley.gradle.cargo.dsl.CargoJvmBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuild
+import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
 import gobley.gradle.uniffi.dsl.BindingsGeneration
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromLibrary
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromUdl
@@ -37,11 +41,9 @@ import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.invoke
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
@@ -56,7 +58,9 @@ class UniFfiPlugin : Plugin<Project> {
     private lateinit var uniFfiExtension: UniFfiExtension
     private lateinit var bindingsGeneration: BindingsGeneration
     private lateinit var cargoExtension: CargoExtension
-    private lateinit var kotlinMultiplatformExtension: KotlinMultiplatformExtension
+
+    @OptIn(InternalGobleyGradleApi::class)
+    private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
 
     override fun apply(target: Project) {
         uniFfiExtension = target.extensions.create<UniFfiExtension>(TASK_GROUP, target)
@@ -85,9 +89,19 @@ class UniFfiPlugin : Plugin<Project> {
         }
 
         PluginUtils.ensurePluginIsApplied(
-            project,
-            "Kotlin Multiplatform",
-            PluginIds.KOTLIN_MULTIPLATFORM
+            this,
+            PluginUtils.PluginInfo(
+                "Kotlin Multiplatform",
+                PluginIds.KOTLIN_MULTIPLATFORM
+            ),
+            PluginUtils.PluginInfo(
+                "Kotlin Android",
+                PluginIds.KOTLIN_ANDROID,
+            ),
+            PluginUtils.PluginInfo(
+                "Kotlin JVM",
+                PluginIds.KOTLIN_JVM,
+            ),
         )
         PluginUtils.ensurePluginIsApplied(project, "Kotlin AtomicFU", PluginIds.KOTLIN_ATOMIC_FU)
         PluginUtils.ensurePluginIsApplied(
@@ -99,8 +113,15 @@ class UniFfiPlugin : Plugin<Project> {
         // Since the Cargo Kotlin Multiplatform plugin is present, `CargoExtension` must be present.
         cargoExtension = extensions.getByType()
 
-        // Since the Kotlin Multiplatform plugin is present, `KotlinMultiplatformExtension` must be present.
-        kotlinMultiplatformExtension = extensions.getByType()
+        plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
+            kotlinExtensionDelegate = GobleyKotlinMultiplatformExtensionDelegate(project)
+        }
+        plugins.withId(PluginIds.KOTLIN_ANDROID) {
+            kotlinExtensionDelegate = GobleyKotlinAndroidExtensionDelegate(project)
+        }
+        plugins.withId(PluginIds.KOTLIN_JVM) {
+            kotlinExtensionDelegate = GobleyKotlinJvmExtensionDelegate(project)
+        }
 
         bindingsGeneration.namespace.convention(cargoExtension.cargoPackage.map { it.libraryCrateName })
         (bindingsGeneration as? BindingsGenerationFromUdl)?.udlFile?.convention(
@@ -185,8 +206,8 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             }
 
-            val kotlinVersionFromExtension =
-                kotlinMultiplatformExtension.javaClass.`package`.implementationVersion
+            @OptIn(InternalGobleyGradleApi::class)
+            val kotlinVersionFromExtension = kotlinExtensionDelegate.implementationVersion
             if (kotlinVersionFromExtension != null) {
                 kotlinVersion.set(kotlinVersionFromExtension)
             }
@@ -312,7 +333,8 @@ class UniFfiPlugin : Plugin<Project> {
             mustRunAfter(tasks.named("buildBindings"))
         }
 
-        kotlinMultiplatformExtension.targets.configureEach {
+        @OptIn(InternalGobleyGradleApi::class)
+        kotlinExtensionDelegate.targets.configureEach {
             when (this) {
                 is KotlinMetadataTarget -> configureKotlinMetadataTarget(this)
                 is KotlinJvmTarget -> configureKotlinJvmTarget(this)
@@ -353,16 +375,17 @@ class UniFfiPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.configureKotlinAndroidTarget(kotlinAndroidTarget: KotlinAndroidTarget) {
-        kotlinMultiplatformExtension.sourceSets {
-            val mainSourceSet = getByName("${kotlinAndroidTarget.name}Main")
-            with(mainSourceSet) {
-                kotlin.srcDir(androidBindingsDirectory)
-                dependencies {
-                    implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}@aar")
-                    implementation("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")
-                }
+        @OptIn(InternalGobleyGradleApi::class)
+        val mainSourceSet =
+            kotlinExtensionDelegate.sourceSets.getByName("${kotlinAndroidTarget.name}Main")
+        with(mainSourceSet) {
+            kotlin.srcDir(androidBindingsDirectory)
+            dependencies {
+                implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}@aar")
+                implementation("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")
             }
         }
+
         // Use the desktop version of JNA in android local unit tests.
         configureKotlinAndroidUnitTestJna()
         // Make android unit tests in dependent projects also use the desktop version of JNA.
