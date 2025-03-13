@@ -50,6 +50,10 @@ kotlin {
         }
     }
 
+    androidNativeArm64()
+    androidNativeArm32()
+    androidNativeX64()
+    androidNativeX86()
     linuxX64()
     linuxArm64()
     if (GobleyHost.Platform.MacOS.isCurrent) {
