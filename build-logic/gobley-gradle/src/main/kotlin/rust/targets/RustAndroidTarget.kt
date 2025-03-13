@@ -33,8 +33,7 @@ enum class RustAndroidTarget(
      * The LLVM triple of the ABI, which is used in the NDK library directory.
      */
     val ndkLibraryTriple: String = rustTriple,
-    // TODO: add `RustAndroidNativeTarget` that implements `RustNativeTarget` for Android NDK Kotlin/Native targets
-) : RustMobileTarget, /* RustJvmTarget, */ Serializable {
+) : RustMobileTarget, /* RustJvmTarget, */ RustNativeTarget, Serializable {
     Arm64(
         rustTriple = "aarch64-linux-android",
         // jnaResourcePrefix = "android-aarch64",
@@ -60,7 +59,12 @@ enum class RustAndroidTarget(
 
     override val friendlyName = "Android$name"
 
-    override val supportedKotlinPlatformTypes = arrayOf(KotlinPlatformType.androidJvm)
+    override val supportedKotlinPlatformTypes = arrayOf(
+        KotlinPlatformType.androidJvm,
+        KotlinPlatformType.native,
+    )
+
+    override val cinteropName = "android"
 
     override fun tier(rustVersion: String) = 2
 
@@ -78,8 +82,10 @@ enum class RustAndroidTarget(
         val actualNdkRoot = tryRetrieveNdkRoot(sdkRoot, ndkVersion, ndkRoot)!!
         val toolchainBinaryDir = ndkToolchainDir(sdkRoot, ndkVersion, ndkRoot)!!.resolve("bin")
         val currentPlatform = GobleyHost.current.platform
-        val clang = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang"))
-        val clangCpp = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang++"))
+        val clang =
+            currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang"))
+        val clangCpp =
+            currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang++"))
         val ar = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("llvm-ar"))
         val ranlib = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("llvm-ranlib"))
         return mapOf(

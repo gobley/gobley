@@ -53,7 +53,10 @@ sealed interface RustTarget {
 }
 
 fun RustTarget(konanTarget: KonanTarget): RustTarget = when (konanTarget) {
-    // Android NDK targets are not supported
+    KonanTarget.ANDROID_ARM64 -> RustAndroidTarget.Arm64
+    KonanTarget.ANDROID_ARM32 -> RustAndroidTarget.ArmV7
+    KonanTarget.ANDROID_X64 -> RustAndroidTarget.X64
+    KonanTarget.ANDROID_X86 -> RustAndroidTarget.X86
     // iOS ARM32 is not supported
     KonanTarget.IOS_ARM64 -> RustAppleMobileTarget.IosArm64
     KonanTarget.IOS_SIMULATOR_ARM64 -> RustAppleMobileTarget.IosSimulatorArm64
