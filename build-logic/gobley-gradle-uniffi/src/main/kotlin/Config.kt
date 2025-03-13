@@ -26,7 +26,7 @@ internal data class Config(
     @SerialName("kotlin_target_version") val kotlinTargetVersion: String? = null,
     @SerialName("disable_java_cleaner") val disableJavaCleaner: Boolean? = null,
     @SerialName("generate_serializable_types") val generateSerializableTypes: Boolean? = null,
-    @SerialName("use_pascal_case_for_enums") val usePascalCaseForEnums: Boolean? = null,
+    @SerialName("use_pascal_case_enum_class") val usePascalCaseEnumClass: Boolean? = null,
     @SerialName("jvm_dynamic_library_dependencies") val jvmDynamicLibraryDependencies: List<String>? = null,
     @SerialName("android_dynamic_library_dependencies") val androidDynamicLibraryDependencies: List<String>? = null,
     @SerialName("dynamic_library_dependencies") val dynamicLibraryDependencies: List<String>? = null,

@@ -121,7 +121,7 @@ pub struct Config {
     disable_java_cleaner: bool,
     generate_serializable_types: Option<bool>,
     #[serde(default)]
-    use_pascal_case_for_enums: Option<bool>,
+    use_pascal_case_enum_class: Option<bool>,
     #[serde(default)]
     jvm_dynamic_library_dependencies: Vec<String>,
     #[serde(default)]
@@ -496,7 +496,7 @@ impl KotlinCodeOracle {
 
     /// Get the idiomatic Kotlin rendering of an individual enum variant.
     fn enum_variant_name(&self, nm: &str, config: &Config) -> String {
-        if config.use_pascal_case_for_enums == Some(true) {
+        if config.use_pascal_case_enum_class == Some(true) {
             nm.to_upper_camel_case()
         } else {
             nm.to_shouty_snake_case()

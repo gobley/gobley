@@ -1,2 +1,2 @@
 package_name = "enum_types"
-use_pascal_case_for_enums = true
+use_pascal_case_enum_class = true
