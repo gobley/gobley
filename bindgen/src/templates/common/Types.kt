@@ -16,8 +16,22 @@ interface Disposable : AutoCloseable {
     companion object {
         internal fun destroy(vararg args: Any?) {
             for (arg in args) {
-                if (arg is Disposable) {
-                    arg.destroy()
+                when (arg) {
+                    is Disposable -> arg.destroy()
+                    is List<*> -> {
+                        for (element in arg) {
+                            if (element is Disposable) {
+                                element.destroy()
+                            }
+                        }
+                    }
+                    is Map<*, *> -> {
+                        for (element in arg.values) {
+                            if (element is Disposable) {
+                                element.destroy()
+                            }
+                        }
+                    }
                 }
             }
         }
