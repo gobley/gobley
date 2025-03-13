@@ -20,7 +20,9 @@ abstract class CargoAndroidBuildVariant @Inject constructor(
     variant: Variant,
     extension: CargoExtension,
 ) : DefaultCargoBuildVariant<RustAndroidTarget, CargoAndroidBuild>(project, build, variant, extension),
-    CargoMobileBuildVariant<RustAndroidTarget>, HasDynamicLibraries {
+    CargoMobileBuildVariant<RustAndroidTarget>,
+    CargoNativeBuildVariant<RustAndroidTarget>,
+    HasDynamicLibraries {
     init {
         dynamicLibraries.addAll(build.dynamicLibraries)
         dynamicLibrarySearchPaths.addAll(build.dynamicLibrarySearchPaths)
