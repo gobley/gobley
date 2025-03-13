@@ -8,7 +8,7 @@ use paste::paste;
 use uniffi_bindgen::backend::Literal;
 use uniffi_bindgen::interface::{ComponentInterface, Radix, Type};
 
-use super::CodeType;
+use super::{CodeType, Config};
 
 fn render_literal(literal: &Literal, _ci: &ComponentInterface) -> String {
     fn typed_number(type_: &Type, num_str: String) -> String {
@@ -70,7 +70,7 @@ macro_rules! impl_code_type_for_primitive {
                     $class_name.into()
                 }
 
-                fn literal(&self, literal: &Literal, ci: &ComponentInterface) -> String {
+                fn literal(&self, literal: &Literal, ci: &ComponentInterface, _config: &Config) -> String {
                     render_literal(&literal, ci)
                 }
             }

@@ -58,7 +58,9 @@ trait CodeType: Debug {
     /// with this type only.
     fn canonical_name(&self) -> String;
 
-    fn literal(&self, _literal: &Literal, ci: &ComponentInterface) -> String {
+    fn literal(&self, literal: &Literal, ci: &ComponentInterface, config: &Config) -> String {
+        let _ = literal;
+        let _ = config;
         unimplemented!("Unimplemented for {}", self.type_label(ci))
     }
 
@@ -118,6 +120,8 @@ pub struct Config {
     #[serde(default)]
     disable_java_cleaner: bool,
     generate_serializable_types: Option<bool>,
+    #[serde(default)]
+    use_pascal_case_for_enums: Option<bool>,
     #[serde(default)]
     jvm_dynamic_library_dependencies: Vec<String>,
     #[serde(default)]
@@ -491,8 +495,12 @@ impl KotlinCodeOracle {
     }
 
     /// Get the idiomatic Kotlin rendering of an individual enum variant.
-    fn enum_variant_name(&self, nm: &str) -> String {
-        nm.to_string().to_shouty_snake_case()
+    fn enum_variant_name(&self, nm: &str, config: &Config) -> String {
+        if config.use_pascal_case_for_enums == Some(true) {
+            nm.to_upper_camel_case()
+        } else {
+            nm.to_shouty_snake_case()
+        }
     }
 
     /// Get the idiomatic Kotlin rendering of an FFI callback function name
@@ -834,8 +842,9 @@ mod filters {
         literal: &Literal,
         as_ct: &impl AsType,
         ci: &ComponentInterface,
+        config: &Config,
     ) -> Result<String, askama::Error> {
-        Ok(as_ct.as_codetype().literal(literal, ci))
+        Ok(as_ct.as_codetype().literal(literal, ci, config))
     }
 
     // Get the idiomatic Kotlin rendering of an integer.
@@ -1102,8 +1111,8 @@ mod filters {
     }
 
     /// Get a String representing the name used for an individual enum variant.
-    pub fn variant_name(v: &Variant) -> Result<String, askama::Error> {
-        Ok(KotlinCodeOracle.enum_variant_name(v.name()))
+    pub fn variant_name(v: &Variant, config: &Config) -> Result<String, askama::Error> {
+        Ok(KotlinCodeOracle.enum_variant_name(v.name(), config))
     }
 
     pub fn error_variant_name(v: &Variant) -> Result<String, askama::Error> {

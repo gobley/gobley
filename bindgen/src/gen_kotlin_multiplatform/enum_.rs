@@ -7,7 +7,7 @@
 use uniffi_bindgen::backend::Literal;
 use uniffi_bindgen::ComponentInterface;
 
-use super::CodeType;
+use super::{CodeType, Config};
 
 #[derive(Debug)]
 pub struct EnumCodeType {
@@ -29,12 +29,12 @@ impl CodeType for EnumCodeType {
         format!("Type{}", self.id)
     }
 
-    fn literal(&self, literal: &Literal, ci: &ComponentInterface) -> String {
+    fn literal(&self, literal: &Literal, ci: &ComponentInterface, config: &Config) -> String {
         if let Literal::Enum(v, _) = literal {
             format!(
                 "{}.{}",
                 self.type_label(ci),
-                super::KotlinCodeOracle.enum_variant_name(v)
+                super::KotlinCodeOracle.enum_variant_name(v, config)
             )
         } else {
             unreachable!();
