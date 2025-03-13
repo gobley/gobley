@@ -98,7 +98,7 @@ class CoverallTest {
     }
 
     @Test
-    fun dict() {
+    fun dict() = withCoverallLock {
         // floats should be "close enough".
         infix fun Float.almostEquals(other: Float) =
             shouldBe(FloatToleranceMatcher(other, 0.000001F))
@@ -132,7 +132,19 @@ class CoverallTest {
             d.maybeFloat64!! almostEquals 1.0
 
             d.coveralls!!.getName() shouldBe "some_dict"
+
+            d.coverallsList[0]!!.getName() shouldBe "some_dict_1"
+            d.coverallsList[1] shouldBe null
+            d.coverallsList[2]!!.getName() shouldBe "some_dict_2"
+
+            d.coverallsMap["some_dict_3"]!!.getName() shouldBe "some_dict_3"
+            d.coverallsMap["none"] shouldBe null
+            d.coverallsMap["some_dict_4"]!!.getName() shouldBe "some_dict_4"
+
+            getNumAlive() shouldBe 5UL
         }
+
+        getNumAlive() shouldBe 0UL
 
         createNoneDict().use { d ->
             d.text shouldBe "text"
@@ -158,7 +170,11 @@ class CoverallTest {
             d.maybeFloat64 shouldBe null
 
             d.coveralls shouldBe null
+
+            getNumAlive() shouldBe 0UL
         }
+
+        getNumAlive() shouldBe 0UL
     }
 
     @Test
