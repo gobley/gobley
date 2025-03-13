@@ -15,7 +15,7 @@ class EnumTypesReflectionTest {
     @Test
     fun assertDestroyNotGenerated() {
         // Assert that no destroy() function is created for simple Enum
-        val simpleCat: Animal = Animal.CAT
+        val simpleCat: Animal = Animal.Cat
         simpleCat::class.functions shouldNot exist { it.name == "destroy" }
 
         // Assert that destroy() function is created for Enum with variants containing fields

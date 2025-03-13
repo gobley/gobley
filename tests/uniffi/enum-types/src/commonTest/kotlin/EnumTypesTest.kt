@@ -11,10 +11,10 @@ import kotlin.test.Test
 class EnumTypesTest {
     @Test
     fun checkVariantValues() {
-        AnimalLargeUInt.DOG.value shouldBe 4294967298.toULong()
-        AnimalLargeUInt.CAT.value shouldBe 4294967299.toULong()
+        AnimalLargeUInt.Dog.value shouldBe 4294967298.toULong()
+        AnimalLargeUInt.Cat.value shouldBe 4294967299.toULong()
 
         // could check `value == (-3).toByte()` but that's ugly :)
-        AnimalSignedInt.DOG.value + 3 shouldBe 0
+        AnimalSignedInt.Dog.value + 3 shouldBe 0
     }
 }
