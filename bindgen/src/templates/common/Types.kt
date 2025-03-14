@@ -18,7 +18,7 @@ interface Disposable : AutoCloseable {
             for (arg in args) {
                 when (arg) {
                     is Disposable -> arg.destroy()
-                    is List<*> -> {
+                    is Iterable<*> -> {
                         for (element in arg) {
                             if (element is Disposable) {
                                 element.destroy()
@@ -27,6 +27,13 @@ interface Disposable : AutoCloseable {
                     }
                     is Map<*, *> -> {
                         for (element in arg.values) {
+                            if (element is Disposable) {
+                                element.destroy()
+                            }
+                        }
+                    }
+                    is Array<*> -> {
+                        for (element in arg) {
                             if (element is Disposable) {
                                 element.destroy()
                             }
