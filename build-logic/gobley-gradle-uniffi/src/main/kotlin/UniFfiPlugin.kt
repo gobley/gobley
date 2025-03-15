@@ -10,7 +10,6 @@ import gobley.gradle.DependencyVersions
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
 import gobley.gradle.Variant
-import gobley.gradle.cargo.dsl.CargoAndroidBuild
 import gobley.gradle.cargo.dsl.CargoExtension
 import gobley.gradle.cargo.dsl.CargoJvmBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuild
@@ -18,6 +17,7 @@ import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
+import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.uniffi.dsl.BindingsGeneration
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromLibrary
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromUdl
@@ -137,11 +137,35 @@ class UniFfiPlugin : Plugin<Project> {
     private fun Project.configureBindingTasks() {
         val bindingsGeneration = bindingsGeneration
 
-        @OptIn(InternalGobleyGradleApi::class)
-        val androidTargetsToBuild = cargoExtension.androidTargetsToBuild.get()
-        val buildRustTarget = bindingsGeneration.build.orNull ?: cargoExtension.builds.filter {
-            it !is CargoAndroidBuild || androidTargetsToBuild.contains(it.rustTarget)
-        }.map { it.rustTarget }.first()
+        val buildRustTarget = bindingsGeneration.build.orNull ?: run {
+            @OptIn(InternalGobleyGradleApi::class)
+            val androidTargetsToBuild = cargoExtension.androidTargetsToBuild.get().toList()
+
+            @OptIn(InternalGobleyGradleApi::class)
+            val hasJvmTarget = kotlinExtensionDelegate.targets.any {
+                it is KotlinJvmTarget || it is KotlinWithJavaTarget<*, *>
+            }
+
+            val jvmTargetsToBuild = when {
+                hasJvmTarget -> cargoExtension.builds.mapNotNull { build ->
+                    build.rustTarget.takeIf {
+                        build is CargoJvmBuild<*> && build.variants.any { variant ->
+                            variant.embedRustLibrary.get()
+                        }
+                    }
+                }
+
+                else -> emptyList()
+            }
+
+            @OptIn(InternalGobleyGradleApi::class)
+            val nativeTargetsToBuild = kotlinExtensionDelegate.targets.mapNotNull { target ->
+                val nativeTarget = target as? KotlinNativeTarget ?: return@mapNotNull null
+                RustTarget(nativeTarget.konanTarget)
+            }
+
+            (androidTargetsToBuild + jvmTargetsToBuild + nativeTargetsToBuild).first()
+        }
         val build = cargoExtension.builds.findByRustTarget(buildRustTarget)
             ?: throw GradleException("Cargo build for $buildRustTarget not available")
 
