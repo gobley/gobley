@@ -178,7 +178,10 @@ class UniFfiPlugin : Plugin<Project> {
             originalConfig.set(
                 bindingsGeneration.config.orElse(
                     cargoExtension.packageDirectory.file("uniffi.toml"),
-                ),
+                ).map { regularFile ->
+                    // TODO: This compiles well, but Android Studio shows an error
+                    regularFile.takeIf { it.asFile.exists() }
+                }
             )
 
             @OptIn(InternalGobleyGradleApi::class)
