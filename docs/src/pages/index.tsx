@@ -28,11 +28,10 @@ function HomepageHeader() {
 }
 
 export default function Home(): ReactNode {
-  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      title="Embed Rust into your Kotlin Multiplatform project"
+      description="Embed Rust into your Kotlin Multiplatform project"
     >
       <HomepageHeader />
       <main>
