@@ -64,7 +64,7 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "tutorialSidebar",
           position: "left",
-          label: "Tutorial",
+          label: "Docs",
         },
         {
           type: "docsVersionDropdown",
@@ -85,8 +85,8 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Tutorial",
-              to: "/docs/tutorial",
+              label: "Getting Started",
+              to: "/docs",
             },
           ],
         },
