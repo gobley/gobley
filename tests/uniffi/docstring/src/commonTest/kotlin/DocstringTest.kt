@@ -6,7 +6,7 @@
 
 @file:Suppress("unused", "UNUSED_VARIABLE")
 
-import docstring.*
+import uniffi.docstring.*
 import kotlin.test.Test
 
 class DocstringTest {
