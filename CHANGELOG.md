@@ -15,6 +15,8 @@
 
 - Ensured interface instances in lists and maps are
   destroyed ([#53](https://github.com/gobley/gobley/pull/53)).
+- Prevented `UniFfiPlugin` from selecting a build excluded by
+  `embedRustLibrary` ([#64](https://github.com/gobley/gobley/pull/64)).
 
 ## [0.1.0](https://github.com/gobley/gobley/releases/tag/v0.1.0) - 2025-03-03
 
