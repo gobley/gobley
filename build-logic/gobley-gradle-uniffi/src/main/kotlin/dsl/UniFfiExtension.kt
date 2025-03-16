@@ -20,6 +20,7 @@ import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.property
 import javax.inject.Inject
 
+@Suppress("LeakingThis")
 abstract class UniFfiExtension(internal val project: Project) {
     internal val bindgenSource: Property<BindgenSource> =
         project.objects.property<BindgenSource>().convention(BindgenSource.Registry())
@@ -78,14 +79,26 @@ abstract class UniFfiExtension(internal val project: Project) {
         bindgenFromGit(repository, BindgenSource.Git.Commit.Revision(revision))
     }
 
+    internal abstract val userProvidedBindingsGeneration: Property<BindingsGeneration>
+
     internal abstract val bindingsGeneration: Property<BindingsGeneration>
+
+    init {
+        bindingsGeneration.convention(
+            userProvidedBindingsGeneration.orElse(
+                project.provider {
+                    project.objects.newInstance<BindingsGenerationFromLibrary>(project)
+                        .also { userProvidedBindingsGeneration.set(it) }
+                })
+        )
+    }
 
     /**
      * Generate bindings using a UDL file.
      */
     fun generateFromUdl(configure: Action<BindingsGenerationFromUdl> = Action { }) {
-        val generation = bindingsGeneration.orNull ?: project.objects.newInstance<BindingsGenerationFromUdl>(project)
-            .also { bindingsGeneration.set(it) }
+        val generation = userProvidedBindingsGeneration.orNull ?: project.objects.newInstance<BindingsGenerationFromUdl>(project)
+            .also { userProvidedBindingsGeneration.set(it) }
 
         generation as? BindingsGenerationFromUdl
             ?: throw GradleException("A `generateFromLibrary` block has already been defined.")
@@ -98,9 +111,9 @@ abstract class UniFfiExtension(internal val project: Project) {
      * Generate bindings from the build result library file.
      */
     fun generateFromLibrary(configure: Action<BindingsGenerationFromLibrary> = Action { }) {
-        val generation =
-            bindingsGeneration.orNull ?: project.objects.newInstance<BindingsGenerationFromLibrary>(project)
-                .also { bindingsGeneration.set(it) }
+        val generation = userProvidedBindingsGeneration.orNull
+            ?: project.objects.newInstance<BindingsGenerationFromLibrary>(project)
+                .also { userProvidedBindingsGeneration.set(it) }
 
         generation as? BindingsGenerationFromLibrary
             ?: throw GradleException("A `generateFromUdl` block has already been defined.")
