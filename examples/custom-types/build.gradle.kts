@@ -13,7 +13,15 @@ plugins {
 
 uniffi {
     bindgenFromPath(rootProject.layout.projectDirectory.dir("bindgen"))
-    generateFromLibrary()
+    generateFromLibrary {
+        packageName = "gobley.uniffi.examples.customtypes"
+        customType("Url") {
+            typeName = "io.ktor.http.Url"
+            imports.add("io.ktor.http.Url")
+            intoCustom = "Url({})"
+            fromCustom = "{}.toString()"
+        }
+    }
 }
 
 kotlin {
