@@ -28,6 +28,7 @@ uniffi {
     bindgenFromPath(rootProject.layout.projectDirectory.dir("bindgen"))
     generateFromLibrary {
         namespace = name.replace('-', '_')
+        packageName = "coverall"
     }
 }
 

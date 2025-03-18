@@ -4,6 +4,12 @@ plugins {
     id("uniffi-tests-from-library")
 }
 
+uniffi {
+    generateFromLibrary {
+        packageName = "coverall"
+    }
+}
+
 kotlin {
     js {
         nodejs()
