@@ -19,7 +19,7 @@ androidx-annotation = "1.8.2"
 androidx-core = "1.6.1"
 androidx-runner = "1.6.2"
 
-jna = "5.16.0"
+jna = "5.17.0"
 junit = "4.13.2"
 ktor = "3.0.3"
 okio = "3.9.1"
