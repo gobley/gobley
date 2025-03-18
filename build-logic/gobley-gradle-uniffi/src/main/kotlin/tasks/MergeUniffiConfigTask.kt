@@ -7,6 +7,7 @@
 package gobley.gradle.uniffi.tasks
 
 import gobley.gradle.uniffi.Config
+import gobley.gradle.uniffi.dsl.CustomType
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.peanuuutz.tomlkt.Toml
@@ -52,7 +53,9 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     @get:Optional
     abstract val generateImmutableRecords: Property<Boolean>
 
-    /* customTypes */
+    @get:Input
+    @get:Optional
+    abstract val customTypes: MapProperty<String, CustomType>
 
     @get:Input
     @get:Optional
@@ -102,6 +105,19 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
             ),
             generateImmutableRecords = originalConfig.generateImmutableRecords
                 ?: generateImmutableRecords.orNull,
+            customTypes = mergeMap(
+                originalConfig.customTypes,
+                customTypes.map {
+                    it.mapValues { entry ->
+                        Config.CustomType(
+                            imports = entry.value.imports.orNull,
+                            typeName = entry.value.typeName.orNull,
+                            intoCustom = entry.value.intoCustom.orNull,
+                            fromCustom = entry.value.fromCustom.orNull,
+                        )
+                    }
+                }.orNull,
+            ),
             externalPackages = mergeMap(
                 originalConfig.externalPackages,
                 externalPackageConfigByCrateName.orNull?.let(::retrieveExternalPackageNames),
@@ -156,10 +172,10 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
         return result.toMap()
     }
 
-    private fun mergeMap(
-        original: Map<String, String>?,
-        new: Map<String, String>?,
-    ): Map<String, String>? {
+    private fun <T> mergeMap(
+        original: Map<String, T>?,
+        new: Map<String, T>?,
+    ): Map<String, T>? {
         if (original == null) return new
         if (new == null) return original
 

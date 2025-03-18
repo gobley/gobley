@@ -8,9 +8,13 @@ package gobley.gradle.uniffi.dsl
 
 import gobley.gradle.Variant
 import gobley.gradle.rust.targets.RustTarget
+import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.kotlin.dsl.invoke
+import org.gradle.kotlin.dsl.newInstance
 import javax.inject.Inject
 
 sealed class BindingsGeneration(internal val project: Project) {
@@ -49,7 +53,17 @@ sealed class BindingsGeneration(internal val project: Project) {
      */
     abstract val cdylibName: Property<String>
 
-    // TODO: customTypes
+    internal abstract val customTypes: MapProperty<String, CustomType>
+
+    /**
+     * Defines a new custom type. See [the documentation](https://mozilla.github.io/uniffi-rs/0.28/udl/custom_types.html#custom-types-in-the-bindings-code).
+     */
+    fun customType(name: String, configure: Action<CustomType> = Action { }) {
+        customTypes.put(
+            name,
+            project.objects.newInstance<CustomType>().apply { configure(this) }
+        )
+    }
 
     /**
      * When `true`, generated data classes has `val` properties instead of `var`.

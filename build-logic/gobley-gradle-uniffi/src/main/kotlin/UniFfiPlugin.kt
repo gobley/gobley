@@ -42,7 +42,6 @@ import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
@@ -202,7 +201,7 @@ class UniFfiPlugin : Plugin<Project> {
             packageName.set(bindingsGeneration.packageName)
             cdylibName.set(bindingsGeneration.cdylibName)
             generateImmutableRecords.set(bindingsGeneration.generateImmutableRecords)
-            // TODO: customTypes
+            customTypes.set(bindingsGeneration.customTypes)
             disableJavaCleaner.set(bindingsGeneration.disableJavaCleaner)
             usePascalCaseEnumClass.set(bindingsGeneration.usePascalCaseEnumClass)
 
