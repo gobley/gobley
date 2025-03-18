@@ -199,6 +199,13 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             )
 
+            packageName.set(bindingsGeneration.packageName)
+            cdylibName.set(bindingsGeneration.cdylibName)
+            generateImmutableRecords.set(bindingsGeneration.generateImmutableRecords)
+            // TODO: customTypes
+            disableJavaCleaner.set(bindingsGeneration.disableJavaCleaner)
+            usePascalCaseEnumClass.set(bindingsGeneration.usePascalCaseEnumClass)
+
             @OptIn(InternalGobleyGradleApi::class)
             kotlinMultiplatform.set(kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM)
 

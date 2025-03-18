@@ -34,11 +34,25 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
+    abstract val packageName: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val cdylibName: Property<String>
+
+    @get:Input
+    @get:Optional
     abstract val kotlinMultiplatform: Property<Boolean>
 
     @get:Input
     @get:Optional
     abstract val kotlinTargets: ListProperty<String>
+
+    @get:Input
+    @get:Optional
+    abstract val generateImmutableRecords: Property<Boolean>
+
+    /* customTypes */
 
     @get:Input
     @get:Optional
@@ -50,7 +64,15 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
+    abstract val disableJavaCleaner: Property<Boolean>
+
+    @get:Input
+    @get:Optional
     abstract val useKotlinXSerialization: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val usePascalCaseEnumClass: Property<Boolean>
 
     @get:Input
     @get:Optional
@@ -71,19 +93,27 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     fun mergeConfig() {
         val originalConfig = originalConfig.orNull?.asFile?.let(::loadConfig) ?: Config()
         val result = originalConfig.copy(
+            packageName = originalConfig.packageName ?: packageName.orNull,
+            cdylibName = originalConfig.cdylibName ?: cdylibName.orNull,
             kotlinMultiplatform = originalConfig.kotlinMultiplatform ?: kotlinMultiplatform.orNull,
             kotlinTargets = mergeSet(
                 originalConfig.kotlinTargets,
                 kotlinTargets.orNull,
             ),
+            generateImmutableRecords = originalConfig.generateImmutableRecords
+                ?: generateImmutableRecords.orNull,
             externalPackages = mergeMap(
                 originalConfig.externalPackages,
                 externalPackageConfigByCrateName.orNull?.let(::retrieveExternalPackageNames),
             ),
             kotlinTargetVersion = originalConfig.kotlinTargetVersion
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
+            disableJavaCleaner = originalConfig.disableJavaCleaner
+                ?: disableJavaCleaner.orNull,
             generateSerializableTypes = originalConfig.generateSerializableTypes
                 ?: useKotlinXSerialization.orNull,
+            usePascalCaseEnumClass = originalConfig.usePascalCaseEnumClass
+                ?: usePascalCaseEnumClass.orNull,
             jvmDynamicLibraryDependencies = mergeSet(
                 originalConfig.jvmDynamicLibraryDependencies,
                 jvmDynamicLibraryDependencies.orNull,
