@@ -18,6 +18,10 @@
 - Ensured interface instances in lists and maps are
   destroyed ([#53](https://github.com/gobley/gobley/pull/53)).
 
+## Dependencies
+
+- Upgraded JNA from 5.16.0 to 5.17.0 ([#65](https://github.com/gobley/gobley/pull/65)).
+
 ## [0.1.0](https://github.com/gobley/gobley/releases/tag/v0.1.0) - 2025-03-03
 
 ### New Features
