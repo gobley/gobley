@@ -34,7 +34,6 @@ if (ext.propertyIsTrue("gobley.projects.gradleTests")) {
     include(":tests:gradle:android-linking")
     include(":tests:gradle:cargo-only")
     include(":tests:gradle:jvm-only")
-    include(":tests:gradle:no-uniffi-block")
 }
 
 if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
