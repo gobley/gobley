@@ -5,8 +5,9 @@
 [![Crates.io](https://img.shields.io/crates/v/gobley-uniffi-bindgen)](https://crates.io/crates/gobley-uniffi-bindgen)
 [![Gradle Plugin Portal](https://img.shields.io/maven-central/v/dev.gobley.gradle/gobley-gradle
 )](https://central.sonatype.com/artifact/dev.gobley.gradle/gobley-gradle)
-![Gitlab Build Status](https://img.shields.io/github/check-runs/gobley/gobley/main
-)
+[![GitHub Actions Workflow Status](
+https://img.shields.io/github/actions/workflow/status/gobley/gobley/pr-build-test.yml?branch=main&label=tests)](
+https://github.com/gobley/gobley/actions/workflows/pr-build-test.yml?query=branch%3Amain)
 
 Kotlin Multiplatform bindings generation for [UniFFI](https://github.com/mozilla/uniffi-rs).
 This project was forked from [UniFFI Kotlin Multiplatform bindings](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings).
