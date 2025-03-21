@@ -9,6 +9,8 @@
 https://img.shields.io/github/actions/workflow/status/gobley/gobley/pr-build-test.yml?branch=main&label=tests)](
 https://github.com/gobley/gobley/actions/workflows/pr-build-test.yml?query=branch%3Amain)
 
+<img align="right" src=".idea/icon.svg" width="20%">
+
 Kotlin Multiplatform bindings generation for [UniFFI](https://github.com/mozilla/uniffi-rs).
 This project was forked from [UniFFI Kotlin Multiplatform bindings](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings).
 Since the original project is no longer maintained, active development now continues here.

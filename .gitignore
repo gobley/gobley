@@ -3,6 +3,7 @@ build
 .cxx
 .gradle
 .idea
+!.idea/icon.svg
 .kotlin
 .DS_Store
 local.properties
