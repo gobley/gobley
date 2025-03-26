@@ -117,11 +117,7 @@ Let's add a Cargo to the Kotlin Multiplatform project.
       library file when building for iOS, and the dynamic library file for Android.
     - `path = "src/commonMain/rust/lib.rs"` designates the path to the Rust source code.
 
-6. Add an empty file, `composeApp/uniffi.toml`.
-
-   > :bulb: You can configure various binding generation options here.
-
-7. Modify `composeApp/build.gradle.kts` like the following.
+6. Modify `composeApp/build.gradle.kts` like the following.
 
    ```kotlin
    plugins {
@@ -129,10 +125,6 @@ Let's add a Cargo to the Kotlin Multiplatform project.
        id("dev.gobley.cargo") version "0.2.0"
        id("dev.gobley.uniffi") version "0.2.0"
        kotlin("plugin.atomicfu") version libs.versions.kotlin
-   }
-
-   uniffi {
-       generateFromLibrary()
    }
    ```
 
@@ -144,9 +136,7 @@ Let's add a Cargo to the Kotlin Multiplatform project.
    Let's see what each plugin does:
 
     - `dev.gobley.cargo` builds and links the Rust library to the Kotlin application.
-    - `dev.gobley.uniffi` generates the bindings using UniFFI. The `uniffi {}` block is to configure
-      binding generation options. Since we used `generateFromLibrary()` this time, the bindings will
-      be generated automatically from the Rust library.
+    - `dev.gobley.uniffi` generates the bindings using UniFFI.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
 We're now ready to code both in Rust and Kotlin! Press the **Sync Now** button to make the IDE
