@@ -1,5 +1,5 @@
 ---
-slug: /
+slug: /tutorial
 ---
 
 # Getting started (Android & iOS)

@@ -2,7 +2,7 @@
 slug: /
 ---
 
-# Getting started
+# Overview
 
 We recommend to first read the [UniFFI user guide](https://mozilla.github.io/uniffi-rs/). Then, please read this documentation in the following order.
 
@@ -19,7 +19,7 @@ subscription. Fleet was another option, but JetBrains announced that
 [they are dropping the KMP support in Fleet](https://blog.jetbrains.com/kotlin/2025/02/kotlin-multiplatform-tooling-shifting-gears/).
 
 Therefore, most users may use different IDEs for Kotlin and Rust when developing with this project. For Kotlin, you
-can use Android Studio or IntelliJ IDEA, and for Rust, you can use `rust-analyzer` with Visual Studio Code or RustRover. 
+can use Android Studio or IntelliJ IDEA, and for Rust, you can use `rust-analyzer` with Visual Studio Code or RustRover.
 In normal cases, Kotlin handles the part interacting with users such as UI while Rust handles the core business logic,
 so using two IDEs won't harm the developer experience that much.
 
@@ -240,13 +240,13 @@ For JVM builds, the Cargo plugin tries to build all the targets, whether the req
 current system or not. The list of such targets by the build host is as follows.
 
 | Targets      | Windows | macOS | Linux |
-|--------------|---------|-------|-------|
-| Android      | ✅       | ✅     | ✅     |
-| Apple Mobile | ❌       | ✅     | ❌     |
-| MinGW        | ✅       | ✅     | ✅     |
-| macOS        | ❌       | ✅     | ❌     |
-| Linux        | ✅       | ✅     | ✅     |
-| Visual C++   | ✅       | ❌     | ❌     |
+| ------------ | ------- | ----- | ----- |
+| Android      | ✅      | ✅    | ✅    |
+| Apple Mobile | ❌      | ✅    | ❌    |
+| MinGW        | ✅      | ✅    | ✅    |
+| macOS        | ❌      | ✅    | ❌    |
+| Linux        | ✅      | ✅    | ✅    |
+| Visual C++   | ✅      | ❌    | ❌    |
 
 To build for specific targets only, you can configure that using the `embedRustLibrary` property. For example, to
 build a shared library for the current build host only, set this property to
@@ -313,7 +313,7 @@ cdylib_name = "bar"
 The JVM `loadIndirect()` function in the bindings allow users to override the `cdylib_name` value using the
 `uniffi.component.<namespace name>.libraryOverride` system property as well. See the
 [`:tests:uniffi:ext-types:ext-types`](https://github.com/gobley/gobley/tree/v0.1.0/tests/uniffi/ext-types/ext-types)
-test to see how this works. 
+test to see how this works.
 
 Android local unit tests requires JVM targets to be built, as they run in the host machine's JVM. The Cargo plugin
 automatically copies the Rust shared library targeting the host machine into Android local unit tests. It also finds
@@ -327,7 +327,7 @@ import gobley.gradle.rust.targets.RustWindowsTarget
 
 cargo {
     builds.jvm {
-        // Use Visual C++ X64 for Android local unit tests 
+        // Use Visual C++ X64 for Android local unit tests
         androidUnitTest = (rustTarget == RustWindowsTarget.X64)
     }
 }
@@ -597,7 +597,7 @@ details, see [`bindgen/src/gen_kotlin_multiplatform/mod.rs`](https://github.com/
 or [`Config.kt`](https://github.com/gobley/gobley/tree/v0.1.0/build-logic/gradle-plugin/src/main/kotlin/io/gitlab/trixnity/gradle/uniffi/Config.kt).
 
 | Configuration Name                     | Type         | Description                                                                                                                                                                                                                                               |
-|----------------------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `package_name`                         | String       | The Kotlin package name to use. Defaults to `uniffi.<namespace name>`.                                                                                                                                                                                    |
 | `cdylib_name`                          | String       | The name of the resulting dynamic library without the prefix (e.g. `lib`) and the file extension. Defaults to the library's name when bindings are generated from it, or `uniffi_<namespace>` when generated from a UDL file.                             |
 | `generate_immutable_records`           | Boolean      | When `true`, generated data classes has `val` properties instead of `var`.                                                                                                                                                                                |
@@ -644,7 +644,7 @@ You can manually download Zig [here](https://ziglang.org/download/). If you're u
 manager, you can also install Zig as follows:
 
 | Package Manager      | Command                          | Zig Installation Path                                                   |
-|----------------------|----------------------------------|-------------------------------------------------------------------------|
+| -------------------- | -------------------------------- | ----------------------------------------------------------------------- |
 | WinGet (Windows)     | `winget install -e --id zig.zig` | `%LOCALAPPDATA%\Microsoft\WinGet\Links\zig.exe`                         |
 | Chocolatey (Windows) | `choco install zig`              | `C:\ProgramData\chocolatey\bin\zig.exe`                                 |
 | Homebrew (macOS)     | `brew install zig`               | `/opt/homebrew/bin/zig` (Apple Silicon) or `/usr/local/bin/zig` (Intel) |
@@ -1017,7 +1017,7 @@ binding generator versions such that each generator targets the same `uniffi-rs`
 Here is how `gobley-uniffi-bindgen` versions are tied to `uniffi-rs` are tied:
 
 | gobley-uniffi-bindgen version | uniffi-rs version |
-|-------------------------------|-------------------|
+| ----------------------------- | ----------------- |
 | v0.1.0                        | v0.25.2           |
 
 ## Build and use locally
@@ -1027,8 +1027,8 @@ configuration in order to use these local versions in your projects. Since this 
 unit tests and examples, you may want to opt out of building them. Use the following Gradle properties to
 choose tests and examples to turn on and off.
 
-| Gradle property name              | Projects                                   |
-|-----------------------------------|--------------------------------------------|
+| Gradle property name          | Projects                                   |
+| ----------------------------- | ------------------------------------------ |
 | `gobley.projects.gradleTests` | `:tests:gradle`                            |
 | `gobley.projects.uniffiTests` | `:tests:uniffi` & `:examples:custom-types` |
 | `gobley.projects.examples`    | `:examples`                                |

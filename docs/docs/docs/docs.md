@@ -1,4 +1,8 @@
-# Getting started
+---
+slug: /
+---
+
+# Overview
 
 We recommend to first read the [UniFFI user guide](https://mozilla.github.io/uniffi-rs/). Then, please read this documentation in the following order.
 
