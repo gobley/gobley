@@ -35,16 +35,16 @@
                                 {%- endif -%}
                                 {%- call arg_list_lowered(func, indent + 8) %}
 {{ " "|repeat(indent) }}        uniffiRustCallStatus,
+{{ " "|repeat(indent) }}    )
                         {%- if let Some(return_type) = func.ffi_func().return_type() -%}
                         {%-     if return_type|need_non_null_assertion %}
-{{ " "|repeat(indent) }}    )!!
+{{ " "|repeat(indent) }}{{ '}' }}!!
                         {%-     else %}
-{{ " "|repeat(indent) }}    )
-                        {%- endif -%}
-                        {%- else %}
-{{ " "|repeat(indent) }}    )
-                        {%- endif %}
 {{ " "|repeat(indent) }}{{ '}' }}
+                        {%-     endif -%}
+                        {%- else %}
+{{ " "|repeat(indent) }}{{ '}' }}
+                        {%- endif %}
 {%- endmacro -%}
 
 {%- macro func_decl(func_decl, callable, indent, is_decl_override) %}
