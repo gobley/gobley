@@ -9,6 +9,7 @@ use std::time::SystemTime;
 
 use once_cell::sync::Lazy;
 
+mod additional;
 mod traits;
 pub use traits::{
     ancestor_names, get_string_util_traits, get_traits, make_rust_getters, test_getters,
