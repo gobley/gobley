@@ -17,21 +17,25 @@ import kotlin.test.Test
 class AdditionalCoverallTest {
     @Test
     fun testPanicInsideFunctionReturningObject() {
-        shouldThrow<InternalException> {
-            NotConstructible()
-        }
-        shouldThrow<InternalException> {
-            newNotConstructible()
+        if (uniffiSupported) {
+            shouldThrow<InternalException> {
+                NotConstructible()
+            }
+            shouldThrow<InternalException> {
+                newNotConstructible()
+            }
         }
     }
 
     @Test
     fun testErrorThrownFromFunctionReturningObject() {
-        shouldThrow<NotConstructibleException> {
-            NotConstructible2()
-        }
-        shouldThrow<NotConstructibleException> {
-            newNotConstructible2()
+        if (uniffiSupported) {
+            shouldThrow<NotConstructibleException> {
+                NotConstructible2()
+            }
+            shouldThrow<NotConstructibleException> {
+                newNotConstructible2()
+            }
         }
     }
 }
