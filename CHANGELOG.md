@@ -19,6 +19,8 @@
   destroyed ([#53](https://github.com/gobley/gobley/pull/53)).
 - Prevented `UniFfiPlugin` from selecting a build excluded by
   `embedRustLibrary` ([#64](https://github.com/gobley/gobley/pull/64)).
+- Prevented NPE occurring when functions returning RustArcPtr throw
+  errors ([#75](https://github.com/gobley/gobley/pull/75)).
 
 ## Dependencies
 
