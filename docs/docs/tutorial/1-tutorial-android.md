@@ -1,25 +1,20 @@
 ---
-slug: /tutorial
+slug: /tutorial-android
 ---
 
-# Getting started (Android & iOS)
+# Getting started (Android)
 
 Welcome to Gobley! Gobley is a set of libraries and tools that help you mix Rust and Kotlin, so you
 can focus on implementing your business logic. In this tutorial, you will learn how to embed Rust
-code into your Kotlin Multiplatform project using Gobley. If you have trouble setting up your
-project, please create a question
-in [GitHub Discussions](https://github.com/gobley/gobley/discussions).
+code into your Android project using Gobley. If you have trouble setting up your project, please
+create a question in [GitHub Discussions](https://github.com/gobley/gobley/discussions).
 
 ## Prerequisites
 
-To develop with Kotlin Multiplatform, you need:
-
-1. An IDE for Android development, such as [Android Studio](https://developer.android.com/studio)
-   or [IntelliJ IDEA](https://www.jetbrains.com/idea/download).
-2. (Optional) The IDE for iOS development: [Xcode](https://developer.apple.com/xcode).
-
-You'll spend much time with Android Studio or IntelliJ IDEA to code in Kotlin. Xcode is required to
-build iOS apps.
+To develop an Android app, you need to
+install [Android Studio](https://developer.android.com/studio).
+Using [IntelliJ IDEA](https://www.jetbrains.com/idea/download) is also available for Android
+development.
 
 To develop in Rust, you need:
 
@@ -32,69 +27,64 @@ To develop in Rust, you need:
       the [Rust plugin](https://www.jetbrains.com/help/idea/rust-plugin.html).
     - Other editors like Vim. Still, using `rust-analyzer` is recommended.
 
-You'll use a separate IDE for Rust development. The only way to use a single IDE is IntelliJ IDEA
-Ultimate, but it needs a paid subscription.
+## Creating an Android project
 
-## Creating a Kotlin Multiplatform project
+Let's first create a new Android project.
 
-Let's first create a new Kotlin Multiplatform project. Please read
-the [official documentation](https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-create-first-app.html)
-for more details about how Kotlin Multiplatform works.
+1. Open Android Studio.
+2. Select **File > New > New Project**.
+3. Select **Empty Activity** with Compose.
 
-1. Visit the [Kotlin Multiplatform Wizard](https://kmp.jetbrains.com) website.
-2. On the **New Project** tab, set the **Project Name** and **Project ID** to names you want. Let's
-   use `MyFirstGobleyProject` and `dev.gobley.myfirstproject`.
-3. Make sure you selected **Android** and **iOS**.
-4. Select **Share UI (with Compose Multiplatform UI framework)**. You can use Gobley without Compose
-   Multiplatform, but let's focus on how to mix Rust and Kotlin this time.
-5. Click the **Download** button and extract the downloaded `.zip` file.
-6. Launch Android Studio or IntelliJ IDEA, and open the extracted folder.
+> :bulb: Gobley can be used without Compose, but the rest of this tutorial will use Compose.
 
-![The Android Studio screen after opening the downloaded project](./tutorial/img_1.png)
+![The new project screen](./1-tutorial-android/img-1.png)
 
-## Adding Rust to your Kotlin Multiplatform project
+4. Rename the project to `MyFirstGobleyProject` and the package to `dev.gobley.myfirstproject`.
+5. Make sure you selected **Kotlin DSL** for **Build configuration language**.
 
-Let's add a Cargo to the Kotlin Multiplatform project.
+![The new project screen](./1-tutorial-android/img-2.png)
+
+6. Click the **Finish** button, and the project will open.
+
+## Adding Rust to your Android project
+
+Let's add a Cargo package to the Android project.
 
 1. Make sure you installed `cargo` and `rustup`.
-2. Open the **Terminal** menu in Android Studio or IntelliJ IDEA. Run:
+2. Open the **Terminal** menu in Android Studio. Run:
 
    ```shell
-   cargo init --lib --name compose-app --vcs none composeApp
+   cargo init --lib --vcs none app
    ```
 
    Let's see what this command does:
 
     - `cargo init` will create a new Cargo package in `composeApp`.
     - `--lib` means that Cargo will create a **library** crate.
-    - `--name compose-app` means that the name of the resulting Cargo package will be `compose-app`.
-      Cargo doesn't like camelCase.
     - `--vcs none` means you don't want to generate `.git` or `.gitignore`.
-    - `composeApp` is the directory where we'll code both in Rust and Kotlin.
+    - `app` is the directory where we'll code both in Rust and Kotlin.
 
    After running this command, the following files should be generated:
 
-    - `composeApp/Cargo.toml`: This file contains the definition of the Cargo package.
-    - `composeApp/src/lib.rs`: The Rust source code file.
+    - `app/Cargo.toml`: This file contains the definition of the Cargo package.
+    - `app/src/lib.rs`: The Rust source code file.
 
 3. Add `**/target/` to `.gitignore`.
 
    > :bulb: This is the folder where Cargo stores the build intermediate files and the final Rust
    > library.
 
-4. (Optional) Move `composeApp/src/lib.rs` to `composeApp/src/commonMain/rust/lib.rs`.
-
-   ![The Android Studio screen after moving lib.rs](./tutorial/img_2.png)
+4. (Optional) Move `app/src/lib.rs` to `app/src/main/rust/lib.rs`.
 
    > :bulb: When you use CMake in an Android project, C++ source files are usually located in
    > `src/main/cpp`. This procedure imitates that behavior. It feels more organized, isn't it?
 
-5. Modify `composeApp/Cargo.toml` like the following.
+5. Modify `app/Cargo.toml` like the following.
 
    ```toml
    # This part is already added by cargo init.
    [package]
-   name = "compose-app"
+   name = "app"
    version = "0.1.0"
    edition = "2024"
 
@@ -104,21 +94,20 @@ Let's add a Cargo to the Kotlin Multiplatform project.
 
    # This as well.
    [lib]
-   crate-type = ["cdylib", "staticlib"]
+   crate-type = ["cdylib"]
    # Put this only if you moved lib.rs.
-   path = "src/commonMain/rust/lib.rs"
+   path = "src/main/rust/lib.rs"
    ```
 
    Let's see what each part of the modification does:
 
     - `uniffi = "0.28.3"` downloads UniFFI, the library used to generate the Kotlin code (the "
       bindings") that calls the Rust library.
-    - `crate-type = ["cdylib", "staticlib"]` will make Cargo generate a `.a` (static library) file
-      and a `.so`/`.dylib` (dynamic library) file that can be used by Gobley. Gobley uses the static
-      library file when building for iOS, and the dynamic library file for Android.
-    - `path = "src/commonMain/rust/lib.rs"` designates the path to the Rust source code.
+    - `crate-type = ["cdylib"]` will make Cargo generate a `.so` (dynamic library) file that can be
+      used by Gobley.
+    - `path = "src/main/rust/lib.rs"` designates the path to the Rust source code.
 
-6. Modify `composeApp/build.gradle.kts` like the following.
+6. Modify `app/build.gradle.kts` like the following.
 
    ```kotlin
    plugins {
@@ -143,13 +132,11 @@ Let's add a Cargo to the Kotlin Multiplatform project.
 We're now ready to code both in Rust and Kotlin! Press the **Sync Now** button to make the IDE
 download the Gradle plugins.
 
-![The Android Studio screen after configuring the Gradle plugins](./tutorial/img_3.png)
-
 ## Defining and exposing Rust types and functions
 
-Now is the time to code in Rust. Open `composeApp` in Visual Studio Code. Once `rust-analyzer` is
-ready, you can see highlightings and inlay hints in the code editor. Modify
-`src/commonMain/rust/lib.rs` as follows.
+Now is the time to code in Rust. Open `app` in Visual Studio Code. Once `rust-analyzer` is ready,
+you can see highlightings and inlay hints in the code editor. Modify `src/main/rust/lib.rs`
+as follows.
 
 ```rust
 /// This exports this Rust function to the Kotlin side.
@@ -182,12 +169,10 @@ impl Greeter {
 uniffi::setup_scaffolding!();
 ```
 
-![The Visual Studio Code screen after modifying lib.rs](./tutorial/img_4.png)
-
 By just applying `#[uniffi::export]` or similar macros, the functions and the types become available
 on the Kotlin side. Go back to Android Studio and run **Build > Make Project**. Cargo will start
 building the Rust library inside Android Studio. After the build completes, open
-`composeApp/src/commonMain/dev/gobley/myfirstproject/App.kt`. Add the following lines to the part
+`app/src/main/java/dev/gobley/myfirstproject/MainActivity.kt`. Add the following lines to the part
 you prefer:
 
 ```kotlin
@@ -210,21 +195,6 @@ Let's run the Android app. Hit the Run button on the upper right corner of the s
 the Rust library is included in the final app automatically, and the app communicates with the Rust
 part without any issues.
 
-Let's run the iOS app as well. Open `iosApp/iosApp.xcodeproj` in Xcode. Run:
-
-```shell
-open -a "Xcode" ./iosApp/iosApp.xcodeproj
-```
-
-![The Xcode screen after launching](./tutorial/img_5.png)
-
-Since the part connecting Swift and Kotlin is handled by the Kotlin Multiplatform Wizard, we can
-just hit the Run button as well on Xcode.
-
-| Android                                                            | iOS                                                             |
-|--------------------------------------------------------------------|-----------------------------------------------------------------|
-| ![The app screen inside an Android emulator](./tutorial/img_6.png) | ![The app screen inside an iOS simulator](./tutorial/img_7.png) |
-
 ## Next step
 
-And that's how you embed Rust into your Kotlin Multiplatform project.
+And that's how you embed Rust into your Android project.
