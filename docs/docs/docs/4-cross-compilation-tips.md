@@ -166,8 +166,9 @@ You're ready to start building your library and application for Linux.
 
 ## LLVM version compatibility on Apple Platforms
 
-If you encounter an undefined symbols linker error like the following when building your Rust library that has
-a dependency on a C library for iOS, you may have an LLVM version compatibility issue.
+If you encounter an undefined symbols linker error like the following when building your Rust
+library that has a dependency on a C library for iOS, you may have an LLVM version compatibility
+issue.
 
 ```
 Undefined symbols for architecture arm64:
@@ -207,8 +208,8 @@ InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault
 You can see Xcode 16.2 uses LLVM 16. So, the linker in Apple LLVM 16 tried to link object files that
 targets LLVM 19, which resulted in a linker error.
 
-To resolve this issue, try downgrading your Rust toolchain to a version that uses lower LLVM version.
-For example, Rust 1.81 uses LLVM 18, so downgrading to 1.81 might help.
+To resolve this issue, try downgrading your Rust toolchain to a version that uses lower LLVM
+version. For example, Rust 1.81 uses LLVM 18, so downgrading to 1.81 might help.
 
 ```
 > rustup target add 1.81
@@ -223,18 +224,18 @@ release: 1.81.0
 LLVM version: 18.1.7
 ```
 
-You can also set the toolchain directory via the `toolchainDirectory` property in the `rust {}` block, so
-consider using this if you don't want to `rustup default 1.81`.
+You can also set the toolchain directory via the `toolchainDirectory` property in the `rust {}`
+block, so consider using this if you don't want to `rustup default 1.81`.
 
-To see which Rust version uses which LLVM version, see the Rust compiler
-[CHANGELOG](https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1820-2024-10-17). You can see
-LLVM version upgrade notes in `Internal Changes` sections.
+To see which Rust version uses which LLVM version, see the Rust
+compiler [CHANGELOG](https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1820-2024-10-17).
+You can see LLVM version upgrade notes in `Internal Changes` sections.
 
 ## C++ Runtime on Android NDK
 
-Android NDK has multiple kinds of C++ runtime libraries, so it is important to check which one you are using now.
-If you encounter a linker error (whether it's dynamic or static) mentioning functions like `__cxa_pure_virtual`,
-you may have not linked C++ runtime to your library properly.
+Android NDK has multiple kinds of C++ runtime libraries, so it is important to check which one you
+are using now. If you encounter a linker error (whether it's dynamic or static) mentioning functions
+like `__cxa_pure_virtual`, you may have not linked C++ runtime to your library properly.
 
 Such error can be a dynamic library load error in runtime like the following:
 
@@ -248,15 +249,16 @@ or a linking error occurred during build as below.
 <file name>: undefined reference to `__cxa_pure_virtual'
 ```
 
-Currently, two C++ runtime libraries are available: `libc++_static.a` and `libc++_shared.so`. The criteria
-for choosing which one to use is explained in detail in
+Currently, two C++ runtime libraries are available: `libc++_static.a` and `libc++_shared.so`. The
+criteria for choosing which one to use is explained in detail in
 [the official documentation](https://developer.android.com/ndk/guides/cpp-support#ic). If you are
 embedding your Rust library to an application, use `libc++_shared.so`.
 
-To link C++ runtime, use Cargo [build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
-Configure the path to the directory containing the runtime libraries via the `cargo::rustc-link-search`
-command. Use `cargo::rustc-link-lib` to control which runtime library to link. For example in
-`<manifest dir>/build.rs`:
+To link C++ runtime, use
+Cargo [build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
+Configure the path to the directory containing the runtime libraries via the
+`cargo::rustc-link-search` command. Use `cargo::rustc-link-lib` to control which runtime library to
+link. For example in `<manifest dir>/build.rs`:
 
 ```rust
 use std::env;
@@ -315,16 +317,17 @@ fn main() {
 }
 ```
 
-Some Rust libraries automatically find `libc++_static.a` or `libc++_shared.so` from NDK, and they usually
-allow users to control this using Cargo features. If some of your dependency uses `libc++_static.a` while
-others use `libc++_shared.so`, you may encounter another linker error like the following.
+Some Rust libraries automatically find `libc++_static.a` or `libc++_shared.so` from NDK, and they
+usually allow users to control this using Cargo features. If some of your dependency uses
+`libc++_static.a` while others use `libc++_shared.so`, you may encounter another linker error like
+the following.
 
 ```
 ld: error: <HOME>/.rustup/toolchains/.../lib/rustlib/armv7-linux-androideabi/lib/libcompiler_builtins-...(compiler_builtins-... .o): symbol __aeabi_memcpy8@@LIBC_N has undefined version LIBC_N
 ```
 
-Before such error is printed, Cargo shows the entire linker invocation arguments. For example, you may
-be able to see something like:
+Before such error is printed, Cargo shows the entire linker invocation arguments. For example, you
+may be able to see something like:
 
 ```
 error: linking with `<linker path>` failed: exit status: 1
@@ -332,10 +335,11 @@ error: linking with `<linker path>` failed: exit status: 1
   = note: LC_ALL="C" PATH="..." "<linker path>" <arguments ...>
 ```
 
-Copy this error and see if both `-lc++_static` and `-lc++_shared` are in the invocation. If this is the
-case, inspect the output emitted by build scripts of dependencies. You can read it from
+Copy this error and see if both `-lc++_static` and `-lc++_shared` are in the invocation. If this is
+the case, inspect the output emitted by build scripts of dependencies. You can read it from
 `target[/<Cargo triplet>]/<profile>/build/<package name>-<hash>/output`. For example in
-`target/aarch64-linux-android/debug/build/blake3-<hash>/output`, you can see something like the following.
+`target/aarch64-linux-android/debug/build/blake3-<hash>/output`, you can see something like the
+following.
 
 ```
 cargo:rerun-if-env-changed=CARGO_FEATURE_PURE
@@ -353,9 +357,9 @@ HOST = Some("aarch64-apple-darwin")
 
 Check whether there is something like `cargo::rustc-link-lib=c++_static` in it.
 
-When you use `libc++_shared.so`, it should be embedded into the application. Use the `dynamicLibraries`
-property in the `builds.android {}` block to ensure `libc++_shared.so` is included in the resulting
-Android application/library.
+When you use `libc++_shared.so`, it should be embedded into the application. Use the
+`dynamicLibraries` property in the `builds.android {}` block to ensure `libc++_shared.so` is
+included in the resulting Android application/library.
 
 ```
 cargo {

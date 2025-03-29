@@ -4,8 +4,10 @@ slug: /gradle-plugins/uniffi
 
 # The UniFFI plugin
 
-The UniFFI plugin is responsible for generating Kotlin bindings from your Rust package. Here is an example of using the
-UniFFI plugin to build bindings from the resulting library binary.
+> :bulb: We recommend to first read the [UniFFI user guide](https://mozilla.github.io/uniffi-rs/).
+
+The UniFFI plugin is responsible for generating Kotlin bindings from your Rust package. Here is an
+example of using the UniFFI plugin to build bindings from the resulting library binary.
 
 ```kotlin
 import gobley.gradle.Variant
@@ -32,7 +34,8 @@ uniffi {
 }
 ```
 
-If you want to generate bindings from a UDL file as well, you can specify the path using the `generateFromUdl {}` block.
+If you want to generate bindings from a UDL file as well, you can specify the path using the
+`generateFromUdl {}` block.
 
 ```kotlin
 uniffi {
@@ -54,8 +57,8 @@ uniffi {
 }
 ```
 
-When you use Kotlin targets not supported by the UniFFI plugin like `js()`, `wasmJs()`, or `wasmWasi()`,
-the UniFFI plugin generates stubs. This ensures that the Kotlin code is compiled successfully for all
-platforms. However, all generated functions except for `RustObject(NoPointer)` constructors will throw
-`kotlin.NotImplementedError`. We are trying to support as many platforms as possible. If you need to
-target WASM/JS, please use these stubs until WASM/JS support is released.
+When you use Kotlin targets not supported by the UniFFI plugin like `js()`, `wasmJs()`, or
+`wasmWasi()`, the UniFFI plugin generates stubs. This ensures that the Kotlin code is compiled
+successfully for all platforms. However, all generated functions except for `RustObject(NoPointer)`
+constructors will throw `kotlin.NotImplementedError`. We are trying to support as many platforms as
+possible. If you need to target WASM/JS, please use these stubs until WASM/JS support is released.

@@ -4,10 +4,12 @@ slug: /
 
 # Overview
 
-We recommend to first read the [UniFFI user guide](https://mozilla.github.io/uniffi-rs/). Then, please read this documentation in the following order.
+Gobley is a set of libraries and tools that help you mix Rust and Kotlin, so you can focus on
+implementing your business logic. To get started, please refer to
+the [tutorial](../tutorial/0-tutorial.md). After you finished setting up the project, please read
+the documentation in the following order:
 
-- [Development environment and common development practices](./1-common-development-practices.md)
+- [Common development practices](./1-common-development-practices.md)
 - [Using the Gradle plugin](./2-gradle-plugins/0-plugins.md)
 - [The Bindgen](./3-bindgen.md)
-- [Bindgen configuration](#bindgen-configuration)
-- [Cross-compilation tips](#cross-compilation-tips)
+- [Cross-compilation tips](./4-cross-compilation-tips.md)
