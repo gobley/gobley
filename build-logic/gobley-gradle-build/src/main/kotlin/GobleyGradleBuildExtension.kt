@@ -21,14 +21,23 @@ abstract class GobleyGradleBuildExtension(private val project: Project) {
         project.rootProject.layout.projectDirectory.file("../bindgen/Cargo.toml").asFile
     )
 
-    fun configureGobleyGradleProject(description: String, gradlePlugin: Boolean = false) {
-        project.configureGobleyGradleProject(description, gradlePlugin)
+    fun configureGobleyGradleProject(
+        description: String,
+        gradlePlugin: Boolean = false,
+        signing: Boolean = needsSigning(),
+    ) {
+        project.configureGobleyGradleProject(description, gradlePlugin, signing)
+    }
+
+    private fun needsSigning(): Boolean {
+        return project.findProperty("signingInMemoryKey") != null
     }
 }
 
 private fun Project.configureGobleyGradleProject(
     description: String,
     gradlePlugin: Boolean,
+    signing: Boolean,
 ) {
     configureProjectProperties(description)
     configureKotlinProperties()
@@ -38,7 +47,7 @@ private fun Project.configureGobleyGradleProject(
             junitXml.required.set(true)
         }
     }
-    configureMavenCentralPublishing(gradlePlugin)
+    configureMavenCentralPublishing(gradlePlugin, signing)
 }
 
 private fun Project.configureProjectProperties(
@@ -58,7 +67,7 @@ private fun Project.configureKotlinProperties() {
     }
 }
 
-private fun Project.configureMavenCentralPublishing(gradlePlugin: Boolean) {
+private fun Project.configureMavenCentralPublishing(gradlePlugin: Boolean, signing: Boolean) {
     extensions.configure(MavenPublishBaseExtension::class.java) {
         configure(
             if (gradlePlugin) {
@@ -74,7 +83,9 @@ private fun Project.configureMavenCentralPublishing(gradlePlugin: Boolean) {
             }
         )
         publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-        signAllPublications()
+        if (signing) {
+            signAllPublications()
+        }
         coordinates(group.toString(), name, version.toString())
         pom {
             name.set(project.name)
