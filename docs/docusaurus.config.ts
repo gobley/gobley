@@ -49,7 +49,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: "img/Gobley-Social-Card.svg",
+    image: "img/Gobley-Social-Card.png",
     colorMode: {
       respectPrefersColorScheme: true,
     },
