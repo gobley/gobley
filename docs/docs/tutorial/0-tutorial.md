@@ -137,7 +137,8 @@ Let's add a Cargo package to the Kotlin Multiplatform project.
    Let's see what each plugin does:
 
     - `dev.gobley.cargo` builds and links the Rust library to the Kotlin application.
-    - `dev.gobley.uniffi` generates the bindings using UniFFI.
+    - `dev.gobley.uniffi` generates the bindings using UniFFI. You can change the package name of
+      the bindings inside the `uniffi {}` block.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
 We're now ready to code both in Rust and Kotlin! Press the **Sync Now** button to make the IDE
@@ -147,8 +148,15 @@ download the Gradle plugins.
 
 ## Defining and exposing Rust types and functions
 
-Now is the time to code in Rust. Open `composeApp` in Visual Studio Code. Once `rust-analyzer` is
-ready, you can see highlightings and inlay hints in the code editor. Modify
+Now is the time to code in Rust. Open `composeApp` in Visual Studio Code.
+
+```shell
+code ./composeApp
+# or on macOS
+open -a "Visual Studio Code" ./composeApp
+```
+
+Once `rust-analyzer` is ready, you can see highlightings and inlay hints in the code editor. Modify
 `src/commonMain/rust/lib.rs` as follows.
 
 ```rust
@@ -203,6 +211,8 @@ Column {
 }
 ```
 
+![The Android studio screen after modifying the composable function](./0-tutorial/img-5.png)
+
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
 
@@ -216,15 +226,16 @@ Let's run the iOS app as well. Open `iosApp/iosApp.xcodeproj` in Xcode. Run:
 open -a "Xcode" ./iosApp/iosApp.xcodeproj
 ```
 
-![The Xcode screen after launching](./0-tutorial/img-5.png)
+![The Xcode screen after launching](./0-tutorial/img-6.png)
 
 Since the part connecting Swift and Kotlin is handled by the Kotlin Multiplatform Wizard, we can
 just hit the Run button as well on Xcode.
 
-| Android                                                            | iOS                                                             |
-|--------------------------------------------------------------------|-----------------------------------------------------------------|
-| ![The app screen inside an Android emulator](./0-tutorial/img-6.png) | ![The app screen inside an iOS simulator](./0-tutorial/img-7.png) |
+| Android                                                              | iOS                                                               |
+|----------------------------------------------------------------------|-------------------------------------------------------------------|
+| ![The app screen inside an Android emulator](./0-tutorial/img-7.png) | ![The app screen inside an iOS simulator](./0-tutorial/img-8.png) |
 
 ## Next step
 
-And that's how you embed Rust into your Kotlin Multiplatform project.
+And that's how you embed Rust into your Kotlin project. If you need more detailed information about
+Gobley, please read the [documentation](../docs/0-overview.md).

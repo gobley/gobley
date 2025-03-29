@@ -37,12 +37,12 @@ Let's first create a new Android project.
 
 > :bulb: Gobley can be used without Compose, but the rest of this tutorial will use Compose.
 
-![The new project screen](./1-tutorial-android/img-1.png)
+![The new project wizard](./1-tutorial-android/img-1.png)
 
 4. Rename the project to `MyFirstGobleyProject` and the package to `dev.gobley.myfirstproject`.
 5. Make sure you selected **Kotlin DSL** for **Build configuration language**.
 
-![The new project screen](./1-tutorial-android/img-2.png)
+![The Android studio screen after the project opened](./1-tutorial-android/img-2.png)
 
 6. Click the **Finish** button, and the project will open.
 
@@ -75,6 +75,8 @@ Let's add a Cargo package to the Android project.
    > library.
 
 4. (Optional) Move `app/src/lib.rs` to `app/src/main/rust/lib.rs`.
+
+   ![The Android Studio screen after moving lib.rs](./1-tutorial-android/img-3.png)
 
    > :bulb: When you use CMake in an Android project, C++ source files are usually located in
    > `src/main/cpp`. This procedure imitates that behavior. It feels more organized, isn't it?
@@ -126,17 +128,27 @@ Let's add a Cargo package to the Android project.
    Let's see what each plugin does:
 
     - `dev.gobley.cargo` builds and links the Rust library to the Kotlin application.
-    - `dev.gobley.uniffi` generates the bindings using UniFFI.
+    - `dev.gobley.uniffi` generates the bindings using UniFFI. You can change the package name of
+      the bindings inside the `uniffi {}` block.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
 We're now ready to code both in Rust and Kotlin! Press the **Sync Now** button to make the IDE
 download the Gradle plugins.
 
+![The Android Studio screen after configuring the Gradle plugins](./1-tutorial-android/img-4.png)
+
 ## Defining and exposing Rust types and functions
 
-Now is the time to code in Rust. Open `app` in Visual Studio Code. Once `rust-analyzer` is ready,
-you can see highlightings and inlay hints in the code editor. Modify `src/main/rust/lib.rs`
-as follows.
+Now is the time to code in Rust. Open `app` in Visual Studio Code.
+
+```shell
+code ./app
+# or on macOS
+open -a "Visual Studio Code" ./app
+```
+
+Once `rust-analyzer` is ready, you can see highlightings and inlay hints in the code editor. Modify
+`src/main/rust/lib.rs` as follows.
 
 ```rust
 /// This exports this Rust function to the Kotlin side.
@@ -169,6 +181,8 @@ impl Greeter {
 uniffi::setup_scaffolding!();
 ```
 
+![The Visual Studio Code screen after modifying lib.rs](./1-tutorial-android/img-5.png)
+
 By just applying `#[uniffi::export]` or similar macros, the functions and the types become available
 on the Kotlin side. Go back to Android Studio and run **Build > Make Project**. Cargo will start
 building the Rust library inside Android Studio. After the build completes, open
@@ -176,9 +190,9 @@ building the Rust library inside Android Studio. After the build completes, open
 you prefer:
 
 ```kotlin
-Column {
-    Text("Addition using Rust: 2 + 3 = ${uniffi.compose_app.add(2, 3)}")
-    val greeting = remember { uniffi.compose_app.Greeter("Hello") }
+Column(Modifier.safeContentPadding()) {
+    Text("Addition using Rust: 2 + 3 = ${uniffi.app.add(2, 3)}")
+    val greeting = remember { uniffi.app.Greeter("Hello") }
     Text(greeting.greet("Rust"))
     DisposableEffect(greeting) {
         onDispose {
@@ -188,6 +202,9 @@ Column {
 }
 ```
 
+<!-- TODO: Modify this after resolving #78 and #79 -->
+![The Android studio screen after modifying the composable function](./1-tutorial-android/img-6.png)
+
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
 
@@ -195,6 +212,9 @@ Let's run the Android app. Hit the Run button on the upper right corner of the s
 the Rust library is included in the final app automatically, and the app communicates with the Rust
 part without any issues.
 
+![The app screen inside an Android emulator](./1-tutorial-android/img-7.png)
+
 ## Next step
 
-And that's how you embed Rust into your Android project.
+And that's how you embed Rust into your Kotlin project. If you need more detailed information about
+Gobley, please read the [documentation](../docs/0-overview.md).

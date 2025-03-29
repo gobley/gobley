@@ -237,5 +237,5 @@ just hit the Run button as well on Xcode.
 
 ## Next step
 
-And that's how you embed Rust into your Kotlin Multiplatform project. If you need more detailed
-information about Gobley, please read the [documentation](../docs).
+And that's how you embed Rust into your Kotlin project. If you need more detailed information about
+Gobley, please read the [documentation](../docs/docs.md).
