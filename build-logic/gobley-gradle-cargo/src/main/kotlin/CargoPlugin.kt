@@ -34,7 +34,6 @@ import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustJvmTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.tasks.useGlobalLock
-import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.PluginUtils
 import gobley.gradle.variant
 import org.gradle.api.Action
@@ -42,20 +41,18 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.file.Directory
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.JavaExec
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.listProperty
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
-import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
@@ -230,9 +227,6 @@ class CargoPlugin : Plugin<Project> {
     }
 
     private fun Project.configureBuildTasks() {
-        val androidTarget = cargoExtension.builds.firstNotNullOfOrNull { build ->
-            build.kotlinTargets.firstNotNullOfOrNull { it as? KotlinAndroidTarget }
-        }
         for (cargoBuild in cargoExtension.builds) {
             val rustUpTargetAddTask =
                 tasks.register<RustUpTargetAddTask>({ +cargoBuild.rustTarget }) {
@@ -282,8 +276,6 @@ class CargoPlugin : Plugin<Project> {
                                 kotlinTarget,
                                 // cargoBuild.jvmVariant is checked inside
                                 this,
-                                // required for Android local unit tests
-                                androidTarget,
                             )
                         }
                     }
@@ -318,7 +310,6 @@ class CargoPlugin : Plugin<Project> {
     private fun Project.configureJvmPostBuildTasks(
         kotlinTarget: KotlinTarget,
         cargoBuildVariant: CargoJvmBuildVariant<*>,
-        androidTarget: KotlinAndroidTarget?,
     ) {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
@@ -333,15 +324,6 @@ class CargoPlugin : Plugin<Project> {
             libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
 
-        val resourcePrefix = cargoBuildVariant.resourcePrefix.orNull?.takeIf(String::isNotEmpty)
-        val resourceDirectory = layout.buildDirectory
-            .dir("intermediates/rust/${cargoBuildVariant.rustTarget.rustTriple}/${cargoBuildVariant.variant}")
-        val copyDestination =
-            if (resourcePrefix == null) resourceDirectory else resourceDirectory.map {
-                it.dir(
-                    resourcePrefix
-                )
-            }
         val libraryFiles = project.objects.listProperty<File>().apply {
             add(buildTask.flatMap { task ->
                 task.libraryFileByCrateType.map { it[CrateType.SystemDynamicLibrary]!!.asFile }
@@ -349,28 +331,43 @@ class CargoPlugin : Plugin<Project> {
             addAll(findDynamicLibrariesTask.flatMap { it.libraryPaths })
         }
 
-        val copyTask = tasks.register<Copy>({
-            +"jvm"
+        val jarTask = tasks.register<Jar>({
+            +"jvmRustRuntime"
             +cargoBuildVariant
         }) {
             group = TASK_GROUP
             from(libraryFiles)
-            into(copyDestination)
+            into(cargoBuildVariant.resourcePrefix)
+            @OptIn(InternalGobleyGradleApi::class)
+            archiveClassifier.set(
+                when {
+                    kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> cargoBuildVariant.resourcePrefix
+                    else -> cargoBuildVariant.resourcePrefix.map { "${kotlinTarget.name}-$it" }
+                }
+            )
             dependsOn(buildTask, findDynamicLibrariesTask)
         }
 
+        @OptIn(InternalGobleyGradleApi::class)
         if (cargoBuildVariant.embedRustLibrary.get() && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()) {
-            kotlinTarget.compilations.getByName("main").defaultSourceSet {
-                resources.srcDir(resourceDirectory)
+            val expectedExecName = when {
+                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "run"
+                else -> "${kotlinTarget.name}Run"
             }
-            tasks.withType<ProcessResources> {
-                @OptIn(InternalGobleyGradleApi::class)
-                if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
-                    if (name == "processResources") {
-                        dependsOn(copyTask)
-                    }
-                } else if (name.contains(kotlinTarget.name)) {
-                    dependsOn(copyTask)
+            tasks.withType<JavaExec> {
+                if (name == expectedExecName) {
+                    dependsOn(jarTask)
+                    classpath += files(jarTask.flatMap { it.archiveFile })
+                }
+            }
+            val expectedTestName = when {
+                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "test"
+                else -> "${kotlinTarget.name}Test"
+            }
+            tasks.withType<org.gradle.api.tasks.testing.Test> {
+                if (name == expectedTestName) {
+                    dependsOn(jarTask)
+                    classpath += files(jarTask.flatMap { it.archiveFile })
                 }
             }
         }
@@ -380,66 +377,9 @@ class CargoPlugin : Plugin<Project> {
                 dependsOn(checkTask)
             }
         }
-
-        if (androidTarget != null && cargoBuildVariant.androidUnitTest.get()) {
-            androidDelegate.addTestSourceDir(
-                cargoBuildVariant.variant,
-                resourceDirectory,
-            )
-
-            // Copy the dynamic library to the current project's android unit tests.
-            copyJvmBuildResultsToAndroidUnitTest(
-                copyTask,
-                cargoBuildVariant,
-                resourceDirectory,
-                libraryFiles,
-                resourcePrefix,
-            )
-
-            // Copy the dynamic library to all android unit tests of the same variant in projects dependent on this project.
-            @OptIn(InternalGobleyGradleApi::class)
-            DependencyUtils.configureEachDependentProjects(project) { dependent ->
-                dependent.copyJvmBuildResultsToAndroidUnitTest(
-                    copyTask,
-                    cargoBuildVariant,
-                    resourceDirectory,
-                    libraryFiles,
-                    resourcePrefix,
-                )
-            }
-        }
     }
 
-    private fun Project.copyJvmBuildResultsToAndroidUnitTest(
-        copyTask: TaskProvider<Copy>,
-        cargoBuildVariant: CargoJvmBuildVariant<*>,
-        resourceDirectory: Provider<Directory>,
-        libraryFiles: Provider<out Iterable<File>>,
-        resourcePrefix: String?,
-    ) {
-        val fileTree = objects.fileTree().from(resourceDirectory)
-        val libraryFilesTree = libraryFiles.map { files ->
-            fileTree.matching {
-                for (libraryFile in files) {
-                    includes += if (resourcePrefix == null) {
-                        setOf("/${libraryFile.name}")
-                    } else {
-                        setOf("/$resourcePrefix/${libraryFile.name}")
-                    }
-                }
-            }.toList()
-        }
-        androidDelegate.addUnitTestResource(
-            this,
-            cargoBuildVariant.variant,
-            copyTask,
-            libraryFilesTree,
-        )
-    }
-
-    private fun Project.configureAndroidPostBuildTasks(
-        cargoBuildVariant: CargoAndroidBuildVariant,
-    ) {
+    private fun Project.configureAndroidPostBuildTasks(cargoBuildVariant: CargoAndroidBuildVariant) {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
         val findDynamicLibrariesTask = cargoBuildVariant.findDynamicLibrariesTaskProvider
