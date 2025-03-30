@@ -25,6 +25,14 @@ kotlin {
         jvmTarget = JvmTarget.JVM_17
     }
     sourceSets {
+        test {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.androidx.test.core)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotest.assertions.core)
+            }
+        }
         androidTest {
             dependencies {
                 implementation(libs.junit)
