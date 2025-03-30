@@ -16,8 +16,8 @@ android-targetSdk = "35"
 
 androidx-activity-compose = "1.10.0"
 androidx-annotation = "1.8.2"
-androidx-core = "1.6.1"
-androidx-runner = "1.6.2"
+androidx-test-core = "1.6.1"
+androidx-test-runner = "1.6.2"
 
 jna = "5.17.0"
 junit = "4.13.2"
@@ -48,8 +48,8 @@ vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = 
 
 [libraries]
 
-androidx-core = { module = "androidx.test:core", version.ref = "androidx-core" }
-androidx-runner = { module = "androidx.test:runner", version.ref = "androidx-runner" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }

@@ -28,8 +28,8 @@ kotlin {
         androidTest {
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.androidx.core)
-                implementation(libs.androidx.runner)
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.runner)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.kotest.assertions.core)
             }
