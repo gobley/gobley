@@ -7,6 +7,11 @@
 package gobley.gradle.utils
 
 import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.PluginIds
+import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
+import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
@@ -58,5 +63,17 @@ object PluginUtils {
             append("  // ...\n")
             append("}\n")
         }.toString()
+    }
+
+    fun withKotlinPlugin(project: Project, action: (GobleyKotlinExtensionDelegate) -> Unit) {
+        project.plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
+            action(GobleyKotlinMultiplatformExtensionDelegate(project))
+        }
+        project.plugins.withId(PluginIds.KOTLIN_ANDROID) {
+            action(GobleyKotlinAndroidExtensionDelegate(project))
+        }
+        project.plugins.withId(PluginIds.KOTLIN_JVM) {
+            action(GobleyKotlinJvmExtensionDelegate(project))
+        }
     }
 }

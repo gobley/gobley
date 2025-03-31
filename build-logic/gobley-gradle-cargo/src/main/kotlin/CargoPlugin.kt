@@ -25,15 +25,13 @@ import gobley.gradle.cargo.tasks.CargoTask
 import gobley.gradle.cargo.tasks.RustUpTargetAddTask
 import gobley.gradle.cargo.tasks.RustUpTask
 import gobley.gradle.cargo.utils.register
-import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
-import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
-import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustJvmTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.tasks.useGlobalLock
+import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.PluginUtils
 import gobley.gradle.variant
 import org.gradle.api.Action
@@ -115,19 +113,10 @@ class CargoPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.watchPluginChanges() {
-        plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
-            kotlinExtensionDelegate = GobleyKotlinMultiplatformExtensionDelegate(project)
+        PluginUtils.withKotlinPlugin(this) { delegate ->
+            kotlinExtensionDelegate = delegate
             kotlinExtensionDelegate.targets.configureEach { planBuilds() }
         }
-        plugins.withId(PluginIds.KOTLIN_ANDROID) {
-            kotlinExtensionDelegate = GobleyKotlinAndroidExtensionDelegate(project)
-            kotlinExtensionDelegate.targets.configureEach { planBuilds() }
-        }
-        plugins.withId(PluginIds.KOTLIN_JVM) {
-            kotlinExtensionDelegate = GobleyKotlinJvmExtensionDelegate(project)
-            kotlinExtensionDelegate.targets.configureEach { planBuilds() }
-        }
-
         val androidPluginAction = Action<Plugin<*>> {
             androidDelegate = CargoPluginAndroidDelegate(project)
             val abiFilters = androidDelegate.abiFilters
