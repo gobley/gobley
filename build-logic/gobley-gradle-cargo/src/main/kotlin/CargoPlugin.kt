@@ -6,7 +6,6 @@
 
 package gobley.gradle.cargo
 
-import com.android.build.gradle.tasks.factory.AndroidUnitTest
 import gobley.gradle.AppleSdk
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
@@ -368,19 +367,22 @@ class CargoPlugin : Plugin<Project> {
             group = TASK_GROUP
             from(libraryFiles)
             into(cargoBuildVariant.resourcePrefix)
-            val variant = cargoBuildVariant.build.jvmVariant.get()
+            val variantSuffix = when (val variant = cargoBuildVariant.variant) {
+                Variant.Debug -> "-$variant"
+                else -> ""
+            }
             @OptIn(InternalGobleyGradleApi::class)
             archiveClassifier.set(
                 when (kotlinExtensionDelegate.pluginId) {
-                    PluginIds.KOTLIN_JVM -> cargoBuildVariant.resourcePrefix
+                    PluginIds.KOTLIN_JVM -> cargoBuildVariant.resourcePrefix.map { "$it$variantSuffix" }
                     PluginIds.KOTLIN_ANDROID -> cargoBuildVariant.resourcePrefix.map {
-                        "android-local-$variant-$it"
+                        "android-local-$it$variantSuffix"
                     }
 
                     else -> cargoBuildVariant.resourcePrefix.map {
                         when {
-                            kotlinTarget is KotlinAndroidTarget -> "android-local-$variant-$it"
-                            else -> "${kotlinTarget.name}-$it"
+                            kotlinTarget is KotlinAndroidTarget -> "android-local-$it$variantSuffix"
+                            else -> "${kotlinTarget.name}-$it$variantSuffix"
                         }
                     }
                 }
@@ -394,24 +396,14 @@ class CargoPlugin : Plugin<Project> {
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()
         ) {
-            val expectedExecName = when {
-                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "run"
-                else -> "${kotlinTarget.name}Run"
+            val expectedSourceSetName = when {
+                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "main"
+                else -> "${kotlinTarget.name}Main"
             }
-            tasks.withType<JavaExec> {
-                if (name == expectedExecName) {
-                    dependsOn(jarTask)
-                    classpath += files(jarTask.flatMap { it.archiveFile })
-                }
-            }
-            val expectedTestName = when {
-                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "test"
-                else -> "${kotlinTarget.name}Test"
-            }
-            tasks.withType<org.gradle.api.tasks.testing.Test> {
-                if (name == expectedTestName) {
-                    dependsOn(jarTask)
-                    classpath += files(jarTask.flatMap { it.archiveFile })
+            // Modifying classpath of AndroidUnitTest does not work. This is a workaround for it.
+            with(kotlinExtensionDelegate.sourceSets.getByName(expectedSourceSetName)) {
+                dependencies {
+                    runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
             }
         }
@@ -428,16 +420,9 @@ class CargoPlugin : Plugin<Project> {
                 kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID -> "test"
                 else -> "androidUnitTest"
             }
-            // Modifying classpath of AndroidUnitTest does not work. This is a workaround for it.
             with(kotlinExtensionDelegate.sourceSets.getByName(expectedAndroidUnitTestName)) {
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
-                }
-            }
-            tasks.withType<AndroidUnitTest> {
-                if (variant == cargoBuildVariant.variant) {
-                    dependsOn(jarTask)
-                    classpath += files(jarTask.flatMap { it.archiveFile })
                 }
             }
         }
