@@ -44,7 +44,6 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.JavaExec
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.listProperty
@@ -71,6 +70,10 @@ class CargoPlugin : Plugin<Project> {
     private lateinit var androidDelegate: CargoPluginAndroidDelegate
 
     override fun apply(target: Project) {
+        @OptIn(InternalGobleyGradleApi::class)
+        if (!target.plugins.hasPlugin(PluginIds.GOBLEY_RUST)) {
+            DependencyUtils.createConfigurations(target)
+        }
         cargoExtension = target.extensions.create<CargoExtension>(TASK_GROUP, target)
         cargoExtension.jvmVariant.convention(Variant.Debug)
         cargoExtension.nativeVariant.convention(Variant.Debug)
@@ -109,6 +112,9 @@ class CargoPlugin : Plugin<Project> {
 
         configureBuildTasks()
         configureCleanTasks()
+
+        @OptIn(InternalGobleyGradleApi::class)
+        DependencyUtils.resolveJvmRustLibraryConfigurations(target)
     }
 
     @OptIn(InternalGobleyGradleApi::class)
@@ -385,6 +391,11 @@ class CargoPlugin : Plugin<Project> {
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()
         ) {
+            DependencyUtils.addJvmRuntimeRustLibraryJar(
+                this,
+                cargoBuildVariant.rustTarget,
+                jarTask,
+            )
             val expectedSourceSetName = when {
                 kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "main"
                 else -> "${kotlinTarget.name}Main"
