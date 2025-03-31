@@ -42,12 +42,17 @@ private class AndroidSystemCleanable(
     override fun clean() = cleanable.clean()
 }
 
-private fun UniffiCleaner.Companion.create(): UniffiCleaner =
+private fun UniffiCleaner.Companion.create(): UniffiCleaner {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-        AndroidSystemCleaner()
-    } else {
-        UniffiJnaCleaner()
+        try {
+            return AndroidSystemCleaner()
+        } catch (_: IllegalAccessError) {
+            // (For Compose preview) Fallback to UniffiJnaCleaner if AndroidSystemCleaner is
+            // unavailable, even for API level 34 or higher.
+        }
     }
+    return UniffiJnaCleaner()
+}
 
 {%- else %}
 
