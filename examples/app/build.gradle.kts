@@ -10,6 +10,11 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+dependencies {
+    add("rustRuntimeOnly", project(":examples:arithmetic-procmacro"))
+    add("rustRuntimeOnly", project(":examples:todolist"))
+}
+
 kotlin {
     androidTarget {
         compilerOptions {
