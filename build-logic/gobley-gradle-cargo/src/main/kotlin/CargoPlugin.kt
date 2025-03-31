@@ -425,6 +425,21 @@ class CargoPlugin : Plugin<Project> {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
             }
+            // This is for Android Compose Preview
+            if (cargoBuildVariant.variant == Variant.Debug) {
+                val expectedAndroidDebugName = when {
+                    kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID -> "debug"
+                    else -> "androidDebug"
+                }
+                // TODO
+                if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
+                    kotlinExtensionDelegate.sourceSets.named(expectedAndroidDebugName).configure {
+                        dependencies {
+                            runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
+                        }
+                    }
+                }
+            }
         }
     }
 
