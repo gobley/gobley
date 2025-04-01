@@ -32,7 +32,7 @@ class RustPlugin : Plugin<Project> {
         rustExtension = target.extensions.create<RustExtension>(TASK_GROUP)
         target.afterEvaluate {
             @OptIn(InternalGobleyGradleApi::class)
-            DependencyUtils.resolveJvmRustLibraryConfigurations(target)
+            DependencyUtils.resolveRustLibraryDependencies(target)
         }
     }
 }

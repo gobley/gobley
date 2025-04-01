@@ -9,6 +9,7 @@ package gobley.gradle.utils
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
+import gobley.gradle.Variant
 import gobley.gradle.rust.targets.RustJvmTarget
 import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.Project
@@ -19,6 +20,7 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.provider.Provider
 import org.gradle.jvm.tasks.Jar
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import java.util.Locale
@@ -26,41 +28,101 @@ import java.util.Locale
 @Suppress("UnstableApiUsage")
 @InternalGobleyGradleApi
 object DependencyUtils {
+    private val rustRuntimeRustTargetAttribute = Attribute.of("rustTarget", String::class.java)
+    private val rustLibraryUsageAttribute = Attribute.of("rustLibraryUsage", String::class.java)
+    private val rustVariantAttribute = Attribute.of("rustVariant", String::class.java)
+
+    private fun Configuration.addAttributes(
+        superConfiguration: Configuration,
+        rustTarget: RustTarget,
+        usage: String,
+        variant: Variant? = null,
+    ) {
+        extendsFrom(superConfiguration)
+        attributes.attribute(rustRuntimeRustTargetAttribute, rustTarget.friendlyName)
+        attributes.attribute(rustLibraryUsageAttribute, usage)
+        if (variant != null) {
+            attributes.attribute(rustVariantAttribute, variant.toString())
+        }
+    }
+
     fun createConfigurations(currentProject: Project) {
-        val rustRuntimeRustTargetAttribute = Attribute.of("rustTarget", String::class.java)
         val rustRuntimeOnlyConfiguration =
             currentProject.configurations.dependencyScope("rustRuntimeOnly")
         for (rustTarget in GobleyHost.current.platform.supportedTargets) {
             if (rustTarget !is RustJvmTarget) {
                 continue
             }
-            val runtimeConfigurationName = jvmRuntimeRustLibraryConfigurationName(rustTarget)
-            currentProject.configurations.resolvable(runtimeConfigurationName) { configuration ->
-                configuration.extendsFrom(rustRuntimeOnlyConfiguration.get())
-                configuration.attributes.attribute(
-                    rustRuntimeRustTargetAttribute, rustTarget.friendlyName
+            currentProject.configurations.resolvable(
+                jvmRuntimeRustLibraryConfigurationName(rustTarget)
+            ) { configuration ->
+                configuration.addAttributes(
+                    superConfiguration = rustRuntimeOnlyConfiguration.get(),
+                    rustTarget = rustTarget,
+                    usage = "jvmRuntime",
                 )
             }
-            val consumableConfigurationName =
+            currentProject.configurations.consumable(
                 jvmConsumableRuntimeRustLibraryConfigurationName(rustTarget)
-            currentProject.configurations.consumable(consumableConfigurationName) { configuration ->
-                configuration.extendsFrom(rustRuntimeOnlyConfiguration.get())
-                configuration.attributes.attribute(
-                    rustRuntimeRustTargetAttribute, rustTarget.friendlyName
+            ) { configuration ->
+                configuration.addAttributes(
+                    superConfiguration = rustRuntimeOnlyConfiguration.get(),
+                    rustTarget = rustTarget,
+                    usage = "jvmRuntime",
                 )
+            }
+
+            for (variant in Variant.entries) {
+                currentProject.configurations.resolvable(
+                    androidUnitTestRuntimeRustLibraryConfigurationName(
+                        rustTarget, variant
+                    )
+                ) { configuration ->
+                    configuration.addAttributes(
+                        superConfiguration = rustRuntimeOnlyConfiguration.get(),
+                        rustTarget = rustTarget,
+                        variant = variant,
+                        usage = "androidUnitTestRuntime",
+                    )
+                }
+                currentProject.configurations.consumable(
+                    androidUnitTestConsumableRuntimeRustLibraryConfigurationName(
+                        rustTarget, variant
+                    )
+                ) { configuration ->
+                    configuration.addAttributes(
+                        superConfiguration = rustRuntimeOnlyConfiguration.get(),
+                        rustTarget = rustTarget,
+                        variant = variant,
+                        usage = "androidUnitTestRuntime",
+                    )
+                }
             }
         }
     }
 
-    fun resolveJvmRustLibraryConfigurations(currentProject: Project) {
+    fun resolveRustLibraryDependencies(currentProject: Project) {
         for (rustTarget in GobleyHost.current.platform.supportedTargets) {
             if (rustTarget !is RustJvmTarget) {
                 continue
             }
-            val configurationName = jvmRuntimeRustLibraryConfigurationName(rustTarget)
-            val configuration =
-                currentProject.configurations.findByName(configurationName) ?: continue
-            registerJvmRustLibraryToClassPaths(currentProject, configuration)
+            val jvmRuntimeConfiguration = currentProject.configurations.findByName(
+                jvmRuntimeRustLibraryConfigurationName(
+                    rustTarget
+                )
+            ) ?: continue
+            registerJvmRustLibraryToClassPaths(currentProject, jvmRuntimeConfiguration)
+            for (variant in Variant.entries) {
+                val androidUnitTestConfiguration = currentProject.configurations.findByName(
+                    androidUnitTestRuntimeRustLibraryConfigurationName(
+                        rustTarget, variant
+                    )
+                ) ?: continue
+                registerAndroidUnitTestLibraryToClassPaths(
+                    currentProject,
+                    androidUnitTestConfiguration,
+                )
+            }
         }
     }
 
@@ -84,20 +146,38 @@ object DependencyUtils {
                             }
                         }
                     }
-                    val androidTarget = delegate.targets.firstOrNull { it is KotlinAndroidTarget }
-                    if (androidTarget != null) {
-                        with(delegate.sourceSets.getByName("${androidTarget.name}UnitTest")) {
-                            dependencies {
-                                runtimeOnly(dependencyJars)
-                            }
-                        }
-                    }
                 }
 
                 PluginIds.KOTLIN_JVM -> {
                     with(delegate.sourceSets.getByName("main")) {
                         dependencies {
                             runtimeOnly(dependencyJars)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun registerAndroidUnitTestLibraryToClassPaths(
+        currentProject: Project,
+        configuration: Configuration,
+    ) {
+        val variant = Variant(configuration.attributes.getAttribute(rustVariantAttribute)!!)
+        val dependencies = configuration.incoming
+        val dependencyJars =
+            currentProject.files(dependencies.artifacts.resolvedArtifacts.map { artifacts ->
+                artifacts.map { it.file }
+            })
+        PluginUtils.withKotlinPlugin(currentProject) { delegate ->
+            when (delegate.pluginId) {
+                PluginIds.KOTLIN_MULTIPLATFORM -> {
+                    val androidTarget = delegate.targets.firstOrNull { it is KotlinAndroidTarget }
+                    if (androidTarget != null) {
+                        with(delegate.sourceSets.getByName("${androidTarget.name}UnitTest")) {
+                            dependencies {
+                                runtimeOnly(dependencyJars)
+                            }
                         }
                     }
                 }
@@ -120,6 +200,18 @@ object DependencyUtils {
         currentProject.artifacts.add(configurationName, jarTaskProvider)
     }
 
+    fun addAndroidUnitTestRuntimeRustLibraryJar(
+        currentProject: Project,
+        rustTarget: RustTarget,
+        variant: Variant,
+        jarTaskProvider: Provider<Jar>
+    ) {
+        val configurationName = androidUnitTestConsumableRuntimeRustLibraryConfigurationName(
+            rustTarget, variant
+        )
+        currentProject.artifacts.add(configurationName, jarTaskProvider)
+    }
+
     private fun jvmRuntimeRustLibraryConfigurationName(
         rustTarget: RustTarget
     ): String {
@@ -135,6 +227,28 @@ object DependencyUtils {
         return StringBuilder().apply {
             append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
             append("RustRuntimeJvmConsumable")
+        }.toString()
+    }
+
+    private fun androidUnitTestRuntimeRustLibraryConfigurationName(
+        rustTarget: RustTarget,
+        variant: Variant,
+    ): String {
+        return StringBuilder().apply {
+            append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
+            append("RustRuntimeAndroidUnitTest")
+            append(variant.toString().uppercaseFirstChar())
+        }.toString()
+    }
+
+    private fun androidUnitTestConsumableRuntimeRustLibraryConfigurationName(
+        rustTarget: RustTarget,
+        variant: Variant,
+    ): String {
+        return StringBuilder().apply {
+            append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
+            append("RustRuntimeAndroidUnitTestConsumable")
+            append(variant.toString().uppercaseFirstChar())
         }.toString()
     }
 

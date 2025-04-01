@@ -114,7 +114,7 @@ class CargoPlugin : Plugin<Project> {
         configureCleanTasks()
 
         @OptIn(InternalGobleyGradleApi::class)
-        DependencyUtils.resolveJvmRustLibraryConfigurations(target)
+        DependencyUtils.resolveRustLibraryDependencies(target)
     }
 
     @OptIn(InternalGobleyGradleApi::class)
@@ -400,7 +400,6 @@ class CargoPlugin : Plugin<Project> {
                 kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "main"
                 else -> "${kotlinTarget.name}Main"
             }
-            // Modifying classpath of AndroidUnitTest does not work. This is a workaround for it.
             with(kotlinExtensionDelegate.sourceSets.getByName(expectedSourceSetName)) {
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
@@ -416,6 +415,12 @@ class CargoPlugin : Plugin<Project> {
 
         @OptIn(InternalGobleyGradleApi::class)
         if (androidTarget != null && cargoBuildVariant.androidUnitTest.get()) {
+            DependencyUtils.addAndroidUnitTestRuntimeRustLibraryJar(
+                this,
+                cargoBuildVariant.rustTarget,
+                cargoBuildVariant.variant,
+                jarTask,
+            )
             val expectedAndroidUnitTestName = when {
                 kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID -> "test"
                 else -> "androidUnitTest"
