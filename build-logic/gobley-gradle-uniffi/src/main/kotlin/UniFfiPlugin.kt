@@ -27,7 +27,6 @@ import gobley.gradle.uniffi.tasks.InstallBindgenTask
 import gobley.gradle.uniffi.tasks.MergeUniffiConfigTask
 import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.PluginUtils
-import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -39,7 +38,6 @@ import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
@@ -444,25 +442,16 @@ class UniFfiPlugin : Plugin<Project> {
                 implementation("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")
             }
         }
-
-        // Use the desktop version of JNA in android local unit tests.
-        configureKotlinAndroidUnitTestJna()
-        // Make android unit tests in dependent projects also use the desktop version of JNA.
-        @OptIn(InternalGobleyGradleApi::class)
-        DependencyUtils.configureEachDependentProjects(project) { dependentProject ->
-            dependentProject.configureKotlinAndroidUnitTestJna()
-        }
-    }
-
-    @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinAndroidUnitTestJna() {
-        val androidPluginAction = Action<Plugin<*>> {
+        with(kotlinExtensionDelegate.sourceSets.androidMain(Variant.Debug)) {
             dependencies {
-                add("testImplementation", "net.java.dev.jna:jna:${DependencyVersions.JNA}")
+                runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
             }
         }
-        plugins.withId(PluginIds.ANDROID_APPLICATION, androidPluginAction)
-        plugins.withId(PluginIds.ANDROID_LIBRARY, androidPluginAction)
+        with(kotlinExtensionDelegate.sourceSets.androidUnitTest) {
+            dependencies {
+                runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
+            }
+        }
     }
 
     private fun Project.configureKotlinNativeTarget(

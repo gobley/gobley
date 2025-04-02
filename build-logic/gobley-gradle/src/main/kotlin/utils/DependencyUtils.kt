@@ -6,6 +6,7 @@
 
 package gobley.gradle.utils
 
+import gobley.gradle.DependencyVersions
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
@@ -108,12 +109,15 @@ object DependencyUtils {
                     with(delegate.sourceSets.androidMain(variant)) {
                         dependencies {
                             runtimeOnly(dependencyJars)
+                            // TODO: Set JNA only when UniFFI is used
+                            runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
                         }
                     }
                 }
                 with(delegate.sourceSets.androidUnitTest(variant)) {
                     dependencies {
                         runtimeOnly(dependencyJars)
+                        runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
                     }
                 }
             }
@@ -152,50 +156,6 @@ object DependencyUtils {
             append("RustRuntimeAndroidUnitTestConsumable")
             append(variant.toString().uppercaseFirstChar())
         }.toString()
-    }
-
-    fun configureEachDependentProjects(
-        currentProject: Project,
-        action: (Project) -> Unit,
-    ) {
-        // A set of projects known to be dependent on `currentProject`.
-        val consumedDependentProjects = mutableSetOf(currentProject)
-        // A partial inverse graph of the project dependency graph, only containing the part not connected to
-        // `currentProject`.
-        val unconsumedDirectDependentsByProject =
-            currentProject.rootProject.allprojects.associateWith {
-                mutableSetOf<Project>()
-            }
-        for (project in currentProject.rootProject.allprojects) {
-            project.configurations.configureEach { configuration ->
-                configuration.dependencies.configureEach { dependency ->
-                    if (dependency is ProjectDependency) {
-                        // If this dependency points to a project that is already consumed, this project is also
-                        // (indirectly) dependent on currentProject.
-                        if (consumedDependentProjects.contains(dependency.dependencyProject)) {
-                            // Perform DFS starting at `project`.
-                            val stack = arrayListOf(project)
-                            while (stack.isNotEmpty()) {
-                                val stackItem = stack.removeLast()
-                                // Visit `stackItem` if not visited.
-                                if (!consumedDependentProjects.contains(stackItem)) {
-                                    consumedDependentProjects.add(stackItem)
-                                    action(stackItem)
-                                    // Consume items in the inverse graph as well.
-                                    stack.addAll(unconsumedDirectDependentsByProject[stackItem]!!)
-                                    unconsumedDirectDependentsByProject[stackItem]!!.clear()
-                                }
-                            }
-                        } else {
-                            // Otherwise, just store the dependency for future use.
-                            unconsumedDirectDependentsByProject[dependency.dependencyProject]!!.add(
-                                project
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 
     fun configureEachCommonDependencies(
