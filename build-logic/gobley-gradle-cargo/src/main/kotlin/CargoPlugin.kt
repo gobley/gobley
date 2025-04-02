@@ -72,7 +72,7 @@ class CargoPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         @OptIn(InternalGobleyGradleApi::class)
         if (!target.plugins.hasPlugin(PluginIds.GOBLEY_RUST)) {
-            DependencyUtils.createConfigurations(target)
+            DependencyUtils.createCargoConfigurations(target)
         }
         cargoExtension = target.extensions.create<CargoExtension>(TASK_GROUP, target)
         cargoExtension.jvmVariant.convention(Variant.Debug)
@@ -114,7 +114,7 @@ class CargoPlugin : Plugin<Project> {
         configureCleanTasks()
 
         @OptIn(InternalGobleyGradleApi::class)
-        DependencyUtils.resolveRustLibraryDependencies(target)
+        DependencyUtils.resolveCargoDependencies(target)
     }
 
     @OptIn(InternalGobleyGradleApi::class)

@@ -27,12 +27,12 @@ class RustPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         @OptIn(InternalGobleyGradleApi::class)
         if (!target.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)) {
-            DependencyUtils.createConfigurations(target)
+            DependencyUtils.createCargoConfigurations(target)
         }
         rustExtension = target.extensions.create<RustExtension>(TASK_GROUP)
         target.afterEvaluate {
             @OptIn(InternalGobleyGradleApi::class)
-            DependencyUtils.resolveRustLibraryDependencies(target)
+            DependencyUtils.resolveCargoDependencies(target)
         }
     }
 }

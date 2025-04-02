@@ -43,7 +43,7 @@ object DependencyUtils {
         }
     }
 
-    fun createConfigurations(currentProject: Project) {
+    fun createCargoConfigurations(currentProject: Project) {
         val rustRuntimeOnlyConfiguration =
             currentProject.configurations.dependencyScope("rustRuntimeOnly")
         for (rustTarget in GobleyHost.current.platform.supportedTargets) {
@@ -98,7 +98,7 @@ object DependencyUtils {
         }
     }
 
-    fun resolveRustLibraryDependencies(currentProject: Project) {
+    fun resolveCargoDependencies(currentProject: Project) {
         for (rustTarget in GobleyHost.current.platform.supportedTargets) {
             if (rustTarget !is RustJvmTarget) {
                 continue
