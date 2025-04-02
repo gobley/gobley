@@ -28,6 +28,29 @@ import java.util.Locale
 @Suppress("UnstableApiUsage")
 @InternalGobleyGradleApi
 object DependencyUtils {
+    private fun configureEachCommonProjectDependencies(
+        configurations: ConfigurationContainer,
+        action: (ProjectDependency) -> Unit,
+    ) {
+        configureEachCommonDependencies(configurations) { dependency ->
+            if (dependency is ProjectDependency) {
+                action(dependency)
+            }
+        }
+    }
+
+    private fun addDependencyEachCommonProjectDependencies(
+        currentProject: Project,
+        configurationName: String
+    ) {
+        configureEachCommonProjectDependencies(currentProject.configurations) { dependency ->
+            currentProject.dependencies.add(
+                configurationName,
+                currentProject.project(dependency.path),
+            )
+        }
+    }
+
     private val rustRuntimeRustTargetAttribute = Attribute.of("rustTarget", String::class.java)
     private val rustVariantAttribute = Attribute.of("rustVariant", String::class.java)
 
@@ -44,6 +67,8 @@ object DependencyUtils {
     fun createCargoConfigurations(currentProject: Project) {
         val rustRuntimeOnlyConfiguration =
             currentProject.configurations.dependencyScope("rustRuntimeOnly")
+        addDependencyEachCommonProjectDependencies(currentProject, "rustRuntimeOnly")
+
         for (rustTarget in GobleyHost.current.platform.supportedTargets) {
             if (rustTarget !is RustJvmTarget) {
                 continue
@@ -173,6 +198,8 @@ object DependencyUtils {
     fun createUniFfiConfigurations(currentProject: Project) {
         val uniFfiImplementationConfiguration =
             currentProject.configurations.dependencyScope("uniFfiImplementation")
+        addDependencyEachCommonProjectDependencies(currentProject, "uniFfiImplementation")
+
         currentProject.configurations.resolvable("uniFfiConfiguration") { configuration ->
             configuration.addAttributes(
                 superConfiguration = uniFfiImplementationConfiguration.get(),
@@ -233,17 +260,6 @@ object DependencyUtils {
         configurations.configureEach { configuration ->
             if (configuration.name == "commonMainApi" || configuration.name == "commonMainImplementation" || configuration.name == "commonMainCompileOnly") {
                 configuration.dependencies.configureEach(action)
-            }
-        }
-    }
-
-    fun configureEachCommonProjectDependencies(
-        configurations: ConfigurationContainer,
-        action: (Project) -> Unit,
-    ) {
-        configureEachCommonDependencies(configurations) { dependency ->
-            if (dependency is ProjectDependency) {
-                action(dependency.dependencyProject)
             }
         }
     }

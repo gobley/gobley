@@ -2,12 +2,6 @@ plugins {
     id("uniffi-tests-from-library")
 }
 
-dependencies {
-    add("uniFfiImplementation", project(":examples:custom-types"))
-    add("uniFfiImplementation", project(":tests:uniffi:ext-types:custom-types"))
-    add("uniFfiImplementation", project(":tests:uniffi:ext-types:uniffi-one"))
-}
-
 kotlin {
     sourceSets {
         commonMain {
