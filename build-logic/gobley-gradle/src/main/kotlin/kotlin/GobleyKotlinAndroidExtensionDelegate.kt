@@ -8,6 +8,7 @@ package gobley.gradle.kotlin
 
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
+import gobley.gradle.Variant
 import org.gradle.api.DomainObjectCollection
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.Project
@@ -28,13 +29,50 @@ class GobleyKotlinAndroidExtensionDelegate(
     override val targets: DomainObjectCollection<KotlinTarget> =
         project.container(KotlinTarget::class.java)
 
-    override val sourceSets: NamedDomainObjectCollection<KotlinSourceSet>
-        get() = kotlinAndroidExtension.sourceSets
+    override val sourceSets: GobleyKotlinSourceSetCollection
+        get() = GobleyKotlinSourceSetCollection(kotlinAndroidExtension.sourceSets)
 
     override val implementationVersion: String?
         get() = kotlinAndroidExtension.javaClass.`package`.implementationVersion
 
+    override val jvmTarget: KotlinTarget? = null
+
+    override val androidTarget: KotlinTarget?
+        get() = targets.firstOrNull()
+
     init {
         kotlinAndroidExtension.target { targets.add(this) }
+    }
+}
+
+@OptIn(InternalGobleyGradleApi::class)
+private fun GobleyKotlinSourceSetCollection(sourceSets: NamedDomainObjectCollection<KotlinSourceSet>): GobleyKotlinSourceSetCollection {
+    return object :
+        NamedDomainObjectCollection<KotlinSourceSet> by sourceSets,
+        GobleyKotlinSourceSetCollection {
+        override val commonMain: KotlinSourceSet get() = androidMain
+
+        override fun androidMain(variant: Variant?): KotlinSourceSet {
+            return sourceSets.getByName(
+                when (variant) {
+                    Variant.Debug -> "debug"
+                    Variant.Release -> "release"
+                    null -> "main"
+                }
+            )
+        }
+
+        override fun androidUnitTest(variant: Variant?): KotlinSourceSet {
+            return sourceSets.getByName(
+                when (variant) {
+                    Variant.Debug -> "testDebug"
+                    Variant.Release -> "testRelease"
+                    null -> "test"
+                }
+            )
+        }
+
+        override val jvmMain: KotlinSourceSet
+            get() = error("not supported")
     }
 }

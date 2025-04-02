@@ -396,11 +396,7 @@ class CargoPlugin : Plugin<Project> {
                 cargoBuildVariant.rustTarget,
                 jarTask,
             )
-            val expectedSourceSetName = when {
-                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM -> "main"
-                else -> "${kotlinTarget.name}Main"
-            }
-            with(kotlinExtensionDelegate.sourceSets.getByName(expectedSourceSetName)) {
+            with(kotlinExtensionDelegate.sourceSets.jvmMain) {
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
@@ -421,27 +417,16 @@ class CargoPlugin : Plugin<Project> {
                 cargoBuildVariant.variant,
                 jarTask,
             )
-            val expectedAndroidUnitTestName = when {
-                kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID -> "test"
-                else -> "androidUnitTest"
-            }
-            with(kotlinExtensionDelegate.sourceSets.getByName(expectedAndroidUnitTestName)) {
+            with(kotlinExtensionDelegate.sourceSets.androidUnitTest(cargoBuildVariant.variant)) {
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
             }
             // This is for Android Compose Preview
             if (cargoBuildVariant.variant == Variant.Debug) {
-                val expectedAndroidDebugName = when {
-                    kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID -> "debug"
-                    else -> "androidDebug"
-                }
-                // TODO
-                if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
-                    kotlinExtensionDelegate.sourceSets.named(expectedAndroidDebugName).configure {
-                        dependencies {
-                            runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
-                        }
+                with(kotlinExtensionDelegate.sourceSets.androidMain(Variant.Debug)) {
+                    dependencies {
+                        runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                     }
                 }
             }

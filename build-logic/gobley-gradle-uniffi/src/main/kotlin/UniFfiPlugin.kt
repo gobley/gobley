@@ -377,19 +377,19 @@ class UniFfiPlugin : Plugin<Project> {
         @OptIn(InternalGobleyGradleApi::class)
         kotlinExtensionDelegate.targets.configureEach {
             when (this) {
-                is KotlinMetadataTarget -> configureKotlinCommonTarget(this)
+                is KotlinMetadataTarget -> configureKotlinCommonTarget()
                 is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
                     if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
-                        configureKotlinCommonTarget(this)
+                        configureKotlinCommonTarget()
                     }
-                    configureKotlinJvmTarget(this)
+                    configureKotlinJvmTarget()
                 }
 
                 is KotlinAndroidTarget -> {
                     if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
-                        configureKotlinCommonTarget(this)
+                        configureKotlinCommonTarget()
                     }
-                    configureKotlinAndroidTarget(this)
+                    configureKotlinAndroidTarget()
                 }
 
                 is KotlinNativeTarget -> configureKotlinNativeTarget(
@@ -404,21 +404,14 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinCommonTarget(kotlinCommonTarget: KotlinTarget) {
-        val mainSourceSet = if (
-            kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID
-            || kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM
-        ) {
-            kotlinExtensionDelegate.sourceSets.getByName("main").apply {
-                kotlin.srcDir(mainBindingsDirectory)
-            }
-        } else {
-            kotlinCommonTarget.compilations.getByName("main").defaultSourceSet.apply {
-                kotlin.srcDir(commonBindingsDirectory)
-            }
-        }
-
-        with(mainSourceSet) {
+    private fun Project.configureKotlinCommonTarget() {
+        with(kotlinExtensionDelegate.sourceSets.commonMain) {
+            kotlin.srcDir(
+                when (kotlinExtensionDelegate.pluginId) {
+                    PluginIds.KOTLIN_ANDROID, PluginIds.KOTLIN_JVM -> mainBindingsDirectory
+                    else -> commonBindingsDirectory
+                }
+            )
             dependencies {
                 implementation("com.squareup.okio:okio:${DependencyVersions.OKIO}")
                 implementation("org.jetbrains.kotlinx:atomicfu:${DependencyVersions.KOTLINX_ATOMICFU}")
@@ -429,16 +422,11 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinJvmTarget(kotlinJvmTarget: KotlinTarget) {
-        val mainSourceSet = if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
-            kotlinExtensionDelegate.sourceSets.getByName("main")
-        } else {
-            kotlinJvmTarget.compilations.getByName("main").defaultSourceSet.apply {
+    private fun Project.configureKotlinJvmTarget() {
+        with(kotlinExtensionDelegate.sourceSets.jvmMain) {
+            if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
                 kotlin.srcDir(jvmBindingsDirectory)
             }
-        }
-
-        with(mainSourceSet) {
             dependencies {
                 implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}")
             }
@@ -446,17 +434,11 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinAndroidTarget(kotlinAndroidTarget: KotlinAndroidTarget) {
-        @OptIn(InternalGobleyGradleApi::class)
-        val mainSourceSet = if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
-            kotlinExtensionDelegate.sourceSets.getByName("main")
-        } else {
-            kotlinExtensionDelegate.sourceSets.getByName("${kotlinAndroidTarget.name}Main").apply {
+    private fun Project.configureKotlinAndroidTarget() {
+        with(kotlinExtensionDelegate.sourceSets.androidMain) {
+            if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
                 kotlin.srcDir(androidBindingsDirectory)
             }
-        }
-
-        with(mainSourceSet) {
             dependencies {
                 implementation("net.java.dev.jna:jna:${DependencyVersions.JNA}@aar")
                 implementation("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")

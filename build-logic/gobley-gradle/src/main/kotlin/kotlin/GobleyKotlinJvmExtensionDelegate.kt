@@ -8,6 +8,7 @@ package gobley.gradle.kotlin
 
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
+import gobley.gradle.Variant
 import org.gradle.api.DomainObjectCollection
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.Project
@@ -28,13 +29,30 @@ class GobleyKotlinJvmExtensionDelegate(
     override val targets: DomainObjectCollection<KotlinTarget> =
         project.container(KotlinTarget::class.java)
 
-    override val sourceSets: NamedDomainObjectCollection<KotlinSourceSet>
-        get() = kotlinJvmExtension.sourceSets
+    override val sourceSets: GobleyKotlinSourceSetCollection
+        get() = GobleyKotlinSourceSetCollection(kotlinJvmExtension.sourceSets)
 
     override val implementationVersion: String?
         get() = kotlinJvmExtension.javaClass.`package`.implementationVersion
 
+    override val jvmTarget: KotlinTarget?
+        get() = targets.firstOrNull()
+
+    override val androidTarget: KotlinTarget? = null
+
     init {
         kotlinJvmExtension.target { targets.add(this) }
+    }
+}
+
+@OptIn(InternalGobleyGradleApi::class)
+private fun GobleyKotlinSourceSetCollection(sourceSets: NamedDomainObjectCollection<KotlinSourceSet>): GobleyKotlinSourceSetCollection {
+    return object :
+        NamedDomainObjectCollection<KotlinSourceSet> by sourceSets,
+        GobleyKotlinSourceSetCollection {
+        override val commonMain get() = jvmMain
+        override fun androidMain(variant: Variant?) = error("not supported")
+        override fun androidUnitTest(variant: Variant?) = error("not supported")
+        override val jvmMain: KotlinSourceSet get() = sourceSets.getByName("main")
     }
 }

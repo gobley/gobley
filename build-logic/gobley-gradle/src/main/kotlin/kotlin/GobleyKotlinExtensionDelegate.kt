@@ -8,14 +8,14 @@ package gobley.gradle.kotlin
 
 import gobley.gradle.InternalGobleyGradleApi
 import org.gradle.api.DomainObjectCollection
-import org.gradle.api.NamedDomainObjectCollection
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 
 @InternalGobleyGradleApi
 interface GobleyKotlinExtensionDelegate {
     val pluginId: String
     val targets: DomainObjectCollection<KotlinTarget>
-    val sourceSets: NamedDomainObjectCollection<KotlinSourceSet>
+    val sourceSets: GobleyKotlinSourceSetCollection
     val implementationVersion: String?
+    val jvmTarget: KotlinTarget?
+    val androidTarget: KotlinTarget?
 }

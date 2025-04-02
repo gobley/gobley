@@ -8,7 +8,6 @@ package gobley.gradle.utils
 
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
-import gobley.gradle.PluginIds
 import gobley.gradle.Variant
 import gobley.gradle.rust.targets.RustJvmTarget
 import gobley.gradle.rust.targets.RustTarget
@@ -21,8 +20,6 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.provider.Provider
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
-import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import java.util.Locale
 
 @Suppress("UnstableApiUsage")
@@ -136,23 +133,10 @@ object DependencyUtils {
                 artifacts.map { it.file }
             })
         PluginUtils.withKotlinPlugin(currentProject) { delegate ->
-            when (delegate.pluginId) {
-                PluginIds.KOTLIN_MULTIPLATFORM -> {
-                    val jvmTarget = delegate.targets.firstOrNull { it is KotlinJvmTarget }
-                    if (jvmTarget != null) {
-                        with(delegate.sourceSets.getByName("${jvmTarget.name}Main")) {
-                            dependencies {
-                                runtimeOnly(dependencyJars)
-                            }
-                        }
-                    }
-                }
-
-                PluginIds.KOTLIN_JVM -> {
-                    with(delegate.sourceSets.getByName("main")) {
-                        dependencies {
-                            runtimeOnly(dependencyJars)
-                        }
+            if (delegate.jvmTarget != null) {
+                with(delegate.sourceSets.jvmMain) {
+                    dependencies {
+                        runtimeOnly(dependencyJars)
                     }
                 }
             }
@@ -170,23 +154,10 @@ object DependencyUtils {
                 artifacts.map { it.file }
             })
         PluginUtils.withKotlinPlugin(currentProject) { delegate ->
-            when (delegate.pluginId) {
-                PluginIds.KOTLIN_MULTIPLATFORM -> {
-                    val androidTarget = delegate.targets.firstOrNull { it is KotlinAndroidTarget }
-                    if (androidTarget != null) {
-                        with(delegate.sourceSets.getByName("${androidTarget.name}UnitTest")) {
-                            dependencies {
-                                runtimeOnly(dependencyJars)
-                            }
-                        }
-                    }
-                }
-
-                PluginIds.KOTLIN_ANDROID -> {
-                    with(delegate.sourceSets.getByName("test")) {
-                        dependencies {
-                            runtimeOnly(dependencyJars)
-                        }
+            if (delegate.androidTarget != null) {
+                with(delegate.sourceSets.androidUnitTest(variant)) {
+                    dependencies {
+                        runtimeOnly(dependencyJars)
                     }
                 }
             }
