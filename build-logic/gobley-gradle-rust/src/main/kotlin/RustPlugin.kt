@@ -36,8 +36,12 @@ class RustPlugin : Plugin<Project> {
         rustExtension = target.extensions.create<RustExtension>(TASK_GROUP)
         @OptIn(InternalGobleyGradleApi::class)
         target.afterEvaluate {
-            DependencyUtils.resolveCargoDependencies(target)
-            DependencyUtils.resolveUniFfiDependencies(target)
+            if (!target.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)) {
+                DependencyUtils.resolveCargoDependencies(target)
+            }
+            if (!target.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)) {
+                DependencyUtils.resolveUniFfiDependencies(target)
+            }
         }
     }
 }

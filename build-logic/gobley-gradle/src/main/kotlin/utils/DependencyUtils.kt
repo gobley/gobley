@@ -18,6 +18,7 @@ import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
@@ -136,15 +137,12 @@ object DependencyUtils {
                     with(delegate.sourceSets.androidMain(variant)) {
                         dependencies {
                             runtimeOnly(dependencyJars)
-                            // TODO: Set JNA only when UniFFI is used
-                            runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
                         }
                     }
                 }
                 with(delegate.sourceSets.androidUnitTest(variant)) {
                     dependencies {
                         runtimeOnly(dependencyJars)
-                        runtimeOnly("net.java.dev.jna:jna:${DependencyVersions.JNA}")
                     }
                 }
             }
@@ -212,6 +210,27 @@ object DependencyUtils {
                 uniffiUsage = "uniFfiConfig"
             )
         }
+        currentProject.configurations.resolvable("uniFfiCargoManifest") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "cargoManifest"
+            )
+        }
+        currentProject.configurations.consumable("uniFfiCargoManifestConsumable") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "cargoManifest"
+            )
+        }
+    }
+
+    fun addUniFfiConfigTasks(
+        currentProject: Project,
+        uniFfiConfigTask: TaskProvider<*>,
+        cargoManifest: Provider<RegularFile>,
+    ) {
+        currentProject.artifacts.add("uniFfiConfigurationConsumable", uniFfiConfigTask)
+        currentProject.artifacts.add("uniFfiCargoManifestConsumable", cargoManifest)
     }
 
     fun getExternalPackageUniFfiConfigurations(currentProject: Project): Provider<List<File>>? {
@@ -224,14 +243,20 @@ object DependencyUtils {
     }
 
     fun resolveUniFfiDependencies(currentProject: Project) {
-        val externalPackageUniFfiConfigurations =
-            getExternalPackageUniFfiConfigurations(currentProject) ?: return
-        val jnaDependency = externalPackageUniFfiConfigurations.map {
+        val configuration = currentProject.configurations.findByName("uniFfiCargoManifest")
+            ?: return
+        val dependencies = configuration.incoming
+        val externalCargoManifests = dependencies.artifacts.resolvedArtifacts.map { artifacts ->
+            artifacts.map { it.file }
+        }
+        val jnaDependency = externalCargoManifests.map {
             // Don't apply JNA when there's no dependency on UniFFI
-            if (it.isEmpty()) currentProject.files() else "net.java.dev.jna:jna:${DependencyVersions.JNA}"
+            if (it.isEmpty()) currentProject.files()
+            else "net.java.dev.jna:jna:${DependencyVersions.JNA}"
         }
         PluginUtils.withKotlinPlugin(currentProject) { delegate ->
             if (delegate.androidTarget != null) {
+                // For Compose previews
                 with(delegate.sourceSets.androidMain(Variant.Debug)) {
                     dependencies {
                         runtimeOnly(jnaDependency)
@@ -244,13 +269,6 @@ object DependencyUtils {
                 }
             }
         }
-    }
-
-    fun addUniFfiConfigTasks(
-        currentProject: Project,
-        uniFfiConfigTask: TaskProvider<*>,
-    ) {
-        currentProject.artifacts.add("uniFfiConfigurationConsumable", uniFfiConfigTask)
     }
 
     fun configureEachCommonDependencies(
