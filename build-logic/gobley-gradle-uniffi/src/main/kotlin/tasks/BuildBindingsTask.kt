@@ -8,14 +8,16 @@ package gobley.gradle.uniffi.tasks
 
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.cargo.tasks.CargoPackageTask
+import gobley.gradle.uniffi.Config
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -46,18 +48,12 @@ abstract class BuildBindingsTask : CargoPackageTask() {
     abstract val config: RegularFileProperty
 
     /**
-     * Path to the optional uniffi config file by a crate name.
+     * Paths to the optional uniffi config files.
      */
-    @get:Input
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:Optional
-    abstract val configByCrateName: MapProperty<String, File>
-
-    /**
-     * Path of the package by a crate name.
-     */
-    @get:Input
-    @get:Optional
-    abstract val rootByCrateName: MapProperty<String, File>
+    abstract val externalPackageConfigs: ListProperty<File>
 
     /**
      * Extract proc-macro metadata from a native lib (cdylib or staticlib) for this crate.
@@ -114,16 +110,25 @@ abstract class BuildBindingsTask : CargoPackageTask() {
                 arguments("--out-dir", outputDirectory.get())
             }
             if (config.isPresent) {
-                arguments("--config", config.get())
-            }
-            if (configByCrateName.isPresent) {
-                for ((crateName, packageConfig) in configByCrateName.get()) {
-                    arguments("--crate-configs", "$crateName=$packageConfig")
+                val configFile = config.get()
+                arguments("--config", configFile)
+                val config = Config(configFile.asFile)
+                val crateName = config.crateName
+                if (crateName != null) {
+                    arguments("--crate-configs", "$crateName=$configFile")
+                    val packageRoot = config.packageRoot
+                    if (packageRoot != null) {
+                        arguments("--crate-paths", "$crateName=$packageRoot")
+                    }
                 }
             }
-            if (rootByCrateName.isPresent) {
-                for ((crateName, packageConfig) in rootByCrateName.get()) {
-                    arguments("--crate-paths", "$crateName=$packageConfig")
+            if (externalPackageConfigs.isPresent) {
+                for (packageConfigFile in externalPackageConfigs.get()) {
+                    val config = Config(packageConfigFile)
+                    val crateName = config.crateName ?: continue
+                    arguments("--crate-configs", "$crateName=$packageConfigFile")
+                    val packageRoot = config.packageRoot ?: continue
+                    arguments("--crate-paths", "$crateName=$packageRoot")
                 }
             }
             if (libraryFile.isPresent) {
@@ -142,7 +147,8 @@ abstract class BuildBindingsTask : CargoPackageTask() {
             suppressXcodeIosToolchains()
         }.get().assertNormalExitValue()
 
-        val defFilePath = outputDirectory.get().file("nativeInterop/cinterop/${libraryCrateName.get()}.def")
+        val defFilePath =
+            outputDirectory.get().file("nativeInterop/cinterop/${libraryCrateName.get()}.def")
         val defFileFile = defFilePath.asFile
         defFileFile.parentFile?.mkdirs()
         defFileFile.writeText("staticLibraries = lib${libraryCrateName.get()}.a\n")

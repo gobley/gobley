@@ -8,7 +8,6 @@ package gobley.gradle.uniffi.tasks
 
 import gobley.gradle.uniffi.Config
 import gobley.gradle.uniffi.dsl.CustomType
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import net.peanuuutz.tomlkt.Toml
 import org.gradle.api.DefaultTask
@@ -19,6 +18,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -32,6 +32,14 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val originalConfig: RegularFileProperty
+
+    @get:Input
+    @get:Optional
+    abstract val crateName: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val packageRoot: Property<String>
 
     @get:Input
     @get:Optional
@@ -57,9 +65,10 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     @get:Optional
     abstract val customTypes: MapProperty<String, CustomType>
 
-    @get:Input
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:Optional
-    abstract val externalPackageConfigByCrateName: MapProperty<String, File>
+    abstract val externalPackageConfigs: ListProperty<File>
 
     @get:Input
     @get:Optional
@@ -94,8 +103,12 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @TaskAction
     fun mergeConfig() {
-        val originalConfig = originalConfig.orNull?.asFile?.let(::loadConfig) ?: Config()
+        val originalConfig = originalConfig.orNull?.asFile?.let(::Config) ?: Config()
         val result = originalConfig.copy(
+            // Properties read by the Gradle plugins
+            crateName = crateName.orNull,
+            packageRoot = packageRoot.orNull,
+            // Properties read by the bindgen
             packageName = originalConfig.packageName ?: packageName.orNull,
             cdylibName = originalConfig.cdylibName ?: cdylibName.orNull,
             kotlinMultiplatform = originalConfig.kotlinMultiplatform ?: kotlinMultiplatform.orNull,
@@ -120,7 +133,7 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
             ),
             externalPackages = mergeMap(
                 originalConfig.externalPackages,
-                externalPackageConfigByCrateName.orNull?.let(::retrieveExternalPackageNames),
+                externalPackageConfigs.orNull?.let(::retrieveExternalPackageNames),
             ),
             kotlinTargetVersion = originalConfig.kotlinTargetVersion
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
@@ -146,16 +159,13 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
         outputConfig.get().asFile.writeText(toml.encodeToString(result), Charsets.UTF_8)
     }
 
-    private fun loadConfig(file: File): Config {
-        return toml.decodeFromString<Config>(file.readText(Charsets.UTF_8))
-    }
-
     private fun retrieveExternalPackageNames(
-        externalPackageConfigByCrateName: Map<String, File>
+        externalPackageConfigs: List<File>
     ): Map<String, String> {
         val result = mutableMapOf<String, String>()
-        for ((crateName, configFile) in externalPackageConfigByCrateName) {
-            val config = loadConfig(configFile)
+        for (configFile in externalPackageConfigs) {
+            val config = Config(configFile)
+            val crateName = config.crateName ?: continue
             if (!result.contains(crateName)) {
                 if (config.packageName != null) {
                     result[crateName] = config.packageName
@@ -164,7 +174,7 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
             if (config.externalPackages != null) {
                 for ((externalCrateName, externalPackageName) in config.externalPackages) {
                     if (!result.contains(externalCrateName)) {
-                        result[crateName] = externalPackageName
+                        result[externalCrateName] = externalPackageName
                     }
                 }
             }

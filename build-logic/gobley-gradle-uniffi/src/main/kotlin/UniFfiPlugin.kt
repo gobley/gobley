@@ -196,6 +196,8 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             )
 
+            crateName.set(cargoExtension.cargoPackage.map { it.libraryCrateName })
+            packageRoot.set(cargoExtension.cargoPackage.map { it.root.asFile.path })
             packageName.set(bindingsGeneration.packageName)
             cdylibName.set(bindingsGeneration.cdylibName)
             generateImmutableRecords.set(bindingsGeneration.generateImmutableRecords)
@@ -224,23 +226,7 @@ class UniFfiPlugin : Plugin<Project> {
                 if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
                     && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)
                 ) {
-
-                    // Different projects use different class loaders; we need to access those projects'
-                    // cargoPackage using reflection.
-                    val cargoExtension = dependencyProject.extensions.getByName("cargo")
-                    val getCargoPackage = cargoExtension::class.java.getMethod("getCargoPackage")
-
-                    val cargoPackageProvider = getCargoPackage.invoke(cargoExtension) as Provider<*>
-                    val cargoPackage = cargoPackageProvider.get()
-
-                    val getLibraryCrateName =
-                        cargoPackage::class.java.getMethod("getLibraryCrateName")
-                    val libraryCrateName = getLibraryCrateName.invoke(cargoPackage) as String
-
-                    externalPackageConfigByCrateName.put(
-                        libraryCrateName,
-                        dependencyProject.mergedConfig.map { it.asFile },
-                    )
+                    externalPackageConfigs.add(dependencyProject.mergedConfig.map { it.asFile })
                     dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
                 }
             }
@@ -278,40 +264,12 @@ class UniFfiPlugin : Plugin<Project> {
                 formatCode.set(uniFfiExtension.formatCode.get())
 
             config.set(mergeUniffiConfig.flatMap { it.outputConfig })
-
-            configByCrateName.put(
-                cargoExtension.cargoPackage.get().libraryCrateName,
-                mergedConfig.map { it.asFile },
-            )
-            rootByCrateName.put(
-                cargoExtension.cargoPackage.get().libraryCrateName,
-                cargoExtension.cargoPackage.get().root.asFile,
-            )
             @OptIn(InternalGobleyGradleApi::class)
             DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
                 if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
                     && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)
                 ) {
-
-                    // Different projects use different class loaders; we need to access those projects'
-                    // cargoPackage using reflection.
-                    val cargoExtension = dependencyProject.extensions.getByName("cargo")
-                    val getCargoPackage = cargoExtension::class.java.getMethod("getCargoPackage")
-
-                    val cargoPackageProvider = getCargoPackage.invoke(cargoExtension) as Provider<*>
-                    val cargoPackage = cargoPackageProvider.get()
-
-                    val getRoot = cargoPackage::class.java.getMethod("getRoot")
-                    val root = getRoot.invoke(cargoPackage) as Directory
-
-                    val getLibraryCrateName =
-                        cargoPackage::class.java.getMethod("getLibraryCrateName")
-                    val libraryCrateName = getLibraryCrateName.invoke(cargoPackage) as String
-
-                    configByCrateName.put(
-                        libraryCrateName,
-                        dependencyProject.mergedConfig.map { it.asFile })
-                    rootByCrateName.put(libraryCrateName, root.asFile)
+                    externalPackageConfigs.add(dependencyProject.mergedConfig.map { it.asFile })
                     dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
                 }
             }
@@ -512,7 +470,7 @@ private val Project.nativeBindingsCInteropDirectory: Provider<Directory>
     get() = bindingsDirectory.map { it.dir("nativeInterop/cinterop") }
 
 private val Project.mergedConfig: Provider<RegularFile>
-    get() = bindingsDirectory.map { it.file("uniffi.toml") }
+    get() = layout.buildDirectory.file("intermediates/merged_uniffi_config/uniffi.toml")
 
 private fun Project.nativeBindingsCInteropDef(libraryCrateName: String): Provider<RegularFile> =
     nativeBindingsCInteropDirectory.map { it.file("$libraryCrateName.def") }

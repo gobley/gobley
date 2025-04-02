@@ -8,14 +8,21 @@ package gobley.gradle.uniffi
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import net.peanuuutz.tomlkt.Toml
+import java.io.File
 
 /**
  * Configuration provided to the bindgen. Must be synced with Config in
  * `src/gen_kotlin_multiplatform/mod.rs`, but keep all properties nullable, so only properties
  * explicitly set by users are generated when merged by the plugin.
+ *
+ * Properties start with `__gradle_` should be set and read by the Gradle plugins only.
  */
 @Serializable
 internal data class Config(
+    @SerialName("__gradle_crate_name") val crateName: String? = null,
+    @SerialName("__gradle_package_root") val packageRoot: String? = null,
     @SerialName("package_name") val packageName: String? = null,
     @SerialName("cdylib_name") val cdylibName: String? = null,
     @SerialName("kotlin_multiplatform") val kotlinMultiplatform: Boolean? = null,
@@ -38,4 +45,15 @@ internal data class Config(
         @SerialName("into_custom") val intoCustom: String? = null,
         @SerialName("from_custom") val fromCustom: String? = null,
     )
+
+    companion object {
+        val toml = Toml {
+            ignoreUnknownKeys = true
+            explicitNulls = false
+        }
+    }
+}
+
+internal fun Config(file: File): Config {
+    return Config.toml.decodeFromString<Config>(file.readText(Charsets.UTF_8))
 }
