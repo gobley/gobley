@@ -1,0 +1,18 @@
+[package]
+name = "gobley-fixture-coverall-jvm"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gobley_fixture_coverall_jvm"
+crate-type = ["cdylib"]
+path = "src/main/rust/lib.rs"
+
+[dependencies]
+uniffi = { workspace = true }
+once_cell = { workspace = true }
+thiserror = { workspace = true }
+
+[build-dependencies]
+gobley-fixture-build-common = { path = "../../build-common" }

@@ -710,6 +710,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "gobley-fixture-coverall-android"
+version = "0.1.0"
+dependencies = [
+ "gobley-fixture-build-common",
+ "once_cell",
+ "thiserror",
+ "uniffi",
+]
+
+[[package]]
+name = "gobley-fixture-coverall-jvm"
+version = "0.1.0"
+dependencies = [
+ "gobley-fixture-build-common",
+ "once_cell",
+ "thiserror",
+ "uniffi",
+]
+
+[[package]]
 name = "gobley-fixture-docstring"
 version = "0.1.0"
 dependencies = [

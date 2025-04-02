@@ -1,5 +1,3 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
-import gobley.gradle.cargo.dsl.jvm
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -8,17 +6,6 @@ plugins {
     id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
     alias(libs.plugins.android.library)
-}
-
-cargo {
-    packageDirectory = project.layout.projectDirectory.dir("../coverall")
-    builds.jvm.configureEach {
-        variants {
-            buildTaskProvider.dependsOn(
-                project(":tests:uniffi:coverall").tasks.named(buildTaskProvider.name)
-            )
-        }
-    }
 }
 
 uniffi {

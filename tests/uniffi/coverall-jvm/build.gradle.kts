@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.jvm
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -11,21 +10,8 @@ plugins {
 }
 
 cargo {
-    packageDirectory = project.layout.projectDirectory.dir("../coverall")
     builds.jvm {
         embedRustLibrary = rustTarget == GobleyHost.current.rustTarget
-    }
-    builds.configureEach {
-        variants {
-            buildTaskProvider.dependsOn(
-                project(":tests:uniffi:coverall").tasks.named(buildTaskProvider.name)
-            )
-            if (rustTarget == GobleyHost.current.rustTarget) {
-                buildTaskProvider.dependsOn(
-                    project(":tests:uniffi:coverall-android").tasks.named(buildTaskProvider.name)
-                )
-            }
-        }
     }
 }
 
