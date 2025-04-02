@@ -20,6 +20,11 @@ cargo {
             buildTaskProvider.dependsOn(
                 project(":tests:uniffi:coverall").tasks.named(buildTaskProvider.name)
             )
+            if (rustTarget == GobleyHost.current.rustTarget) {
+                buildTaskProvider.dependsOn(
+                    project(":tests:uniffi:coverall-android").tasks.named(buildTaskProvider.name)
+                )
+            }
         }
     }
 }
