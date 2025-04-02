@@ -26,21 +26,16 @@ import java.util.Locale
 @InternalGobleyGradleApi
 object DependencyUtils {
     private val rustRuntimeRustTargetAttribute = Attribute.of("rustTarget", String::class.java)
-    private val rustLibraryUsageAttribute = Attribute.of("rustLibraryUsage", String::class.java)
     private val rustVariantAttribute = Attribute.of("rustVariant", String::class.java)
 
     private fun Configuration.addAttributes(
         superConfiguration: Configuration,
         rustTarget: RustTarget,
-        usage: String,
-        variant: Variant? = null,
+        variant: Variant,
     ) {
         extendsFrom(superConfiguration)
         attributes.attribute(rustRuntimeRustTargetAttribute, rustTarget.friendlyName)
-        attributes.attribute(rustLibraryUsageAttribute, usage)
-        if (variant != null) {
-            attributes.attribute(rustVariantAttribute, variant.toString())
-        }
+        attributes.attribute(rustVariantAttribute, variant.toString())
     }
 
     fun createCargoConfigurations(currentProject: Project) {
@@ -50,25 +45,6 @@ object DependencyUtils {
             if (rustTarget !is RustJvmTarget) {
                 continue
             }
-            currentProject.configurations.resolvable(
-                jvmRuntimeRustLibraryConfigurationName(rustTarget)
-            ) { configuration ->
-                configuration.addAttributes(
-                    superConfiguration = rustRuntimeOnlyConfiguration.get(),
-                    rustTarget = rustTarget,
-                    usage = "jvmRuntime",
-                )
-            }
-            currentProject.configurations.consumable(
-                jvmConsumableRuntimeRustLibraryConfigurationName(rustTarget)
-            ) { configuration ->
-                configuration.addAttributes(
-                    superConfiguration = rustRuntimeOnlyConfiguration.get(),
-                    rustTarget = rustTarget,
-                    usage = "jvmRuntime",
-                )
-            }
-
             for (variant in Variant.entries) {
                 currentProject.configurations.resolvable(
                     androidUnitTestRuntimeRustLibraryConfigurationName(
@@ -79,7 +55,6 @@ object DependencyUtils {
                         superConfiguration = rustRuntimeOnlyConfiguration.get(),
                         rustTarget = rustTarget,
                         variant = variant,
-                        usage = "androidUnitTestRuntime",
                     )
                 }
                 currentProject.configurations.consumable(
@@ -91,7 +66,6 @@ object DependencyUtils {
                         superConfiguration = rustRuntimeOnlyConfiguration.get(),
                         rustTarget = rustTarget,
                         variant = variant,
-                        usage = "androidUnitTestRuntime",
                     )
                 }
             }
@@ -103,12 +77,6 @@ object DependencyUtils {
             if (rustTarget !is RustJvmTarget) {
                 continue
             }
-            val jvmRuntimeConfiguration = currentProject.configurations.findByName(
-                jvmRuntimeRustLibraryConfigurationName(
-                    rustTarget
-                )
-            ) ?: continue
-            registerJvmRustLibraryToClassPaths(currentProject, jvmRuntimeConfiguration)
             for (variant in Variant.entries) {
                 val androidUnitTestConfiguration = currentProject.configurations.findByName(
                     androidUnitTestRuntimeRustLibraryConfigurationName(
@@ -119,26 +87,6 @@ object DependencyUtils {
                     currentProject,
                     androidUnitTestConfiguration,
                 )
-            }
-        }
-    }
-
-    private fun registerJvmRustLibraryToClassPaths(
-        currentProject: Project,
-        configuration: Configuration,
-    ) {
-        val dependencies = configuration.incoming
-        val dependencyJars =
-            currentProject.files(dependencies.artifacts.resolvedArtifacts.map { artifacts ->
-                artifacts.map { it.file }
-            })
-        PluginUtils.withKotlinPlugin(currentProject) { delegate ->
-            if (delegate.jvmTarget != null) {
-                with(delegate.sourceSets.jvmMain) {
-                    dependencies {
-                        runtimeOnly(dependencyJars)
-                    }
-                }
             }
         }
     }
@@ -155,6 +103,14 @@ object DependencyUtils {
             })
         PluginUtils.withKotlinPlugin(currentProject) { delegate ->
             if (delegate.androidTarget != null) {
+                // For Compose previews
+                if (variant == Variant.Debug) {
+                    with(delegate.sourceSets.androidMain(variant)) {
+                        dependencies {
+                            runtimeOnly(dependencyJars)
+                        }
+                    }
+                }
                 with(delegate.sourceSets.androidUnitTest(variant)) {
                     dependencies {
                         runtimeOnly(dependencyJars)
@@ -162,13 +118,6 @@ object DependencyUtils {
                 }
             }
         }
-    }
-
-    fun addJvmRuntimeRustLibraryJar(
-        currentProject: Project, rustTarget: RustTarget, jarTaskProvider: Provider<Jar>
-    ) {
-        val configurationName = jvmConsumableRuntimeRustLibraryConfigurationName(rustTarget)
-        currentProject.artifacts.add(configurationName, jarTaskProvider)
     }
 
     fun addAndroidUnitTestRuntimeRustLibraryJar(
@@ -181,24 +130,6 @@ object DependencyUtils {
             rustTarget, variant
         )
         currentProject.artifacts.add(configurationName, jarTaskProvider)
-    }
-
-    private fun jvmRuntimeRustLibraryConfigurationName(
-        rustTarget: RustTarget
-    ): String {
-        return StringBuilder().apply {
-            append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
-            append("RustRuntimeJvm")
-        }.toString()
-    }
-
-    private fun jvmConsumableRuntimeRustLibraryConfigurationName(
-        rustTarget: RustTarget
-    ): String {
-        return StringBuilder().apply {
-            append(rustTarget.friendlyName.replaceFirstChar { it.lowercase(Locale.US) })
-            append("RustRuntimeJvmConsumable")
-        }.toString()
     }
 
     private fun androidUnitTestRuntimeRustLibraryConfigurationName(

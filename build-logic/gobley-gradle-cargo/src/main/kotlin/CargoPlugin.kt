@@ -391,11 +391,6 @@ class CargoPlugin : Plugin<Project> {
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()
         ) {
-            DependencyUtils.addJvmRuntimeRustLibraryJar(
-                this,
-                cargoBuildVariant.rustTarget,
-                jarTask,
-            )
             with(kotlinExtensionDelegate.sourceSets.jvmMain) {
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
