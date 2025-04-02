@@ -19,8 +19,10 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.support.uppercaseFirstChar
+import java.io.File
 import java.util.Locale
 
 @Suppress("UnstableApiUsage")
@@ -156,6 +158,72 @@ object DependencyUtils {
             append("RustRuntimeAndroidUnitTestConsumable")
             append(variant.toString().uppercaseFirstChar())
         }.toString()
+    }
+
+    private val uniFfiUsageAttribute = Attribute.of("uniFfiUsage", String::class.java)
+
+    private fun Configuration.addAttributes(
+        superConfiguration: Configuration,
+        uniffiUsage: String,
+    ) {
+        extendsFrom(superConfiguration)
+        attributes.attribute(uniFfiUsageAttribute, uniffiUsage)
+    }
+
+    fun createUniFfiConfigurations(currentProject: Project) {
+        val uniFfiImplementationConfiguration =
+            currentProject.configurations.dependencyScope("uniFfiImplementation")
+        currentProject.configurations.resolvable("uniFfiConfiguration") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "uniFfiConfig"
+            )
+        }
+        currentProject.configurations.consumable("uniFfiConfigurationConsumable") { configuration ->
+            configuration.addAttributes(
+                superConfiguration = uniFfiImplementationConfiguration.get(),
+                uniffiUsage = "uniFfiConfig"
+            )
+        }
+    }
+
+    fun getExternalPackageUniFfiConfigurations(currentProject: Project): Provider<List<File>>? {
+        val configuration = currentProject.configurations.findByName("uniFfiConfiguration")
+            ?: return null
+        val dependencies = configuration.incoming
+        return dependencies.artifacts.resolvedArtifacts.map { artifacts ->
+            artifacts.map { it.file }
+        }
+    }
+
+    fun resolveUniFfiDependencies(currentProject: Project) {
+        val externalPackageUniFfiConfigurations =
+            getExternalPackageUniFfiConfigurations(currentProject) ?: return
+        val jnaDependency = externalPackageUniFfiConfigurations.map {
+            // Don't apply JNA when there's no dependency on UniFFI
+            if (it.isEmpty()) currentProject.files() else "net.java.dev.jna:jna:${DependencyVersions.JNA}"
+        }
+        PluginUtils.withKotlinPlugin(currentProject) { delegate ->
+            if (delegate.androidTarget != null) {
+                with(delegate.sourceSets.androidMain(Variant.Debug)) {
+                    dependencies {
+                        runtimeOnly(jnaDependency)
+                    }
+                }
+                with(delegate.sourceSets.androidUnitTest) {
+                    dependencies {
+                        runtimeOnly(jnaDependency)
+                    }
+                }
+            }
+        }
+    }
+
+    fun addUniFfiConfigTasks(
+        currentProject: Project,
+        uniFfiConfigTask: TaskProvider<*>,
+    ) {
+        currentProject.artifacts.add("uniFfiConfigurationConsumable", uniFfiConfigTask)
     }
 
     fun configureEachCommonDependencies(

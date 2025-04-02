@@ -62,6 +62,10 @@ class UniFfiPlugin : Plugin<Project> {
     private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
 
     override fun apply(target: Project) {
+        @OptIn(InternalGobleyGradleApi::class)
+        if (!target.plugins.hasPlugin(PluginIds.GOBLEY_RUST)) {
+            DependencyUtils.createUniFfiConfigurations(target)
+        }
         uniFfiExtension = target.extensions.create<UniFfiExtension>(TASK_GROUP, target)
         target.afterEvaluate {
             applyAfterEvaluate(this)
@@ -73,6 +77,9 @@ class UniFfiPlugin : Plugin<Project> {
         configureBindingTasks()
         configureKotlin()
         configureCleanTasks()
+
+        @OptIn(InternalGobleyGradleApi::class)
+        DependencyUtils.resolveUniFfiDependencies(target)
     }
 
     @OptIn(InternalGobleyGradleApi::class)
@@ -185,6 +192,10 @@ class UniFfiPlugin : Plugin<Project> {
             installDirectory.set(layout.buildDirectory.dir("bindgen-install"))
         }
 
+        @OptIn(InternalGobleyGradleApi::class)
+        val externalPackageUniFfiConfigurations =
+            DependencyUtils.getExternalPackageUniFfiConfigurations(this)
+
         val mergeUniffiConfig = tasks.register<MergeUniffiConfigTask>("mergeUniffiConfig") {
             group = TASK_GROUP
             originalConfig.set(
@@ -221,14 +232,8 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             )
 
-            @OptIn(InternalGobleyGradleApi::class)
-            DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
-                if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
-                    && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)
-                ) {
-                    externalPackageConfigs.add(dependencyProject.mergedConfig.map { it.asFile })
-                    dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
-                }
+            if (externalPackageUniFfiConfigurations != null) {
+                externalPackageConfigs.addAll(externalPackageUniFfiConfigurations)
             }
 
             @OptIn(InternalGobleyGradleApi::class)
@@ -254,6 +259,9 @@ class UniFfiPlugin : Plugin<Project> {
             outputConfig.set(mergedConfig)
         }
 
+        @OptIn(InternalGobleyGradleApi::class)
+        DependencyUtils.addUniFfiConfigTasks(this, mergeUniffiConfig)
+
         val buildBindings = tasks.register<BuildBindingsTask>("buildBindings") {
             group = TASK_GROUP
 
@@ -264,14 +272,9 @@ class UniFfiPlugin : Plugin<Project> {
                 formatCode.set(uniFfiExtension.formatCode.get())
 
             config.set(mergeUniffiConfig.flatMap { it.outputConfig })
-            @OptIn(InternalGobleyGradleApi::class)
-            DependencyUtils.configureEachCommonProjectDependencies(configurations) { dependencyProject ->
-                if (dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_UNIFFI)
-                    && dependencyProject.plugins.hasPlugin(PluginIds.GOBLEY_CARGO)
-                ) {
-                    externalPackageConfigs.add(dependencyProject.mergedConfig.map { it.asFile })
-                    dependsOn(dependencyProject.tasks.named("mergeUniffiConfig"))
-                }
+
+            if (externalPackageUniFfiConfigurations != null) {
+                externalPackageConfigs.addAll(externalPackageUniFfiConfigurations)
             }
 
             when (bindingsGeneration) {
