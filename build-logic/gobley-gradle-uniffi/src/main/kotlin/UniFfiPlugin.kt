@@ -25,6 +25,7 @@ import gobley.gradle.uniffi.dsl.UniFfiExtension
 import gobley.gradle.uniffi.tasks.BuildBindingsTask
 import gobley.gradle.uniffi.tasks.InstallBindgenTask
 import gobley.gradle.uniffi.tasks.MergeUniffiConfigTask
+import gobley.gradle.uniffi.utils.TakeIfTransformer
 import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.PluginUtils
 import org.gradle.api.GradleException
@@ -199,12 +200,12 @@ class UniFfiPlugin : Plugin<Project> {
         val mergeUniffiConfig = tasks.register<MergeUniffiConfigTask>("mergeUniffiConfig") {
             group = TASK_GROUP
             originalConfig.set(
+                @OptIn(InternalGobleyGradleApi::class)
                 bindingsGeneration.config.orElse(
                     cargoExtension.packageDirectory.file("uniffi.toml"),
-                ).map { regularFile ->
-                    // TODO: This compiles well, but Android Studio shows an error
-                    regularFile.takeIf { it.asFile.exists() }
-                }
+                ).map(TakeIfTransformer { regularFile ->
+                    regularFile.asFile.exists()
+                })
             )
 
             crateName.set(cargoExtension.cargoPackage.map { it.libraryCrateName })
