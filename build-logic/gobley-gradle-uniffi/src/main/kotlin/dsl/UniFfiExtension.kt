@@ -27,6 +27,14 @@ abstract class UniFfiExtension(internal val project: Project) {
     val formatCode: Property<Boolean> = project.objects.property<Boolean>()
 
     /**
+     * When `true`, the UniFFI plugin adds required dependencies automatically. Defaults to `true`.
+     * When there is another dependency to the same module with a different version, the UniFFI
+     * plugin uses that version.
+     */
+    val addDependencies: Property<Boolean> =
+        project.objects.property<Boolean>().convention(true)
+
+    /**
      * Install the bindgen of the given [version] from the given [registry]. If [registry] is not specified, this will
      * download the bindgen from `crates.io`.
      */
