@@ -35,7 +35,6 @@ import gobley.gradle.tasks.useGlobalLock
 import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.PluginUtils
 import gobley.gradle.variant
-import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -68,6 +67,7 @@ class CargoPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
+
     @OptIn(InternalGobleyGradleApi::class)
     private lateinit var androidDelegate: GobleyAndroidExtensionDelegate
 
@@ -125,8 +125,8 @@ class CargoPlugin : Plugin<Project> {
             kotlinExtensionDelegate = delegate
             kotlinExtensionDelegate.targets.configureEach { planBuilds() }
         }
-        val androidPluginAction = Action<Plugin<*>> {
-            androidDelegate = GobleyAndroidExtensionDelegate(project)
+        PluginUtils.withAndroidPlugin(this) { delegate ->
+            androidDelegate = delegate
             val abiFilters = androidDelegate.abiFilters
             cargoExtension.androidTargetsToBuild.convention(project.provider {
                 if (abiFilters.isNotEmpty()) {
@@ -136,10 +136,6 @@ class CargoPlugin : Plugin<Project> {
                 }
             })
         }
-
-        // If either of the Android application plugin or the Android library plugin is present, retrieve the extension.
-        plugins.withId(PluginIds.ANDROID_APPLICATION, androidPluginAction)
-        plugins.withId(PluginIds.ANDROID_LIBRARY, androidPluginAction)
     }
 
     private fun Project.checkRequiredPlugins() {
