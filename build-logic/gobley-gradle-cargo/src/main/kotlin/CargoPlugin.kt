@@ -11,6 +11,7 @@ import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
 import gobley.gradle.Variant
+import gobley.gradle.android.GobleyAndroidExtensionDelegate
 import gobley.gradle.cargo.dsl.CargoAndroidBuild
 import gobley.gradle.cargo.dsl.CargoAndroidBuildVariant
 import gobley.gradle.cargo.dsl.CargoExtension
@@ -67,7 +68,8 @@ class CargoPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
-    private lateinit var androidDelegate: CargoPluginAndroidDelegate
+    @OptIn(InternalGobleyGradleApi::class)
+    private lateinit var androidDelegate: GobleyAndroidExtensionDelegate
 
     override fun apply(target: Project) {
         @OptIn(InternalGobleyGradleApi::class)
@@ -124,7 +126,7 @@ class CargoPlugin : Plugin<Project> {
             kotlinExtensionDelegate.targets.configureEach { planBuilds() }
         }
         val androidPluginAction = Action<Plugin<*>> {
-            androidDelegate = CargoPluginAndroidDelegate(project)
+            androidDelegate = GobleyAndroidExtensionDelegate(project)
             val abiFilters = androidDelegate.abiFilters
             cargoExtension.androidTargetsToBuild.convention(project.provider {
                 if (abiFilters.isNotEmpty()) {
@@ -252,6 +254,7 @@ class CargoPlugin : Plugin<Project> {
                     )
                     dependsOn(rustUpTargetAddTask)
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
+                        @OptIn(InternalGobleyGradleApi::class)
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
                             sdkRoot = androidDelegate.androidSdkRoot,
                             apiLevel = androidDelegate.androidMinSdk,
@@ -264,6 +267,7 @@ class CargoPlugin : Plugin<Project> {
                 cargoBuildVariant.checkTaskProvider.configure {
                     dependsOn(rustUpTargetAddTask)
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
+                        @OptIn(InternalGobleyGradleApi::class)
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
                             sdkRoot = androidDelegate.androidSdkRoot,
                             apiLevel = androidDelegate.androidMinSdk,
@@ -303,6 +307,7 @@ class CargoPlugin : Plugin<Project> {
                         } else {
                             cargoBuild as CargoAndroidBuild
                             cargoBuild.dynamicLibrarySearchPaths.addAll(
+                                @OptIn(InternalGobleyGradleApi::class)
                                 cargoBuild.rustTarget.ndkLibraryDirectories(
                                     sdkRoot = androidDelegate.androidSdkRoot,
                                     apiLevel = androidDelegate.androidMinSdk,
@@ -474,6 +479,7 @@ class CargoPlugin : Plugin<Project> {
             }
         }
 
+        @OptIn(InternalGobleyGradleApi::class)
         androidDelegate.addMainJniDir(this, cargoBuildVariant.variant, copyTask, copyDestination)
 
         tasks.named("check") {

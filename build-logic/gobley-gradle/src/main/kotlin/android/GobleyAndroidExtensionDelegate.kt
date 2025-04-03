@@ -4,11 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package gobley.gradle.cargo
+package gobley.gradle.android
 
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.tasks.ProcessJavaResTask
 import com.android.build.gradle.tasks.MergeSourceSetFolders
+import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.getByVariant
 import gobley.gradle.variant
@@ -20,35 +20,35 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import java.io.File
 
-internal interface CargoPluginAndroidDelegate {
+@InternalGobleyGradleApi
+interface GobleyAndroidExtensionDelegate {
     val androidSdkRoot: File
     val androidMinSdk: Int
     val androidNdkRoot: File?
     val androidNdkVersion: String?
     val abiFilters: Set<String>
 
-    fun addTestSourceDir(variant: Variant, resourceDirectory: Provider<Directory>)
+    fun addMainSourceDir(
+        variant: Variant? = null,
+        sourceDirectory: Provider<Directory>,
+    )
+
     fun addMainJniDir(
         project: Project,
         variant: Variant,
         jniTask: TaskProvider<*>,
         jniDirectory: Provider<Directory>,
     )
-
-    fun addUnitTestResource(
-        project: Project,
-        variant: Variant,
-        resourceTask: TaskProvider<*>,
-        resourceDirectory: Provider<List<File>>,
-    )
 }
 
-internal fun CargoPluginAndroidDelegate(project: Project): CargoPluginAndroidDelegate {
-    return CargoPluginAndroidDelegateImpl(project)
+@InternalGobleyGradleApi
+fun GobleyAndroidExtensionDelegate(project: Project): GobleyAndroidExtensionDelegate {
+    return GobleyAndroidExtensionDelegateImpl(project)
 }
 
-private class CargoPluginAndroidDelegateImpl(project: Project) :
-    CargoPluginAndroidDelegate {
+@OptIn(InternalGobleyGradleApi::class)
+private class GobleyAndroidExtensionDelegateImpl(project: Project) :
+    GobleyAndroidExtensionDelegate {
     private val androidExtension: BaseExtension = project.extensions.getByType()
 
     override val androidSdkRoot: File
@@ -65,10 +65,17 @@ private class CargoPluginAndroidDelegateImpl(project: Project) :
     override val abiFilters: Set<String>
         get() = androidExtension.defaultConfig.ndk.abiFilters
 
-    override fun addTestSourceDir(variant: Variant, resourceDirectory: Provider<Directory>) {
-        androidExtension.sourceSets {
-            val testSourceSet = getByVariant("test", variant)
-            testSourceSet.resources.srcDir(resourceDirectory)
+    override fun addMainSourceDir(
+        variant: Variant?,
+        sourceDirectory: Provider<Directory>,
+    ) {
+        androidExtension.sourceSets { sourceSets ->
+            val testSourceSet = if (variant != null) {
+                sourceSets.getByVariant("test", variant)
+            } else {
+                sourceSets.getByName("test")
+            }
+            testSourceSet.java.srcDir(sourceDirectory)
         }
     }
 
@@ -87,28 +94,9 @@ private class CargoPluginAndroidDelegateImpl(project: Project) :
             }
         }
 
-        androidExtension.sourceSets {
-            val mainSourceSet = getByVariant(variant)
+        androidExtension.sourceSets { sourceSets ->
+            val mainSourceSet = sourceSets.getByVariant(variant)
             mainSourceSet.jniLibs.srcDir(jniDirectory)
-        }
-    }
-
-    override fun addUnitTestResource(
-        project: Project,
-        variant: Variant,
-        resourceTask: TaskProvider<*>,
-        resourceDirectory: Provider<List<File>>
-    ) {
-        project.tasks.withType<ProcessJavaResTask>().configureEach {
-            if (name.contains("UnitTest") && variant == this.variant!!) {
-                dependsOn(resourceTask)
-                // Override the default behavior of AGP excluding .so files, which causes UnsatisfiedLinkError
-                // on Linux.
-                from(
-                    // Append a fileTree which only includes the Rust shared library.
-                    resourceDirectory
-                )
-            }
         }
     }
 }

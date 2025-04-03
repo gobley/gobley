@@ -23,6 +23,9 @@ dependencies {
     compileOnly(plugin(libs.plugins.kotlin.android))
     compileOnly(plugin(libs.plugins.kotlin.jvm))
     compileOnly(plugin(libs.plugins.kotlin.multiplatform))
+    compileOnly(plugin(libs.plugins.android.application))
+    compileOnly(plugin(libs.plugins.android.library))
+
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.semver)
 }
