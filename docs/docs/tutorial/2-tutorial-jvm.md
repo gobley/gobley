@@ -220,7 +220,7 @@ fun main() {
 also available, so you don't have to write the same description twice.
 
 Let's run the program. Hit the Run button on the upper right corner of the screen. You can see the
-program communicates with the Rust part without any issues.
+program communicates with Rust without any issues.
 
 ![The IntelliJ IDEA screen showing the run result](./2-tutorial-jvm/img-6.png)
 

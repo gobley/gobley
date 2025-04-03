@@ -217,8 +217,8 @@ Column {
 also available, so you don't have to write the same description twice.
 
 Let's run the Android app. Hit the Run button on the upper right corner of the screen. You can see
-the Rust library is included in the final app automatically, and the app communicates with the Rust
-part without any issues.
+the Rust library is included in the final app automatically, and the app communicates with Rust
+without any issues.
 
 Let's run the iOS app as well. Open `iosApp/iosApp.xcodeproj` in Xcode. Run:
 
