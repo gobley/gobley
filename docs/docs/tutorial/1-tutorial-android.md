@@ -202,8 +202,11 @@ Column(Modifier.safeContentPadding()) {
 }
 ```
 
-<!-- TODO: Modify this after resolving #78 and #79 -->
 ![The Android studio screen after modifying the composable function](./1-tutorial-android/img-6.png)
+
+> :warning: To use Rust functions in Compose preview, you need to disable sandboxing. This is not
+> recommended for security reasons. Please see [#85](https://github.com/gobley/gobley/issues/85) for
+> details.
 
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
