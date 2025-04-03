@@ -71,9 +71,9 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
     ) {
         androidExtension.sourceSets { sourceSets ->
             val testSourceSet = if (variant != null) {
-                sourceSets.getByVariant("test", variant)
+                sourceSets.getByVariant(variant)
             } else {
-                sourceSets.getByName("test")
+                sourceSets.getByName("main")
             }
             testSourceSet.java.srcDir(sourceDirectory)
         }

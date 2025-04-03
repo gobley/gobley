@@ -10,13 +10,11 @@ import gobley.gradle.DependencyVersions
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
 import gobley.gradle.Variant
+import gobley.gradle.android.GobleyAndroidExtensionDelegate
 import gobley.gradle.cargo.dsl.CargoExtension
 import gobley.gradle.cargo.dsl.CargoJvmBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuild
-import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
-import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
-import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.uniffi.dsl.BindingsGeneration
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromLibrary
@@ -60,6 +58,9 @@ class UniFfiPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
+
+    @OptIn(InternalGobleyGradleApi::class)
+    private lateinit var androidDelegate: GobleyAndroidExtensionDelegate
 
     override fun apply(target: Project) {
         @OptIn(InternalGobleyGradleApi::class)
@@ -111,14 +112,11 @@ class UniFfiPlugin : Plugin<Project> {
         // Since the Cargo Kotlin Multiplatform plugin is present, `CargoExtension` must be present.
         cargoExtension = extensions.getByType()
 
-        plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
-            kotlinExtensionDelegate = GobleyKotlinMultiplatformExtensionDelegate(project)
+        PluginUtils.withKotlinPlugin(this) { delegate ->
+            kotlinExtensionDelegate = delegate
         }
-        plugins.withId(PluginIds.KOTLIN_ANDROID) {
-            kotlinExtensionDelegate = GobleyKotlinAndroidExtensionDelegate(project)
-        }
-        plugins.withId(PluginIds.KOTLIN_JVM) {
-            kotlinExtensionDelegate = GobleyKotlinJvmExtensionDelegate(project)
+        PluginUtils.withAndroidPlugin(this) { delegate ->
+            androidDelegate = delegate
         }
 
         bindingsGeneration.namespace.convention(cargoExtension.cargoPackage.map { it.libraryCrateName })
@@ -375,6 +373,10 @@ class UniFfiPlugin : Plugin<Project> {
                     else -> commonBindingsDirectory
                 }
             )
+            // Android Studio doesn't recognize directories added using the above method. See #79.
+            if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
+                androidDelegate.addMainSourceDir(sourceDirectory = mainBindingsDirectory)
+            }
             dependencies {
                 implementation("com.squareup.okio:okio:${DependencyVersions.OKIO}")
                 implementation("org.jetbrains.kotlinx:atomicfu:${DependencyVersions.KOTLINX_ATOMICFU}")
