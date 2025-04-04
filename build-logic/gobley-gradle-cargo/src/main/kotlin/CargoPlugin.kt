@@ -46,7 +46,6 @@ import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.listProperty
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
@@ -56,7 +55,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import java.io.File
 
 class CargoPlugin : Plugin<Project> {
     companion object {
@@ -339,6 +337,7 @@ class CargoPlugin : Plugin<Project> {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
         val findDynamicLibrariesTask = cargoBuildVariant.findDynamicLibrariesTaskProvider
+        val jarTask = cargoBuildVariant.jarTaskProvider
         cargoBuildVariant.dynamicLibrarySearchPaths.add(
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
                 cargoPackage.outputDirectory(profile, cargoBuildVariant.rustTarget).asFile
@@ -348,21 +347,7 @@ class CargoPlugin : Plugin<Project> {
         findDynamicLibrariesTask.configure {
             libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
-
-        val libraryFiles = project.objects.listProperty<File>().apply {
-            add(buildTask.flatMap { task ->
-                task.libraryFileByCrateType.map { it[CrateType.SystemDynamicLibrary]!!.asFile }
-            })
-            addAll(findDynamicLibrariesTask.flatMap { it.libraryPaths })
-        }
-
-        val jarTask = tasks.register<Jar>({
-            +"jvmRustRuntime"
-            +cargoBuildVariant
-        }) {
-            group = TASK_GROUP
-            from(libraryFiles)
-            into(cargoBuildVariant.resourcePrefix)
+        jarTask.configure {
             val variantSuffix = when (val variant = cargoBuildVariant.variant) {
                 Variant.Debug -> "-$variant"
                 else -> ""
