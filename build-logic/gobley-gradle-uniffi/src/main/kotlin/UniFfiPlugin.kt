@@ -380,10 +380,20 @@ class UniFfiPlugin : Plugin<Project> {
                 androidDelegate.addMainSourceDir(sourceDirectory = mainBindingsDirectory)
             }
             if (uniFfiExtension.addDependencies.get()) {
-                addDependencyIfNotExists("com.squareup.okio:okio:${DependencyVersions.OKIO}")
-                addDependencyIfNotExists("org.jetbrains.kotlinx:atomicfu:${DependencyVersions.KOTLINX_ATOMICFU}")
-                addDependencyIfNotExists("org.jetbrains.kotlinx:kotlinx-datetime:${DependencyVersions.KOTLINX_DATETIME}")
-                addDependencyIfNotExists("org.jetbrains.kotlinx:kotlinx-coroutines-core:${DependencyVersions.KOTLINX_COROUTINES}")
+                dependencies {
+                    implementation("com.squareup.okio:okio") {
+                        version { prefer(DependencyVersions.OKIO) }
+                    }
+                    implementation("org.jetbrains.kotlinx:atomicfu") {
+                        version { prefer(DependencyVersions.KOTLINX_ATOMICFU) }
+                    }
+                    implementation("org.jetbrains.kotlinx:kotlinx-datetime") {
+                        version { prefer(DependencyVersions.KOTLINX_DATETIME) }
+                    }
+                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core") {
+                        version { prefer(DependencyVersions.KOTLINX_COROUTINES) }
+                    }
+                }
             }
         }
     }
@@ -395,51 +405,52 @@ class UniFfiPlugin : Plugin<Project> {
                 kotlin.srcDir(jvmBindingsDirectory)
             }
             if (uniFfiExtension.addDependencies.get()) {
-                addDependencyIfNotExists(
-                    "net.java.dev.jna:jna:${DependencyVersions.JNA}",
-                    // @aar dependencies can exist
-                    addWithOldVersion = true,
-                )
+                dependencies {
+                    implementation("net.java.dev.jna:jna") {
+                        version { prefer(DependencyVersions.JNA) }
+                    }
+                }
             }
         }
     }
 
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.configureKotlinAndroidTarget() {
-        val jnaDependency = kotlinExtensionDelegate.sourceSets.androidMain.getConflictingDependency(
-            "net.java.dev.jna:jna:${DependencyVersions.JNA}@aar"
-        )
-        val jnaVersion = jnaDependency?.version ?: DependencyVersions.JNA
-
         with(kotlinExtensionDelegate.sourceSets.androidMain) {
             if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
                 kotlin.srcDir(androidBindingsDirectory)
             }
             if (uniFfiExtension.addDependencies.get()) {
-                addDependencyIfNotExists(
-                    "net.java.dev.jna:jna:${jnaVersion}@aar",
-                    // non-@aar dependencies can exist
-                    addWithOldVersion = true,
-                )
-                addDependencyIfNotExists("androidx.annotation:annotation:${DependencyVersions.ANDROIDX_ANNOTATION}")
+                dependencies {
+                    implementation("net.java.dev.jna:jna@aar") {
+                        version { prefer(DependencyVersions.JNA) }
+                    }
+                    implementation("androidx.annotation:annotation") {
+                        version { prefer(DependencyVersions.KOTLINX_COROUTINES) }
+                    }
+                }
             }
         }
+        val jnaDependency = kotlinExtensionDelegate.sourceSets.androidMain.getConflictingDependency(
+            "net.java.dev.jna:jna:${DependencyVersions.JNA}"
+        )
+        val jnaVersion = jnaDependency?.version ?: DependencyVersions.JNA
         with(kotlinExtensionDelegate.sourceSets.androidMain(Variant.Debug)) {
             if (uniFfiExtension.addDependencies.get()) {
-                addDependencyIfNotExists(
-                    "net.java.dev.jna:jna:${jnaVersion}",
-                    // @aar dependencies can exist
-                    addWithOldVersion = true,
-                )
+                dependencies {
+                    implementation("net.java.dev.jna:jna") {
+                        version { prefer(jnaVersion) }
+                    }
+                }
             }
         }
         with(kotlinExtensionDelegate.sourceSets.androidUnitTest) {
             if (uniFfiExtension.addDependencies.get()) {
-                addDependencyIfNotExists(
-                    "net.java.dev.jna:jna:${jnaVersion}",
-                    // @aar dependencies can exist
-                    addWithOldVersion = true,
-                )
+                dependencies {
+                    implementation("net.java.dev.jna:jna") {
+                        version { prefer(jnaVersion) }
+                    }
+                }
             }
         }
     }
@@ -521,36 +532,4 @@ private fun KotlinSourceSet.getConflictingDependency(
                 && dependency.module.group == dependencyToAdd.module.group
                 && dependency.module.name == dependencyToAdd.module.name
     } as? ExternalModuleDependency
-}
-
-private fun KotlinSourceSet.addDependencyIfNotExists(
-    dependencyNotation: String,
-    addWithOldVersion: Boolean = false,
-) {
-    val oldDependency = getConflictingDependency(dependencyNotation)
-    if (oldDependency == null) {
-        dependencies {
-            implementation(dependencyNotation)
-        }
-        return
-    }
-    if (!addWithOldVersion) {
-        return
-    }
-    val newNotation = StringBuilder().apply {
-        append(oldDependency.module.group)
-        append(':')
-        append(oldDependency.module.name)
-        if (oldDependency.version != null) {
-            append(':')
-            append(oldDependency.version)
-        }
-        val atSignIndex = dependencyNotation.indexOfLast { it == '@' }
-        if (atSignIndex != -1) {
-            append(dependencyNotation.substring(atSignIndex))
-        }
-    }.toString()
-    dependencies {
-        implementation(newNotation)
-    }
 }
