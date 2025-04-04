@@ -12,6 +12,7 @@ import gobley.gradle.cargo.utils.register
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustPosixTarget
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.listProperty
@@ -43,7 +44,7 @@ abstract class CargoPosixBuildVariant @Inject constructor(
         searchPaths.set(this@CargoPosixBuildVariant.dynamicLibrarySearchPaths)
     }
 
-    private val libraryFiles = project.objects.listProperty<File>().apply {
+    override val libraryFiles: Provider<List<File>> = project.objects.listProperty<File>().apply {
         add(buildTaskProvider.flatMap { task ->
             task.libraryFileByCrateType.map { it[CrateType.SystemDynamicLibrary]!!.asFile }
         })

@@ -8,12 +8,16 @@ package gobley.gradle.cargo.dsl
 
 import gobley.gradle.cargo.tasks.FindDynamicLibrariesTask
 import gobley.gradle.rust.targets.RustJvmTarget
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
+import java.io.File
 
-interface CargoJvmBuildVariant<out RustTargetT : RustJvmTarget> : CargoDesktopBuildVariant<RustTargetT>,
+interface CargoJvmBuildVariant<out RustTargetT : RustJvmTarget> :
+    CargoDesktopBuildVariant<RustTargetT>,
     HasDynamicLibraries, HasJvmProperties {
     override val build: CargoJvmBuild<CargoJvmBuildVariant<RustTargetT>>
     val findDynamicLibrariesTaskProvider: TaskProvider<FindDynamicLibrariesTask>
+    val libraryFiles: Provider<List<File>>
     val jarTaskProvider: TaskProvider<Jar>
 }
