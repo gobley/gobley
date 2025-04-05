@@ -12,7 +12,7 @@
 - Stub generation for unsupported JS/WASM targets ([#29](https://github.com/gobley/gobley/pull/29)).
 - Kotlin/Native tvOS & watchOS support ([#35](https://github.com/gobley/gobley/pull/35)).
 - Kotlin JVM and Kotlin Android Gradle plugins
-  support ([#44](https://github.com/gobley/gobley/pull/44) & [#47](https://github.com/gobley/gobley/pull/47)).
+  support ([#44](https://github.com/gobley/gobley/pull/44), [#47](https://github.com/gobley/gobley/pull/47), [#87](https://github.com/gobley/gobley/pull/87), [#94](https://github.com/gobley/gobley/pull/94), & [#97](https://github.com/gobley/gobley/pull/97)).
 - Config option for using PascalCase for enums ([#54](https://github.com/gobley/gobley/pull/54)).
 - `CargoCheckTask` for cross-platform linting ([#55](https://github.com/gobley/gobley/pull/55)).
 - `UniFfiPlugin` can be used without a UniFFI config
@@ -30,6 +30,8 @@
 ## Dependencies
 
 - Upgraded JNA from 5.16.0 to 5.17.0 ([#65](https://github.com/gobley/gobley/pull/65)).
+- Kotlin library version requirements are eased
+  off ([#89](https://github.com/gobley/gobley/pull/89)).
 
 ## [0.1.0](https://github.com/gobley/gobley/releases/tag/v0.1.0) - 2025-03-03
 
