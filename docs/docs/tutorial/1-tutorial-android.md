@@ -132,8 +132,12 @@ Let's add a Cargo package to the Android project.
       the bindings inside the `uniffi {}` block.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
-We're now ready to code both in Rust and Kotlin! Press the **Sync Now** button to make the IDE
-download the Gradle plugins.
+We're now ready to code both in Rust and Kotlin!
+
+> :question: If you hit the **Sync Now** button at this point, you'll get a
+> `Crate app not found in libapp.so` error. That's because you haven't used
+> `uniffi::setup_scaffolding!();` inside the Rust code. If you encountered such an error, go
+> straight to the next step.
 
 ![The Android Studio screen after configuring the Gradle plugins](./1-tutorial-android/img-4.png)
 
@@ -184,8 +188,11 @@ uniffi::setup_scaffolding!();
 ![The Visual Studio Code screen after modifying lib.rs](./1-tutorial-android/img-5.png)
 
 By just applying `#[uniffi::export]` or similar macros, the functions and the types become available
-on the Kotlin side. Go back to Android Studio and run **Build > Make Project**. Cargo will start
-building the Rust library inside Android Studio. After the build completes, open
+on the Kotlin side. Go back to Android Studio and press the **Sync Now** button.
+
+![The Android Studio screen before pressing the Sync Now button](./1-tutorial-android/img-6.png)
+
+Cargo will start building the Rust library inside Android Studio. After the build completes, open
 `app/src/main/java/dev/gobley/myfirstproject/MainActivity.kt`. Add the following lines to the part
 you prefer:
 
@@ -202,11 +209,14 @@ Column(Modifier.safeContentPadding()) {
 }
 ```
 
-![The Android studio screen after modifying the composable function](./1-tutorial-android/img-6.png)
+![The Android studio screen after modifying the composable function](./1-tutorial-android/img-7.png)
 
 > :warning: To use Rust functions in Compose preview, you need to disable sandboxing. This is not
 > recommended for security reasons. Please see [#85](https://github.com/gobley/gobley/issues/85) for
 > details.
+
+> :cry: Release mode Compose previews are not supported. Please
+> see [#99](https://github.com/gobley/gobley/issues/99) for details.
 
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
@@ -215,7 +225,7 @@ Let's run the Android app. Hit the Run button on the upper right corner of the s
 the Rust library is included in the final app automatically, and the app communicates with Rust
 without any issues.
 
-![The app screen inside an Android emulator](./1-tutorial-android/img-7.png)
+![The app screen inside an Android emulator](./1-tutorial-android/img-8.png)
 
 ## Next step
 

@@ -117,10 +117,10 @@ Let's add a Cargo package to the Kotlin/JVM project.
    import gobley.gradle.cargo.dsl.jvm
 
    plugins {
-       kotlin("jvm") version "2.1.10"
+       kotlin("jvm") version "<kotlin version>"
        id("dev.gobley.cargo") version "0.2.0"
        id("dev.gobley.uniffi") version "0.2.0"
-       kotlin("plugin.atomicfu") version "2.1.10"
+       kotlin("plugin.atomicfu") version "<kotlin version>"
    }
 
    cargo {
@@ -145,9 +145,12 @@ Let's add a Cargo package to the Kotlin/JVM project.
       the bindings inside the `uniffi {}` block.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
-We're now ready to code both in Rust and Kotlin! Press the **Sync Gradle Changes** button to make
-the IDE
-download the Gradle plugins.
+We're now ready to code both in Rust and Kotlin!
+
+> :question: If you hit the **Sync Now** button at this point, you'll get a
+> `Crate my_first_gobley_project not found in [lib]my_first_gobley_project.{dll, dylib, so}` error.
+> That's because you haven't used `uniffi::setup_scaffolding!();` inside the Rust code. If you
+> encountered such an error, go straight to the next step.
 
 ![The IntelliJ screen after configuring the Gradle plugins](./2-tutorial-jvm/img-4.png)
 
@@ -198,8 +201,11 @@ uniffi::setup_scaffolding!();
 ![The Visual Studio Code screen after modifying lib.rs](./2-tutorial-jvm/img-5.png)
 
 By just applying `#[uniffi::export]` or similar macros, the functions and the types become available
-on the Kotlin side. Go back to IntelliJ IDEA and run **Build > Build Project**. Cargo will start
-building the Rust library inside IntelliJ IDEA. After the build completes, modify
+on the Kotlin side. Go back to IntelliJ IDEA and press the **Sync Gradle Changes** button.
+
+![The IntelliJ screen before pressing the Sync Gradle Changes button](./2-tutorial-jvm/img-6.png)
+
+Cargo will start building the Rust library inside IntelliJ IDEA. After the build completes, modify
 `src/main/kotlin/Main.kt` as follows.
 
 ```kotlin
@@ -222,7 +228,7 @@ also available, so you don't have to write the same description twice.
 Let's run the program. Hit the Run button on the upper right corner of the screen. You can see the
 program communicates with Rust without any issues.
 
-![The IntelliJ IDEA screen showing the run result](./2-tutorial-jvm/img-6.png)
+![The IntelliJ IDEA screen showing the run result](./2-tutorial-jvm/img-7.png)
 
 ## Next step
 

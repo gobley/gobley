@@ -141,8 +141,12 @@ Let's add a Cargo package to the Kotlin Multiplatform project.
       the bindings inside the `uniffi {}` block.
     - `org.jetbrains.kotlin.plugin.atomicfu` is to use atomic types used by the bindings.
 
-We're now ready to code both in Rust and Kotlin! Press the **Sync Now** button to make the IDE
-download the Gradle plugins.
+We're now ready to code both in Rust and Kotlin!
+
+> :question: If you hit the **Sync Now** button at this point, you'll get a
+> `Crate compose_app not found in libcompose_app.so` error. That's because you haven't used
+> `uniffi::setup_scaffolding!();` inside the Rust code. If you encountered such an error, go
+> straight to the next step. 
 
 ![The Android Studio screen after configuring the Gradle plugins](./0-tutorial/img-3.png)
 
@@ -193,7 +197,11 @@ uniffi::setup_scaffolding!();
 ![The Visual Studio Code screen after modifying lib.rs](./0-tutorial/img-4.png)
 
 By just applying `#[uniffi::export]` or similar macros, the functions and the types become available
-on the Kotlin side. Go back to Android Studio and run **Build > Make Project**. Cargo will start
+on the Kotlin side. Go back to Android Studio and press the **Sync Now** button.
+
+![The Android Studio screen before pressing the Sync Now button](./0-tutorial/img-5.png)
+
+Cargo will start
 building the Rust library inside Android Studio. After the build completes, open
 `composeApp/src/commonMain/dev/gobley/myfirstproject/App.kt`. Add the following lines to the part
 you prefer:
@@ -211,7 +219,7 @@ Column {
 }
 ```
 
-![The Android studio screen after modifying the composable function](./0-tutorial/img-5.png)
+![The Android studio screen after modifying the composable function](./0-tutorial/img-6.png)
 
 `Greeter` and `add` exported on the Rust side are accessible on the Kotlin side! Doc-comments are
 also available, so you don't have to write the same description twice.
@@ -226,14 +234,14 @@ Let's run the iOS app as well. Open `iosApp/iosApp.xcodeproj` in Xcode. Run:
 open -a "Xcode" ./iosApp/iosApp.xcodeproj
 ```
 
-![The Xcode screen after launching](./0-tutorial/img-6.png)
+![The Xcode screen after launching](./0-tutorial/img-7.png)
 
 Since the part connecting Swift and Kotlin is handled by the Kotlin Multiplatform Wizard, we can
 just hit the Run button as well on Xcode.
 
 | Android                                                              | iOS                                                               |
 |----------------------------------------------------------------------|-------------------------------------------------------------------|
-| ![The app screen inside an Android emulator](./0-tutorial/img-7.png) | ![The app screen inside an iOS simulator](./0-tutorial/img-8.png) |
+| ![The app screen inside an Android emulator](./0-tutorial/img-8.png) | ![The app screen inside an iOS simulator](./0-tutorial/img-9.png) |
 
 ## Next step
 
