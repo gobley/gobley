@@ -369,6 +369,152 @@ cargo {
 }
 ```
 
+## Supporting 16 KB page sizes on Android
+
+> :bulb: We recommend to first read
+> the [official documentation](https://developer.android.com/guide/practices/page-sizes).
+
+Starting from Android 15, AOSP allows devices to use a page size of 16 KB. You should configure
+the linker to use a 16 KB page size to properly handle this. If you're using NDK r28 or higher,
+NDK will handle this automatically.
+
+### How to check the NDK version
+
+You can get the NDK version you're using via `android.ndkVersion`.
+
+```kotlin
+println("ndkVersion: ${android.ndkVersion}")
+```
+
+```
+> Configure project :your-project
+ndkVersion: 27.0.12077973
+```
+
+If the above code reports NDK r27 or lower, you can set the NDK version using the same property.
+
+```kotlin
+android {
+    ndkVersion = "28.0.13004108"
+}
+```
+
+### Manually configuring the page size
+
+If you're not able to upgrade the NDK version, you have two options to configure the page size
+manually.
+
+#### Using Gradle DSL
+
+Pass `-C link-args=-Wl,-z,max-page-size=16384` to `RUSTFLAGS`.
+
+```kotlin
+cargo {
+    builds.android {
+        variants {
+            buildTaskProvider.configure {
+                additionalEnvironment.put(
+                    "RUSTFLAGS",
+                    "-C link-args=-Wl,-z,max-page-size=16384",
+                )
+            }
+        }
+    }
+}
+```
+
+#### Using Cargo Configuration
+
+You can also modify `RUSTFLAGS`
+in [Cargo Configuration](https://doc.rust-lang.org/cargo/reference/config.html). Putting
+`rustflags = ["-C", "link-args=-Wl,-z,max-page-size=16384"]` has the same effect as the Gradle
+DSL described above. For example in `%USERPROFILE%\.cargo\config.toml` (Windows) or
+`~/.cargo/config.toml` (macOS & Linux), you can configure this as follows:
+
+```toml
+[target.aarch64-linux-android]
+rustflags = ["-C", "link-args=-Wl,-z,max-page-size=16384"]
+
+[target.armv7-linux-androideabi]
+rustflags = ["-C", "link-args=-Wl,-z,max-page-size=16384"]
+
+[target.x86_64-linux-android]
+rustflags = ["-C", "link-args=-Wl,-z,max-page-size=16384"]
+
+[target.i686-linux-android]
+rustflags = ["-C", "link-args=-Wl,-z,max-page-size=16384"]
+```
+
+### How to check the page size of the dynamic library
+
+To check whether the Rust library is built with a 16 KB page size, you can use the `llvm-readelf`
+command in NDK.
+
+```shell
+<Android SDK Root>/ndk/<NDK version>/toolchains/llvm/prebuilt/<Host Triplet>/bin/llvm-readelf -l target/<target triplet>/<profile>/libyour_project.so
+```
+
+For example,
+
+```shell
+# On Windows, checking a AArch64 Android dynamic library
+<NDK Root>\toolchains\llvm\prebuilt\windows-x86_64\bin\llvm-readelf.exe -l target\aarch64-linux-android\debug\libyour_project.so
+
+# On macOS, checking a Arm32 Android dynamic library
+# Apple Silicon Macs also use darwin-x86_64
+<NDK Root>/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-readelf -l target/armv7-linux-androideabi/debug/libyour_project.so
+
+# On Linux
+<NDK Root>/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf -l target/armv7-linux-androideabi/debug/libyour_project.so
+```
+
+When you run the command, you can see something like this.
+
+```
+Elf file type is DYN (Shared object file)
+Entry point 0x0
+There are 10 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
+  PHDR           0x000040 0x0000000000000040 0x0000000000000040 0x000230 0x000230 R   0x8
+  LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x018d28 0x018d28 R   0x4000
+  LOAD           0x018d28 0x000000000001cd28 0x000000000001cd28 0x0306c8 0x0306c8 R E 0x4000
+  LOAD           0x0493f0 0x00000000000513f0 0x00000000000513f0 0x001e08 0x002c10 RW  0x4000
+  LOAD           0x04b1f8 0x00000000000571f8 0x00000000000571f8 0x000078 0x0009a0 RW  0x4000
+  DYNAMIC        0x04ae40 0x0000000000052e40 0x0000000000052e40 0x000190 0x000190 RW  0x8
+  GNU_RELRO      0x0493f0 0x00000000000513f0 0x00000000000513f0 0x001e08 0x002c10 R   0x1
+  GNU_EH_FRAME   0x00bd6c 0x000000000000bd6c 0x000000000000bd6c 0x00234c 0x00234c R   0x4
+  GNU_STACK      0x000000 0x0000000000000000 0x0000000000000000 0x000000 0x000000 RW  0x0
+  NOTE           0x000270 0x0000000000000270 0x0000000000000270 0x000098 0x000098 R   0x4
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     
+   01     .note.android.ident .dynsym .gnu.version .gnu.version_r .gnu.hash .hash .dynstr .rela.dyn .rela.plt .rodata .gcc_except_table .eh_frame_hdr .eh_frame 
+   02     .text .plt 
+   03     .data.rel.ro .fini_array .dynamic .got .got.plt .relro_padding 
+   04     .data .bss 
+   05     .dynamic 
+   06     .data.rel.ro .fini_array .dynamic .got .got.plt .relro_padding 
+   07     .eh_frame_hdr 
+   08     
+   09     .note.android.ident 
+   None   .comment .debug_abbrev .debug_info .debug_aranges .debug_ranges .debug_str .debug_line .debug_loc .symtab .shstrtab .strtab
+```
+
+Look at the program headers named `LOAD`.
+
+```
+LOAD           0x000000 0x0000000000000000 0x0000000000000000 0x018d28 0x018d28 R   0x4000
+```
+
+If the page size is configured correctly, you would be able to see the `Align` column has a value
+of `0x4000` (16384), which means that the dynamic library is built with a page size of 16 KB.
+
+If this value is `0x1000` (4096), that means the linker used a 4 KB page size. Check the NDK version
+or `RUSTFLAGS` again if you encountered this problem.
+
 ## Building for Windows on ARM
 
 By default on an x64 machine, Visual Studio installs MSVC for x64/x86 only. If you try to link a
