@@ -374,6 +374,10 @@ cargo {
 > :bulb: We recommend to first read
 > the [official documentation](https://developer.android.com/guide/practices/page-sizes).
 
+> :warning: If you're using UniFFI, you also have to upgrade JNA to 5.17 or higher. Please
+> see [How to upgrade the JNA version](#how-to-upgrade-the-jna-version) for
+> details.
+
 Starting from Android 15, AOSP allows devices to use a page size of 16 KB. You should configure
 the linker to use a 16 KB page size to properly handle this. If you're using NDK r28 or higher,
 NDK will handle this automatically.
@@ -514,6 +518,36 @@ of `0x4000` (16384), which means that the dynamic library is built with a page s
 
 If this value is `0x1000` (4096), that means the linker used a 4 KB page size. Check the NDK version
 or `RUSTFLAGS` again if you encountered this problem.
+
+### How to upgrade the JNA version
+
+> Please refer
+> to [java-native-access/jna#1647](https://github.com/java-native-access/jna/issues/1647) for the
+> JNA-side issue.
+
+If you're using UniFFI, you also have to upgrade JNA to 5.17 or higher. The version requirements of
+Kotlin library dependencies by UniFFI uses the [
+`prefer` requirements](https://docs.gradle.org/8.13/userguide/dependency_versions.html#sec:preferred-version),
+so you can override versions of them to the one you want. To upgrade the JNA version, add a
+dependency on the version you want as follows.
+
+```kotlin
+// Kotlin Multiplatform
+kotlin {
+    sourceSets {
+        androidMain {
+            dependencies {
+                implementation("net.java.dev.jna:jna:5.17.0@aar")
+            }
+        }
+    }
+}
+
+// Pure Android
+dependencies {
+    implementation("net.java.dev.jna:jna:5.17.0@aar")
+}
+```
 
 ## Building for Windows on ARM
 
