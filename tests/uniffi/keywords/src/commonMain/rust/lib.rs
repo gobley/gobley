@@ -16,10 +16,15 @@ impl r#break {
 
 #[allow(non_camel_case_types)]
 trait r#continue {
+    #[allow(dead_code)]
     fn r#return(&self, v: r#return) -> r#return;
+    #[allow(dead_code)]
     fn r#continue(&self) -> Option<Box<dyn r#continue>>;
+    #[allow(dead_code)]
     fn r#break(&self, _v: Option<Arc<r#break>>) -> HashMap<u8, Arc<r#break>>;
+    #[allow(dead_code)]
     fn r#while(&self, _v: Vec<r#while>) -> r#while;
+    #[allow(dead_code)]
     fn class(&self, _v: HashMap<u8, Vec<class>>) -> Option<HashMap<u8, Vec<class>>>;
 }
 

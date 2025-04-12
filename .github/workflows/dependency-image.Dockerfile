@@ -1,4 +1,4 @@
-FROM rust:1.74-slim
+FROM rust:1.82.0-slim
 
 # Use Clippy to detect more warnings
 RUN rustup component add clippy
