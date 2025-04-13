@@ -9,6 +9,7 @@ package gobley.gradle.cargo.tasks
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.cargo.profiles.CargoProfile
 import gobley.gradle.rust.targets.RustTarget
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
@@ -30,6 +31,9 @@ abstract class CargoCheckTask : CargoPackageTask() {
     @get:Input
     abstract val checkCommand: Property<String>
 
+    @get:Input
+    abstract val extraArguments: ListProperty<String>
+
     @TaskAction
     @OptIn(InternalGobleyGradleApi::class)
     fun check() {
@@ -42,6 +46,9 @@ abstract class CargoCheckTask : CargoPackageTask() {
                 if (features.get().isNotEmpty()) {
                     arguments("--features", features.get().joinToString(","))
                 }
+            }
+            for (extraArgument in extraArguments.get()) {
+                arguments(extraArgument)
             }
             suppressXcodeIosToolchains()
         }.get().apply {
