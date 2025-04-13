@@ -48,6 +48,6 @@ abstract class DefaultCargoBuildVariant<out RustTargetT : RustTarget, out CargoB
             profile.set(this@DefaultCargoBuildVariant.profile)
             target.set(this@DefaultCargoBuildVariant.rustTarget)
             features.set(this@DefaultCargoBuildVariant.features)
-            command.convention(extension.checkCommand)
+            checkCommand.convention(extension.checkCommand)
         }
 }

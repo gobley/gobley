@@ -28,14 +28,14 @@ abstract class CargoCheckTask : CargoPackageTask() {
     abstract val features: SetProperty<String>
 
     @get:Input
-    abstract val command: Property<String>
+    abstract val checkCommand: Property<String>
 
     @TaskAction
     @OptIn(InternalGobleyGradleApi::class)
     fun build() {
         val profile = profile.get()
         val target = target.get()
-        cargo(command.get()) {
+        cargo(checkCommand.get()) {
             arguments("--profile", profile.profileName)
             arguments("--target", target.rustTriple)
             if (features.isPresent) {
