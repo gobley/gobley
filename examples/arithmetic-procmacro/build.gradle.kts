@@ -20,6 +20,10 @@ cargo {
                     nightly = true
                     extraArguments.add("-Zbuild-std")
                 }
+                checkTaskProvider.configure {
+                    nightly = true
+                    extraArguments.add("-Zbuild-std")
+                }
             }
         }
     }
