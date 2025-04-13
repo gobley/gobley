@@ -32,7 +32,7 @@ abstract class CargoCheckTask : CargoPackageTask() {
 
     @TaskAction
     @OptIn(InternalGobleyGradleApi::class)
-    fun build() {
+    fun check() {
         val profile = profile.get()
         val target = target.get()
         cargo(checkCommand.get()) {
