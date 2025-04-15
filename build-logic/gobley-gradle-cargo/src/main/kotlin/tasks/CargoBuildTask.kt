@@ -7,6 +7,7 @@
 package gobley.gradle.cargo.tasks
 
 import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.cargo.CargoMessage
 import gobley.gradle.cargo.profiles.CargoProfile
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustNativeTarget
@@ -23,6 +24,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 
 @Suppress("LeakingThis")
 @CacheableTask
@@ -44,7 +46,8 @@ abstract class CargoBuildTask : CargoPackageTask() {
         profile.zip(target, ::Pair).zip(cargoPackage) { (profile, target), cargoPackage ->
             cargoPackage.libraryCrateTypes.mapNotNull { crateType ->
                 crateType to cargoPackage.outputDirectory(profile, target).file(
-                    target.outputFileName(cargoPackage.libraryCrateName, crateType) ?: return@mapNotNull null
+                    target.outputFileName(cargoPackage.libraryCrateName, crateType)
+                        ?: return@mapNotNull null
                 )
             }.toMap()
         }
@@ -67,6 +70,7 @@ abstract class CargoBuildTask : CargoPackageTask() {
                 }
             }
             arguments("--lib")
+            arguments("--message-format", "json")
             for (extraArgument in extraArguments.get()) {
                 arguments(extraArgument)
             }
@@ -76,34 +80,80 @@ abstract class CargoBuildTask : CargoPackageTask() {
             }
             suppressXcodeIosToolchains()
             if (nativeStaticLibsDefFile.isPresent) {
-                captureStandardError()
+                captureStandardOutput()
             }
         }.get().apply {
             assertNormalExitValue()
         }
 
         if (nativeStaticLibsDefFile.isPresent) {
-            nativeStaticLibsDefFile.get().asFile.run {
+            val nativeStaticLibsDefFile = nativeStaticLibsDefFile.get().asFile.apply {
                 parentFile?.mkdirs()
-
-                val linkerOptName = if (target is RustNativeTarget) {
-                    "linkerOpts.${target.cinteropName}"
-                } else {
-                    "linkerOpts"
-                }
-                val linkerFlag = result.standardError!!.split('\n')
-                    .map { it.trim().substringAfter("note: native-static-libs: ", "") }.firstOrNull(String::isNotEmpty)
-
-                writeText(StringBuilder().apply {
-                    if (linkerFlag != null) {
-                        append("$linkerOptName = $linkerFlag\n")
-                    }
-                    val libraryFile = libraryFileByCrateType.get()[CrateType.SystemStaticLibrary]
-                    if (libraryFile != null) {
-                        append("staticLibraries = ${libraryFile.asFile.name}")
-                    }
-                }.toString())
             }
+            val messages = result.standardOutput!!.split('\n')
+                .mapNotNull { runCatching { CargoMessage(it) }.getOrNull() }
+
+            val librarySearchPaths = mutableListOf<String>()
+            var staticLibraries: String? = null
+            for (message in messages) {
+                when (message) {
+                    is CargoMessage.BuildScriptExecuted -> {
+                        val buildScriptOutput = File(message.outDir).parentFile?.resolve("output")
+                            ?.readLines(Charsets.UTF_8)
+                        if (buildScriptOutput != null) {
+                            for (line in buildScriptOutput) {
+                                val searchPath = line.substringAfter("cargo:", "").trim(':')
+                                    .substringAfter("rustc-link-search=", "")
+                                    .takeIf(String::isNotEmpty)?.split('=')
+                                when (searchPath?.size) {
+                                    1 -> librarySearchPaths.add(searchPath[0])
+                                    2 -> if (searchPath[1] != "crate" && searchPath[1] != "dependency") {
+                                        librarySearchPaths.add(searchPath[1])
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+
+                    is CargoMessage.CompilerMessage -> {
+                        if (staticLibraries == null) {
+                            val note = message.message.rendered?.trim()
+                            staticLibraries =
+                                note?.trim()?.substringAfter("note: native-static-libs: ", "")
+                                    ?.takeIf(String::isNotEmpty)
+                        }
+                    }
+
+                    else -> {}
+                }
+            }
+
+            val linkerOptName = if (target is RustNativeTarget) {
+                "linkerOpts.${target.cinteropName}"
+            } else {
+                "linkerOpts"
+            }
+            val linkerFlag = StringBuilder().apply {
+                if (librarySearchPaths.isNotEmpty()) {
+                    append(librarySearchPaths.joinToString(" ") { "-L$it" })
+                    if (staticLibraries != null) {
+                        append(' ')
+                    }
+                }
+                if (staticLibraries != null) {
+                    append(staticLibraries)
+                }
+            }
+            nativeStaticLibsDefFile.writeText(StringBuilder().apply {
+                if (linkerFlag.isNotEmpty()) {
+                    append("$linkerOptName = $linkerFlag\n")
+                }
+                val libraryFile = libraryFileByCrateType.get()[CrateType.SystemStaticLibrary]
+                if (libraryFile != null) {
+                    append("staticLibraries = ${libraryFile.asFile.name}")
+                }
+            }.toString())
         }
     }
 }
