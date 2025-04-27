@@ -57,7 +57,10 @@ private fun Project.configureProjectProperties(
         rootProject.layout.projectDirectory.file("../bindgen/Cargo.toml").asFile
     )
     group = "dev.gobley.gradle"
-    version = bindgenInfo.version
+    version = when {
+        bindgenInfo.version.contains('-') -> bindgenInfo.version.substringBefore('-') + "-SNAPSHOT"
+        else -> bindgenInfo.version
+    }
     this.description = description
 }
 
