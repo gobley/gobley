@@ -4,7 +4,7 @@ kotlin = "2.1.10"
 agp = "8.7.3"
 
 buildconfig = "5.5.1"
-vanniktech-maven-publish = "0.30.0"
+vanniktech-maven-publish = "0.31.0"
 
 kotlinx-serialization = "1.7.3"
 kotlinx-coroutines = "1.9.0"
