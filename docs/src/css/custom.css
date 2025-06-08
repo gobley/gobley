@@ -92,3 +92,8 @@
 .navbar-sidebar .header-github-link:hover {
   background: var(--ifm-menu-color-background-hover);
 }
+
+.img--half img {
+  width: 50%;
+  max-width: 100%;
+}

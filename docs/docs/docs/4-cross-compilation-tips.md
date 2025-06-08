@@ -796,6 +796,14 @@ lto = true
 On the other hand, Kotlin/Native enables LTO by default for release builds, so no additional
 configuration is required.
 
+The following results are from an experiment using
+the [Kotlin/Native tutorial](../tutorial/3-tutorial-native.md). As you can see, LTO significantly
+reduces the size of the compiled programs.
+
+<div class="text--center img--half">
+    ![LTO experiment results](./4-cross-compilation-tips/img-3.png)
+</div>
+
 ## Building for Windows on ARM
 
 By default on an x64 machine, Visual Studio installs MSVC for x64/x86 only. If you try to link a
