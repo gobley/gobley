@@ -1,8 +1,10 @@
+import fs from "node:fs";
+import path from "node:path";
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
-import type {PluginOptions} from "docusaurus-plugin-llms-builder"
-import packageJson from "./package.json" with {type: "json"}
+import type { PluginOptions } from "docusaurus-plugin-llms-builder";
+import packageJson from "./package.json";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -42,31 +44,22 @@ const config: Config = {
           {
             title: "Gobley",
             description: "Embed Rust into your Kotlin Multiplatform project",
-            summary: `
-A set of libraries and tools that help you mix Rust and Kotlin
-using [UniFFI](https://github.com/mozilla/uniffi-rs). This project was forked
-from [UniFFI Kotlin Multiplatform bindings](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings).
-Since the original project is no longer maintained, active development now continues here.
-
-Currently, Android, Kotlin/JVM, and Kotlin/Native are supported. WASM is not supported yet.
-
-- UniFFI Bindings Generation for Kotlin Multiplatform (Android, JVM, Kotlin/Native)
-- KotlinX Serialization Support
-- Automatic building and linking of Rust libraries to Kotlin projects
-            `,
+            summary: fs.readFileSync(path.join(__dirname, "..", "README.md"), {
+              encoding: "utf-8",
+            }),
             sessions: [
               {
                 type: "docs",
                 docsDir: "docs",
                 sessionName: "Docs",
-              }
+              },
             ],
             generateLLMsTxt: true,
-            generateLLMsFullTxt: true
-          }
-        ]
-      } as PluginOptions
-    ]
+            generateLLMsFullTxt: true,
+          },
+        ],
+      } as PluginOptions,
+    ],
   ],
 
   presets: [
