@@ -59,7 +59,7 @@ Let's add a Cargo package to the Android project.
 
    Let's see what this command does:
 
-    - `cargo init` will create a new Cargo package in `composeApp`.
+    - `cargo init` will create a new Cargo package in `app`.
     - `--lib` means that Cargo will create a **library** crate.
     - `--vcs none` means you don't want to generate `.git` or `.gitignore`.
     - `app` is the directory where we'll code both in Rust and Kotlin.
