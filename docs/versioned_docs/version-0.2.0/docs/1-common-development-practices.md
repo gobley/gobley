@@ -15,7 +15,7 @@ with Visual Studio Code or RustRover. In normal cases, Kotlin handles the part i
 users such as UI while Rust handles the core business logic, so using two IDEs won't harm the
 developer experience that much.
 
-Since building Rust takes much time than compiling Kotlin, try separating the Kotlin part that uses
+Since building Rust takes much more time than compiling Kotlin, try separating the Kotlin part that uses
 Rust directly as a core library. You can build and publish the core library using the
 `maven-publish` plugin and the other Kotlin part can download it from a maven repository.
 
