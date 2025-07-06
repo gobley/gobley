@@ -252,7 +252,9 @@ class CargoPlugin : Plugin<Project> {
                             "nativeStaticLibsDefFile"
                         )
                     )
-                    dependsOn(rustUpTargetAddTask)
+                    if (cargoBuild.installTargetBeforeBuild.get()) {
+                        dependsOn(rustUpTargetAddTask)
+                    }
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
                         @OptIn(InternalGobleyGradleApi::class)
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
@@ -265,7 +267,9 @@ class CargoPlugin : Plugin<Project> {
                     }
                 }
                 cargoBuildVariant.checkTaskProvider.configure {
-                    dependsOn(rustUpTargetAddTask)
+                    if (cargoBuild.installTargetBeforeBuild.get()) {
+                        dependsOn(rustUpTargetAddTask)
+                    }
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
                         @OptIn(InternalGobleyGradleApi::class)
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
