@@ -33,4 +33,12 @@ interface CargoBuild<out CargoBuildVariantT : CargoBuildVariant<RustTarget>>
      * The Cargo command to use for linting. If you want to Clippy, set this to `clippy`.
      */
     val checkCommand: Property<String>
+
+    /**
+     * When `true`, the pre-built standard library for the target will be installed via the
+     * `rustup target add` command before building or linting. This is turned off for tier 3 targets
+     * by default. If you are using a custom target whose tier cannot be determined, set this
+     * property to `false`.
+     */
+    val installTargetBeforeBuild: Property<Boolean>
 }

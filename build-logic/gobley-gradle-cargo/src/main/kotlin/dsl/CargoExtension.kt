@@ -141,4 +141,13 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
      */
     val publishJvmArtifacts: Property<Boolean> =
         project.objects.property<Boolean>().convention(true)
+
+    /**
+     * When `true`, the pre-built standard library for the target will be installed via the
+     * `rustup target add` command before building or linting. This is turned off for tier 3 targets
+     * by default. If you are using a custom target whose tier cannot be determined, set this
+     * property to `false`.
+     */
+    val installTargetBeforeBuild: Property<Boolean> =
+        project.objects.property<Boolean>().convention(true)
 }
