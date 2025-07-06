@@ -529,7 +529,7 @@ cargo {
 
 Some targets like tvOS and watchOS are tier 3 in the Rust world (they are tier 2 on the Kotlin
 side). Pre-built standard libraries are not available for these targets, and the Cargo plugin does
-not invoke the `rustup target add` for them. To use the standard library, you must pass the
+not invoke the `rustup target add` command for them. To use the standard library, you must pass the
 `-Zbuild-std` flag to the `cargo build` command (
 See [here](https://doc.rust-lang.org/cargo/reference/unstable.html#build-std) for the official
 documentation). Since this flag is available only on the nightly channel, you should tell the Cargo
