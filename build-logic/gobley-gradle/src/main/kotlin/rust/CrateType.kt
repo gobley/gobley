@@ -38,6 +38,18 @@ enum class CrateType(private val actualName: String) {
         }
     }
 
+    fun outputFileNameForMinGW(crateName: String): String? {
+        return when (this) {
+            Executable -> "${crateName}.exe"
+            StaticLibrary -> "lib${crateName}.rlib"
+            DynamicLibrary -> "${crateName}.dll"
+            // This part is different from outputFileNameForMsvc
+            SystemStaticLibrary -> "lib${crateName}.a"
+            SystemDynamicLibrary -> "${crateName}.dll"
+            else -> null
+        }
+    }
+
     private fun outputFileNameForPosix(crateName: String, dylibExtension: String): String? {
         return when (this) {
             Executable -> crateName
@@ -49,17 +61,18 @@ enum class CrateType(private val actualName: String) {
         }
     }
 
-    fun outputFileNameForMinGW(crateName: String): String? = outputFileNameForPosix(crateName, "dll")
+    fun outputFileNameForMacOS(crateName: String): String? =
+        outputFileNameForPosix(crateName, "dylib")
 
-    fun outputFileNameForMacOS(crateName: String): String? = outputFileNameForPosix(crateName, "dylib")
-
-    fun outputFileNameForLinux(crateName: String): String? = outputFileNameForPosix(crateName, "so")
+    fun outputFileNameForLinux(crateName: String): String? =
+        outputFileNameForPosix(crateName, "so")
 
     override fun toString(): String = actualName
 }
 
 object CrateTypeSerializer : KSerializer<CrateType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CrateType", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("CrateType", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: CrateType) {
         encoder.encodeString(value.toString())
