@@ -501,11 +501,36 @@ cargo {
 }
 ```
 
+## Disabling automatic installation of pre-built standard libraries
+
+By default, the Cargo plugin installs the pre-built standard library of the specified target via the
+`rustup target add` command before initiating a build. For example, if your library targets AArch64
+Android, the plugin will run `rustup target add aarch64-linux-android` before building.
+
+While this behavior is convenient in most scenarios, some users using a custom target may have
+trouble setting their build. To address such cases, the Cargo plugin offers the
+`installTargetBeforeBuild` property, which defaults to `true`. If you set it to `false`, the plugin
+will skip the `rustup target add` step before building. You can configure this property globally or
+on a per-target basis, as shown below:
+
+```kotlin
+cargo {
+    // Disable `rustup target add` for all targets
+    installTargetBeforeBuild = false
+    // Alternatively, disable `rustup target add` for a specific target (e.g. Android)
+    builds.android {
+        // installTargetBeforeBuild is inherited from the one in the `cargo {}` block 
+        installTargetBeforeBuild = false
+    }
+}
+```
+
 ## Enabling the nightly mode and building tier 3 Rust targets
 
 Some targets like tvOS and watchOS are tier 3 in the Rust world (they are tier 2 on the Kotlin
-side). Pre-built standard libraries are not available for these targets. To use the standard
-library, you must pass the `-Zbuild-std` flag to the `cargo build` command (
+side). Pre-built standard libraries are not available for these targets, and the Cargo plugin does
+not invoke the `rustup target add` for them. To use the standard library, you must pass the
+`-Zbuild-std` flag to the `cargo build` command (
 See [here](https://doc.rust-lang.org/cargo/reference/unstable.html#build-std) for the official
 documentation). Since this flag is available only on the nightly channel, you should tell the Cargo
 plugin to use the nightly compiler to compile the standard library.
