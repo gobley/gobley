@@ -43,6 +43,15 @@ abstract class UniFfiExtension(internal val project: Project) {
         project.objects.property<Boolean>().convention(true)
 
     /**
+     * When `true`, the UniFFI plugin will generate a ProGuard rule file for the Android target.
+     * The generated file will automatically appended to `proguardFile` or `consumerProguardFile`
+     * inside the `android.buildTypes {}` block, depending on whether the current module is
+     * an application project or a library project.
+     */
+    val generateProGuardRules: Property<Boolean> =
+        project.objects.property<Boolean>().convention(true)
+
+    /**
      * Install the bindgen of the given [version] from the given [registry]. If [registry] is not specified, this will
      * download the bindgen from `crates.io`.
      */
