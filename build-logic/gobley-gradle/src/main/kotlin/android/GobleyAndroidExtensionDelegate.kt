@@ -6,6 +6,9 @@
 
 package gobley.gradle.android
 
+import com.android.build.api.dsl.ApplicationBuildType
+import com.android.build.api.dsl.BuildType
+import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import gobley.gradle.InternalGobleyGradleApi
@@ -14,6 +17,7 @@ import gobley.gradle.getByVariant
 import gobley.gradle.variant
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
@@ -38,6 +42,12 @@ interface GobleyAndroidExtensionDelegate {
         variant: Variant,
         jniTask: TaskProvider<*>,
         jniDirectory: Provider<Directory>,
+    )
+
+    fun addProGuardFiles(
+        project: Project,
+        proGuardFile: RegularFile,
+        generationTask: TaskProvider<*>,
     )
 }
 
@@ -97,6 +107,36 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
         androidExtension.sourceSets { sourceSets ->
             val mainSourceSet = sourceSets.getByVariant(variant)
             mainSourceSet.jniLibs.srcDir(jniDirectory)
+        }
+    }
+
+    override fun addProGuardFiles(
+        project: Project,
+        proGuardFile: RegularFile,
+        generationTask: TaskProvider<*>,
+    ) {
+        androidExtension.buildTypes.configureEach { buildType ->
+            if (buildType.isMinifyEnabled) {
+                addProGuardFilesToBuildType(project, proGuardFile, buildType, generationTask)
+            }
+        }
+    }
+
+    private fun addProGuardFilesToBuildType(
+        project: Project,
+        proGuardFile: RegularFile,
+        buildType: BuildType,
+        generationTask: TaskProvider<*>,
+    ) {
+        // For some reason, androidExtension.buildTypes.getByName returns a internal BuildType
+        // that implements both ApplicationBuildType and LibraryBuildType.
+
+        if (buildType is ApplicationBuildType) {
+            buildType.proguardFile(proGuardFile)
+        }
+
+        if (buildType is LibraryBuildType) {
+            buildType.consumerProguardFile(proGuardFile)
         }
     }
 }
