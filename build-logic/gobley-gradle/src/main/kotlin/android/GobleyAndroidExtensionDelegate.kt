@@ -10,6 +10,7 @@ import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
@@ -116,9 +117,7 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
         generationTask: TaskProvider<*>,
     ) {
         androidExtension.buildTypes.configureEach { buildType ->
-            if (buildType.isMinifyEnabled) {
-                addProGuardFilesToBuildType(project, proGuardFile, buildType, generationTask)
-            }
+            addProGuardFilesToBuildType(project, proGuardFile, buildType, generationTask)
         }
     }
 
@@ -137,6 +136,11 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
 
         if (buildType is LibraryBuildType) {
             buildType.consumerProguardFile(proGuardFile)
+            project.tasks.withType<MergeConsumerProguardFilesTask> {
+                if (name.lowercase().contains(buildType.name.lowercase())) {
+                    dependsOn(generationTask)
+                }
+            }
         }
     }
 }

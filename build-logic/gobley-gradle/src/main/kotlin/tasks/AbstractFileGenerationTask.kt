@@ -8,7 +8,7 @@ package gobley.gradle.tasks
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -16,12 +16,13 @@ abstract class AbstractFileGenerationTask : DefaultTask() {
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
-    protected abstract val desiredOutput: Provider<String>
+    @Internal
+    protected abstract fun getDesiredOutput(): String
 
     init {
         outputs.upToDateWhen {
             val outputFile = outputFile.asFile.get()
-            outputFile.exists() && outputFile.isFile && outputFile.readText(Charsets.UTF_8) == desiredOutput.get()
+            outputFile.exists() && outputFile.isFile && outputFile.readText(Charsets.UTF_8) == getDesiredOutput()
         }
     }
 
@@ -29,6 +30,6 @@ abstract class AbstractFileGenerationTask : DefaultTask() {
     fun generateFile() {
         val outputFile = outputFile.asFile.get()
         outputFile.parentFile?.mkdirs()
-        outputFile.writeText(desiredOutput.get())
+        outputFile.writeText(getDesiredOutput())
     }
 }

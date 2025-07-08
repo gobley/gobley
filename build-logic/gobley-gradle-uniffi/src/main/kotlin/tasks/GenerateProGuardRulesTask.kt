@@ -7,32 +7,14 @@
 package gobley.gradle.uniffi.tasks
 
 import gobley.gradle.tasks.AbstractFileGenerationTask
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 
 @CacheableTask
 abstract class GenerateProGuardRulesTask : AbstractFileGenerationTask() {
-    @get:Input
-    @get:Optional
-    abstract val packageName: Property<String>
-
-    @Suppress("LeakingThis")
-    override val desiredOutput: Provider<String> =
-        packageName.orElse("").map(::generateOutput)
-
-    companion object {
-        private fun generateOutput(packageName: String?) = StringBuilder().apply {
-            appendLine("-keep class com.sun.jna.** { *; }")
-            appendLine(
-                when (packageName) {
-                    null, "" -> "-keep class * implements com.sun.jna.** { *; }"
-                    else -> "-keep class ${packageName}.** implements com.sun.jna.** { *; }"
-                }
-            )
-            appendLine("-dontwarn java.awt.**")
-        }.toString()
-    }
+    override fun getDesiredOutput() = StringBuilder().apply {
+        appendLine("# Copied from https://github.com/java-native-access/jna/blob/master/www/FrequentlyAskedQuestions.md#jna-on-android")
+        appendLine("-dontwarn java.awt.*")
+        appendLine("-keep class com.sun.jna.* { *; }")
+        appendLine("-keepclassmembers class * extends com.sun.jna.* { public *; }")
+    }.toString()
 }

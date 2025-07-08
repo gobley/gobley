@@ -316,7 +316,6 @@ class UniFfiPlugin : Plugin<Project> {
                 project,
                 androidGeneratedProGuardFile.get(),
                 tasks.register<GenerateProGuardRulesTask>("generateProGuardRules") {
-                    packageName.set(bindingsGeneration.packageName)
                     outputFile.set(androidGeneratedProGuardFile)
                 },
             )
