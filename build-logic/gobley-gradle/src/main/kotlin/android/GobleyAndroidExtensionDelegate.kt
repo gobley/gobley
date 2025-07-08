@@ -48,9 +48,9 @@ interface GobleyAndroidExtensionDelegate {
         jniDirectory: Provider<Directory>,
     )
 
-    fun addProGuardFiles(
+    fun addProguardFiles(
         project: Project,
-        proGuardFile: RegularFile,
+        proguardFile: RegularFile,
         generationTask: TaskProvider<*>,
     )
 }
@@ -114,19 +114,19 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
         }
     }
 
-    override fun addProGuardFiles(
+    override fun addProguardFiles(
         project: Project,
-        proGuardFile: RegularFile,
+        proguardFile: RegularFile,
         generationTask: TaskProvider<*>,
     ) {
         androidExtension.buildTypes.configureEach { buildType ->
-            addProGuardFilesToBuildType(project, proGuardFile, buildType, generationTask)
+            addProguardFilesToBuildType(project, proguardFile, buildType, generationTask)
         }
     }
 
-    private fun addProGuardFilesToBuildType(
+    private fun addProguardFilesToBuildType(
         project: Project,
-        proGuardFile: RegularFile,
+        proguardFile: RegularFile,
         buildType: BuildType,
         generationTask: TaskProvider<*>,
     ) {
@@ -134,7 +134,7 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
         // that implements both ApplicationBuildType and LibraryBuildType.
 
         if (buildType is ApplicationBuildType) {
-            buildType.proguardFile(proGuardFile)
+            buildType.proguardFile(proguardFile)
             // extractProguardFiles
             project.tasks.withType<ExtractProguardFiles> {
                 dependsOn(generationTask)
@@ -148,7 +148,7 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
         }
 
         if (buildType is LibraryBuildType) {
-            buildType.consumerProguardFile(proGuardFile)
+            buildType.consumerProguardFile(proguardFile)
             // merge<variant>ConsumerProguardFiles
             project.tasks.withType<MergeConsumerProguardFilesTask> {
                 if (name.lowercase().contains(buildType.name.lowercase())) {

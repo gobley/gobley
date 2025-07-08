@@ -48,7 +48,7 @@ abstract class UniFfiExtension(internal val project: Project) {
      * inside the `android.buildTypes {}` block, depending on whether the current module is
      * an application project or a library project.
      */
-    val generateProGuardRules: Property<Boolean> =
+    val generateProguardRules: Property<Boolean> =
         project.objects.property<Boolean>().convention(true)
 
     /**
