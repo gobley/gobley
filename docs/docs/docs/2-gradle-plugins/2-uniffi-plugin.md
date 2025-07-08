@@ -4,6 +4,8 @@ slug: /gradle-plugins/uniffi
 
 # The UniFFI plugin
 
+## Basic usage
+
 > :bulb: We recommend to first read the [UniFFI user guide](https://mozilla.github.io/uniffi-rs/).
 
 The UniFFI plugin is responsible for generating Kotlin bindings from your Rust package. Here is an
@@ -84,3 +86,30 @@ uniffi {
 
 For details about each bindgen setting properties,
 see [Bindgen configuration](../3-bindgen.md#bindgen-configuration).
+
+## JNA ProGuard rules for Android
+
+UniFFI on the Rust side generates C-compatible functions that can be called from other
+languages. These functions serialize and deserialize the return values and the arguments, thus
+acting as the bridge between Rust and other languages, including Kotlin. The functions and the
+classes in generated Kotlin bindings internally call these UniFFI-generated functions. On
+Kotlin/JVM, it uses [JNA](https://github.com/java-native-access/jna) to call the functions. On
+Kotlin/Native, it uses [cinterop](https://kotlinlang.org/docs/native-c-interop.html#bindings).
+
+JNA relies on Java reflection to interact with the Rust library. Some class and method names must be
+preserved at runtime for JNA to function correctly. However, when building Android applications in
+release mode, R8 is enabled by default for obfuscation, which renames these essential JNA classes
+and methods, leading to runtime errors such as `UnsatisfiedLinkError`. While the official JNA
+documentation provides the list of
+[required ProGuard rules](https://github.com/java-native-access/jna/blob/master/www/FrequentlyAskedQuestions.md#jna-on-android)
+to prevent the error, these rules are not included in the official AAR file.
+
+To prevent such runtime issues, the UniFFI plugin generates the necessary ProGuard rules by default.
+If you prefer to manually manage all ProGuard rules and disable this behavior, you can set the
+`generateProguardRules` property to `false` in the `uniffi {}` block.
+
+```kotlin
+uniffi {
+    generateProguardRules = false
+}
+``` 
