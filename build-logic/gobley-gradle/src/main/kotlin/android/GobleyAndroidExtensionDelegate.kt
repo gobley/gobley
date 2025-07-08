@@ -10,6 +10,9 @@ import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
+import com.android.build.gradle.internal.lint.LintModelWriterTask
+import com.android.build.gradle.internal.tasks.ExtractProguardFiles
 import com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import gobley.gradle.InternalGobleyGradleApi
@@ -132,11 +135,28 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
 
         if (buildType is ApplicationBuildType) {
             buildType.proguardFile(proGuardFile)
+            // extractProguardFiles
+            project.tasks.withType<ExtractProguardFiles> {
+                dependsOn(generationTask)
+            }
+            // lintVitalAnalyze<variant>
+            project.tasks.withType<AndroidLintAnalysisTask> {
+                if (name.lowercase().contains(buildType.name.lowercase())) {
+                    dependsOn(generationTask)
+                }
+            }
         }
 
         if (buildType is LibraryBuildType) {
             buildType.consumerProguardFile(proGuardFile)
+            // merge<variant>ConsumerProguardFiles
             project.tasks.withType<MergeConsumerProguardFilesTask> {
+                if (name.lowercase().contains(buildType.name.lowercase())) {
+                    dependsOn(generationTask)
+                }
+            }
+            // generate<variant>LintModel
+            project.tasks.withType<LintModelWriterTask> {
                 if (name.lowercase().contains(buildType.name.lowercase())) {
                     dependsOn(generationTask)
                 }
