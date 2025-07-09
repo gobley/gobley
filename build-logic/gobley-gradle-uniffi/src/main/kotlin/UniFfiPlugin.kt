@@ -311,14 +311,19 @@ class UniFfiPlugin : Plugin<Project> {
         }
 
         @OptIn(InternalGobleyGradleApi::class)
-        if (uniFfiExtension.generateProguardRules.get() && ::androidDelegate.isInitialized) {
-            androidDelegate.addProguardFiles(
-                project,
-                androidGeneratedProguardFile.get(),
+        if (::androidDelegate.isInitialized) {
+            val generateProguardRulesTask =
                 tasks.register<GenerateProguardRulesTask>("generateProguardRules") {
                     outputFile.set(androidGeneratedProguardFile)
-                },
-            )
+                }
+
+            if (uniFfiExtension.generateProguardRules.get()) {
+                androidDelegate.addProguardFiles(
+                    project,
+                    androidGeneratedProguardFile.get(),
+                    generateProguardRulesTask,
+                )
+            }
         }
     }
 
