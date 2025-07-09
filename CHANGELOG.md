@@ -11,7 +11,7 @@
 ### Fixes
 
 - Fixed the build script library search path parsing logic using `--message-format json` ([#113](https://github.com/gobley/gobley/pull/113)).
-- Fixed MinGW DLL files being not included in the JAR files ([#137](https://github.com/gobley/gobley/pull/137)).
+- Fixed MinGW DLL files not being included in the JAR files ([#137](https://github.com/gobley/gobley/pull/137)).
 
 ## [0.2.0](https://github.com/gobley/gobley/releases/tag/v0.2.0) - 2025-04-06
 
