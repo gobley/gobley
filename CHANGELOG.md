@@ -2,6 +2,17 @@
 
 ## [Unreleased](https://github.com/gobley/gobley/compare/v0.2.0...HEAD)
 
+### New Features
+
+- `CargoCheckTask.extraArguments` ([#110](https://github.com/gobley/gobley/pull/110)).
+- `CargoExtension.installTargetBeforeBuild` to prevent `RustUpTargetAddTasks` from running ([#136](https://github.com/gobley/gobley/pull/136)).
+- ProGuard rule file generation for UniFFI ([#140](https://github.com/gobley/gobley/pull/140)).
+
+### Fixes
+
+- Fixed the build script library search path parsing logic using `--message-format json` ([#113](https://github.com/gobley/gobley/pull/113)).
+- Fixed MinGW DLL files being not included in the JAR files ([#137](https://github.com/gobley/gobley/pull/137)).
+
 ## [0.2.0](https://github.com/gobley/gobley/releases/tag/v0.2.0) - 2025-04-06
 
 ### Breaking Changes
@@ -43,9 +54,9 @@
 - Support for `uniffi@0.28.3`.
 - Support for Kotlin 2.x.
 - Gradle plugins for cross-compilation automation.
-    - Android
-    - JVM
-    - Kotlin/Native (MinGW, macOS, Linux, & iOS)
+  - Android
+  - JVM
+  - Kotlin/Native (MinGW, macOS, Linux, & iOS)
 
 ## [UniFFI Kotlin Multiplatform Bindings 0.1.0](https://gitlab.com/trixnity/uniffi-kotlin-multiplatform-bindings/-/tags/v0.1.0) - 2023-11-25
 
