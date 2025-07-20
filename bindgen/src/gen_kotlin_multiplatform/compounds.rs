@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+use anyhow::{bail, Result};
 use uniffi_bindgen::backend::{Literal, Type};
 use uniffi_bindgen::ComponentInterface;
 
@@ -38,13 +39,18 @@ impl CodeType for OptionalCodeType {
         )
     }
 
-    fn literal(&self, literal: &Literal, ci: &ComponentInterface, config: &Config) -> String {
+    fn literal(
+        &self,
+        literal: &Literal,
+        ci: &ComponentInterface,
+        config: &Config,
+    ) -> Result<String> {
         match literal {
-            Literal::None => "null".into(),
+            Literal::None => Ok("null".into()),
             Literal::Some { inner } => super::KotlinCodeOracle
                 .find(&self.inner)
                 .literal(inner, ci, config),
-            _ => panic!("Invalid literal for Optional type: {literal:?}"),
+            _ => bail!("Invalid literal for Optional type: {literal:?}"),
         }
     }
 }
@@ -78,11 +84,16 @@ impl CodeType for SequenceCodeType {
         )
     }
 
-    fn literal(&self, literal: &Literal, _ci: &ComponentInterface, _config: &Config) -> String {
-        match literal {
+    fn literal(
+        &self,
+        literal: &Literal,
+        _ci: &ComponentInterface,
+        _config: &Config,
+    ) -> Result<String> {
+        Ok(match literal {
             Literal::EmptySequence => "listOf()".into(),
-            _ => panic!("Invalid literal for List type: {literal:?}"),
-        }
+            _ => bail!("Invalid literal for List type: {literal:?}"),
+        })
     }
 }
 
@@ -123,10 +134,15 @@ impl CodeType for MapCodeType {
         )
     }
 
-    fn literal(&self, literal: &Literal, _ci: &ComponentInterface, _config: &Config) -> String {
-        match literal {
+    fn literal(
+        &self,
+        literal: &Literal,
+        _ci: &ComponentInterface,
+        _config: &Config,
+    ) -> Result<String> {
+        Ok(match literal {
             Literal::EmptyMap => "mapOf()".into(),
-            _ => panic!("Invalid literal for Map type: {literal:?}"),
-        }
+            _ => bail!("Invalid literal for Map type: {literal:?}"),
+        })
     }
 }
