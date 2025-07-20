@@ -12,7 +12,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
         {%- if e.is_flat() %}
         return when (buf.getInt()) {
             {%- for variant in e.variants() %}
-            {{ loop.index }} -> {{ type_name }}.{{ variant|error_variant_name }}({{ Type::String.borrow()|read_fn }}(buf))
+            {{ loop.index }} -> {{ type_name }}.{{ variant|error_variant_name }}({{ Type::String.borrow()|read_fn(ci) }}(buf))
             {%- endfor %}
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
@@ -21,7 +21,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
             {%- for variant in e.variants() %}
             {{ loop.index }} -> {{ type_name }}.{{ variant|error_variant_name }}({% if variant.has_fields() %}
                 {% for field in variant.fields() -%}
-                {{ field|read_fn }}(buf),
+                {{ field|read_fn(ci) }}(buf),
                 {% endfor -%}
             {%- endif -%})
             {%- endfor %}
@@ -54,7 +54,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
             is {{ type_name }}.{{ variant|error_variant_name }} -> {
                 buf.putInt({{ loop.index }})
                 {%- for field in variant.fields() %}
-                {{ field|write_fn }}(value.{% call kt::field_name(field, loop.index) %}, buf)
+                {{ field|write_fn(ci) }}(value.{% call kt::field_name(field, loop.index) %}, buf)
                 {%- endfor %}
                 Unit
             }

@@ -6,8 +6,8 @@ object {{ ffi_converter_name }}: FfiConverterRustBuffer<Map<{{ key_type_name }},
         val len = buf.getInt()
         return buildMap<{{ key_type_name }}, {{ value_type_name }}>(len) {
             repeat(len) {
-                val k = {{ key_type|read_fn }}(buf)
-                val v = {{ value_type|read_fn }}(buf)
+                val k = {{ key_type|read_fn(ci) }}(buf)
+                val v = {{ value_type|read_fn(ci) }}(buf)
                 this[k] = v
             }
         }
@@ -28,8 +28,8 @@ object {{ ffi_converter_name }}: FfiConverterRustBuffer<Map<{{ key_type_name }},
         // which is important for compatibility with older android devices.
         // Ref https://blog.danlew.net/2017/03/16/kotlin-puzzler-whose-line-is-it-anyways/
         value.forEach { (k, v) ->
-            {{ key_type|write_fn }}(k, buf)
-            {{ value_type|write_fn }}(v, buf)
+            {{ key_type|write_fn(ci) }}(k, buf)
+            {{ value_type|write_fn(ci) }}(v, buf)
         }
     }
 }

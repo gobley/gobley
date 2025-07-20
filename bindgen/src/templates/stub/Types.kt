@@ -1,7 +1,7 @@
 
 {%- import "macros.kt" as kt %}
 
-{%- for type_ in ci.iter_types() %}
+{%- for type_ in ci.iter_local_types() %}
 {%- let type_name = type_|type_name(ci) %}
 {%- let ffi_converter_name = type_|ffi_converter_name %}
 {%- let canonical_type_name = type_|canonical_name %}

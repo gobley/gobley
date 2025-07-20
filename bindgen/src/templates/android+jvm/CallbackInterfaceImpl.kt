@@ -1,4 +1,3 @@
-{% if self.include_once_check("ffi/CallbackInterfaceRuntime.kt") %}{% include "ffi/CallbackInterfaceRuntime.kt" %}{% endif %}
 {%- let trait_impl=format!("uniffiCallbackInterface{}", name) %}
 
 // Put the implementation in an object so we don't pollute the top-level namespace
@@ -9,13 +8,13 @@ internal object {{ trait_impl }} {
             {%- call kt::arg_list_ffi_decl(ffi_callback, 12) %}
         )
         {%- if let Some(return_type) = ffi_callback.return_type() -%}
-            : {{ return_type|ffi_type_name_by_value }}
+            : {{ return_type|ffi_type_name_by_value(ci) }}
         {%- endif %} {
             val uniffiObj = {{ ffi_converter_name }}.handleMap.get(uniffiHandle)
             val makeCall = {% if meth.is_async() %}suspend {% endif %}{ ->
                 uniffiObj.{{ meth.name()|fn_name() }}(
                     {%- for arg in meth.arguments() %}
-                    {%- if arg|as_ffi_type|need_non_null_assertion %}
+                    {%- if arg|as_ffi_type|ref|need_non_null_assertion %}
                     {{ arg|lift_fn }}({{ arg.name()|var_name }}!!),
                     {%- else %}
                     {{ arg|lift_fn }}({{ arg.name()|var_name }}),
@@ -52,11 +51,9 @@ internal object {{ trait_impl }} {
             {%- else %}
             val uniffiHandleSuccess = { {% if meth.return_type().is_some() %}returnValue{% else %}_{% endif %}: {% match meth.return_type() %}{%- when Some(return_type) %}{{ return_type|type_name(ci) }}{%- when None %}Unit{% endmatch %} ->
                 val uniffiResult = {{ meth.foreign_future_ffi_result_struct().name()|ffi_struct_name }}UniffiByValue(
-                    {%- match meth.return_type() %}
-                    {%- when Some(return_type) %}
+                    {%- if let Some(return_type) = meth.return_type() %}
                     {{ return_type|lower_fn }}(returnValue),
-                    {%- when None %}
-                    {%- endmatch %}
+                    {%- endif %}
                     UniffiRustCallStatusHelper.allocValue()
                 )
                 uniffiResult.write()
@@ -66,11 +63,9 @@ internal object {{ trait_impl }} {
                 uniffiFutureCallback.callback(
                     uniffiCallbackData,
                     {{ meth.foreign_future_ffi_result_struct().name()|ffi_struct_name }}UniffiByValue(
-                        {%- match meth.return_type() %}
-                        {%- when Some(return_type) %}
+                        {%- if let Some(return_type) = meth.return_type() %}
                         {{ return_type.into()|ffi_default_value }},
-                        {%- when None %}
-                        {%- endmatch %}
+                        {%- endif %}
                         callStatus,
                     ),
                 )
@@ -102,7 +97,7 @@ internal object {{ trait_impl }} {
         }
     }
 
-    internal val vtable = {{ vtable|ffi_type_name }}(
+    internal val vtable = {{ vtable|ffi_type_name(ci) }}(
         {%- for (ffi_callback, meth) in vtable_methods.iter() %}
         {{ meth.name()|var_name() }},
         {%- endfor %}

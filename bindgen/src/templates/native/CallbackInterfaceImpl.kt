@@ -1,4 +1,3 @@
-{% if self.include_once_check("ffi/CallbackInterfaceRuntime.kt") %}{% include "ffi/CallbackInterfaceRuntime.kt" %}{% endif %}
 {{ self.add_import("kotlinx.cinterop.invoke") }}
 
 {%- let trait_impl=format!("uniffiCallbackInterface{}", name) %}
@@ -10,13 +9,13 @@ internal object {{ trait_impl }} {
         {%- call kt::arg_list_ffi_decl(ffi_callback, 8) %}
     )
     {%- if let Some(return_type) = ffi_callback.return_type() -%}
-        : {{ return_type|ffi_type_name_by_value }}
+        : {{ return_type|ffi_type_name_by_value(ci) }}
     {%- endif %} {
         val uniffiObj = {{ ffi_converter_name }}.handleMap.get(uniffiHandle)
         val makeCall = {% if meth.is_async() %}suspend {% endif %}{ ->
             uniffiObj.{{ meth.name()|fn_name() }}(
                 {%- for arg in meth.arguments() %}
-                {%- if arg|as_ffi_type|need_non_null_assertion %}
+                {%- if arg|as_ffi_type|ref|need_non_null_assertion %}
                 {{ arg|lift_fn }}({{ arg.name()|var_name }}!!),
                 {%- else %}
                 {{ arg|lift_fn }}({{ arg.name()|var_name }}),
@@ -107,14 +106,14 @@ internal object {{ trait_impl }} {
         {{ ffi_converter_name }}.handleMap.remove(handle)
     }
 
-    internal val vtable = nativeHeap.alloc<{{ci.namespace()}}.cinterop.{{ vtable|ffi_type_name }}> {
+    internal val vtable = nativeHeap.alloc<{{ci.namespace()}}.cinterop.{{ vtable|ffi_type_name(ci) }}> {
         {%- for (ffi_callback, meth) in vtable_methods.iter() %}
         {% if ffi_callback|ffi_callback_needs_casting_native -%}
         @Suppress("UNCHECKED_CAST")
         {% endif -%}
         this.{{ meth.name()|var_name }} = staticCFunction {
             {%- for arg in ffi_callback.arguments() %}
-            {{ arg.name().borrow()|var_name }}: {{ arg.type_().borrow()|ffi_type_name_by_value }},
+            {{ arg.name().borrow()|var_name }}: {{ arg.type_().borrow()|ffi_type_name_by_value(ci) }},
             {%- endfor -%}
             {%- if ffi_callback.has_rust_call_status_arg() %}
             uniffiCallStatus: UniffiRustCallStatus,

@@ -5,7 +5,7 @@ object {{ ffi_converter_name }}: FfiConverterRustBuffer<List<{{ inner_type_name 
     override fun read(buf: ByteBuffer): List<{{ inner_type_name }}> {
         val len = buf.getInt()
         return List<{{ inner_type_name }}>(len) {
-            {{ inner_type|read_fn }}(buf)
+            {{ inner_type|read_fn(ci) }}(buf)
         }
     }
 
@@ -18,7 +18,7 @@ object {{ ffi_converter_name }}: FfiConverterRustBuffer<List<{{ inner_type_name 
     override fun write(value: List<{{ inner_type_name }}>, buf: ByteBuffer) {
         buf.putInt(value.size)
         value.iterator().forEach {
-            {{ inner_type|write_fn }}(it, buf)
+            {{ inner_type|write_fn(ci) }}(it, buf)
         }
     }
 }

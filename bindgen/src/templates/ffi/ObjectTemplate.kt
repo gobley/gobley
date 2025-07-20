@@ -1,6 +1,7 @@
 
-{%- let obj = ci|get_object_definition(name) %}
-{%- let (interface_name, impl_class_name) = obj|object_names(ci) %}
+{%- let obj = ci.get_object_definition(name).unwrap() %}
+{%- let interface_name = crate::gen_kotlin_multiplatform::object_interface_name(ci, obj) %}
+{%- let impl_class_name = crate::gen_kotlin_multiplatform::object_impl_name(ci, obj) %}
 {%- let methods = obj.methods() %}
 {%- let interface_docstring = obj.docstring() %}
 {%- let is_error = ci.is_name_used_as_error(name) %}

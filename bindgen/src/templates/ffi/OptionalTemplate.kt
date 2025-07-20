@@ -6,7 +6,7 @@ object {{ ffi_converter_name }}: FfiConverterRustBuffer<{{ inner_type_name }}?> 
         if (buf.get().toInt() == 0) {
             return null
         }
-        return {{ inner_type|read_fn }}(buf)
+        return {{ inner_type|read_fn(ci) }}(buf)
     }
 
     override fun allocationSize(value: {{ inner_type_name }}?): ULong {
@@ -22,7 +22,7 @@ object {{ ffi_converter_name }}: FfiConverterRustBuffer<{{ inner_type_name }}?> 
             buf.put(0)
         } else {
             buf.put(1)
-            {{ inner_type|write_fn }}(value, buf)
+            {{ inner_type|write_fn(ci) }}(value, buf)
         }
     }
 }

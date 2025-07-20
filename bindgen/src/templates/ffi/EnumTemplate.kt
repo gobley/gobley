@@ -34,7 +34,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
             {%- for variant in e.variants() %}
             {{ loop.index }} -> {{ type_name }}.{{ variant|variant_type_name(ci) }}{% if variant.has_fields() %}(
                 {% for field in variant.fields() -%}
-                {{ field|read_fn }}(buf),
+                {{ field|read_fn(ci) }}(buf),
                 {% endfor -%}
             ){%- endif -%}
             {%- endfor %}
@@ -62,7 +62,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
             is {{ type_name }}.{{ variant|variant_type_name(ci) }} -> {
                 buf.putInt({{ loop.index }})
                 {%- for field in variant.fields() %}
-                {{ field|write_fn }}(value.{%- call kt::field_name(field, loop.index) -%}, buf)
+                {{ field|write_fn(ci) }}(value.{%- call kt::field_name(field, loop.index) -%}, buf)
                 {%- endfor %}
                 Unit
             }

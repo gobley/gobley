@@ -5,8 +5,8 @@ internal typealias {{ callback.name()|ffi_callback_name }} = {{ ci.namespace() }
 {%- when FfiDefinition::Struct(ffi_struct) %}
 internal typealias {{ ffi_struct.name()|ffi_struct_name }} = CPointer<{{ ci.namespace() }}.cinterop.{{ ffi_struct.name()|ffi_struct_name }}>
 {% for field in ffi_struct.fields() %}
-internal var {{ ffi_struct.name()|ffi_struct_name }}.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
-    {%- let type_name = field.type_().borrow()|ffi_type_name_for_ffi_struct %}
+internal var {{ ffi_struct.name()|ffi_struct_name }}.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }}
+    {%- let type_name = field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) %}
     get() = pointed.{{ field.name()|var_name }}{% if type_name.contains("ByValue") %}.readValue(){% endif %}
     set(value) {
         {%- match field.type_() %}
@@ -34,7 +34,7 @@ internal fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ff
 internal typealias {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue = CValue<{{ ci.namespace() }}.cinterop.{{ ffi_struct.name()|ffi_struct_name }}>
 fun {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue(
     {%- for field in ffi_struct.fields() %}
-    {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }},
+    {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }},
     {%- endfor %}
 ): {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue {
     return cValue<{{ ci.namespace() }}.cinterop.{{ ffi_struct.name()|ffi_struct_name }}> {
@@ -52,8 +52,8 @@ fun {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue(
 }
 
 {% for field in ffi_struct.fields() %}
-internal val {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }}
-    {%- let type_name = field.type_().borrow()|ffi_type_name_for_ffi_struct %}
+internal val {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }}
+    {%- let type_name = field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) %}
     get() = useContents { {{ field.name()|var_name }}{% if type_name.contains("ByValue") %}.readValue(){% endif %} }
 {% endfor %}
 
@@ -65,12 +65,12 @@ internal val {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name(
 internal interface UniffiLib {
     companion object {
         internal val INSTANCE: UniffiLib by lazy {
-            {% if self.initialization_fns().is_empty() -%}
+            {% if self.initialization_fns(ci).is_empty() -%}
             UniffiLibInstance()
             {%- else -%}
             UniffiLibInstance().also { lib ->
-            {%- for fn in self.initialization_fns() %}
-                {{ fn }}(lib)
+            {%- for init_fn in self.initialization_fns(ci) %}
+                {{ init_fn }}(lib)
             {%- endfor %}
             }
             {%- endif %}
@@ -86,7 +86,7 @@ internal interface UniffiLib {
     {% for func in ci.iter_ffi_function_definitions() -%}
     fun {{ func.name() }}(
         {%- call kt::arg_list_ffi_decl(func, 8) %}
-    ): {% match func.return_type() %}{% when Some with (return_type) %}{{ return_type.borrow()|ffi_type_name_by_value }}{% when None %}Unit{% endmatch %}
+    ): {% match func.return_type() %}{% when Some(return_type) %}{{ return_type.borrow()|ffi_type_name_by_value(ci) }}{% when None %}Unit{% endmatch %}
     {% endfor %}
 }
 
@@ -95,17 +95,19 @@ internal class UniffiLibInstance: UniffiLib {
     override fun {{ func.name() }}(
         {%- call kt::arg_list_ffi_decl(func, 8) %}
     ): {% match func.return_type() -%}
-    {%- when Some with (return_type) -%}
-    {{- return_type.borrow()|ffi_type_name_by_value -}}
+    {%- when Some(return_type) -%}
+    {{- return_type.borrow()|ffi_type_name_by_value(ci) -}}
     {%- when None -%}
     Unit
     {%- endmatch %} = {{ ci.namespace() }}.cinterop.{{ func.name() }}(
         {%- call kt::arg_list_ffi_call_native(func) %}
     )
-    {%- match func.return_type() -%}
-    {%- when Some with (return_type) -%}
+    {%- if let Some(return_type) = func.return_type() -%}
     {{- return_type|ffi_cast_to_external_rust_buffer_if_needed -}}
-    {%- when None -%}
-    {%- endmatch %}
+    {%- endif %}
     {% endfor %}
+}
+
+fun uniffiEnsureInitialized() {
+    UniffiLib.INSTANCE
 }

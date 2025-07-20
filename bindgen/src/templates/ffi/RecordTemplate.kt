@@ -1,12 +1,12 @@
 
-{%- let rec = ci|get_record_definition(name) %}
+{%- let rec = ci.get_record_definition(name).unwrap() %}
 
 object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
     override fun read(buf: ByteBuffer): {{ type_name }} {
         {%- if rec.has_fields() %}
         return {{ type_name }}(
         {%- for field in rec.fields() %}
-            {{ field|read_fn }}(buf),
+            {{ field|read_fn(ci) }}(buf),
         {%- endfor %}
         )
         {%- else %}
@@ -22,7 +22,7 @@ object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
 
     override fun write(value: {{ type_name }}, buf: ByteBuffer) {
         {%- for field in rec.fields() %}
-        {{ field|write_fn }}(value.{{ field.name()|var_name }}, buf)
+        {{ field|write_fn(ci) }}(value.{{ field.name()|var_name }}, buf)
         {%- endfor %}
     }
 }

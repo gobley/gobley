@@ -1,5 +1,5 @@
 
-{%- let rec = ci|get_record_definition(name) -%}
+{%- let rec = ci.get_record_definition(name).unwrap() -%}
 {%- let should_generate_equals_hash_code = rec|should_generate_equals_hash_code_record -%}
 {%- let should_generate_serializable = config.generate_serializable() && rec|serializable_record(ci) -%}
 

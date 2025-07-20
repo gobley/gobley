@@ -18,8 +18,9 @@ interface Disposable : AutoCloseable {
             for (arg in args) {
                 when (arg) {
                     is Disposable -> arg.destroy()
-                    is Iterable<*> -> {
-                        for (element in arg) {
+                    is ArrayList<*> -> {
+                        for (idx in arg.indices) {
+                            val element = arg[idx]
                             if (element is Disposable) {
                                 element.destroy()
                             }
@@ -33,6 +34,13 @@ interface Disposable : AutoCloseable {
                         }
                     }
                     is Array<*> -> {
+                        for (element in arg) {
+                            if (element is Disposable) {
+                                element.destroy()
+                            }
+                        }
+                    }
+                    is Iterable<*> -> {
                         for (element in arg) {
                             if (element is Disposable) {
                                 element.destroy()
@@ -65,7 +73,7 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R): R {
 /** Used to instantiate an interface without an actual pointer, for fakes in tests, mostly. */
 object NoPointer
 
-{%- for type_ in ci.iter_types() %}
+{%- for type_ in ci.iter_local_types() %}
 {%- let type_name = type_|type_name(ci) %}
 {%- let ffi_converter_name = type_|ffi_converter_name %}
 {%- let canonical_type_name = type_|canonical_name %}
@@ -103,9 +111,12 @@ object NoPointer
 {%- when Type::Custom { module_path, name, builtin } %}
 {% include "CustomTypeTemplate.kt" %}
 
-{%- when Type::External { module_path, name, namespace, kind, tagged } %}
-{% include "ExternalTypeTemplate.kt" %}
-
 {%- else %}
 {%- endmatch %}
+{%- endfor %}
+
+{%- for type_ in ci.iter_external_types() %}
+{%- let name = type_.name().unwrap() %}
+{%- let module_path = type_.module_path().unwrap() %}
+{% include "ExternalTypeTemplate.kt" %}
 {%- endfor %}

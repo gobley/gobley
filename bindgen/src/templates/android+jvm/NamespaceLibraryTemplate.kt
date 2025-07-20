@@ -7,22 +7,21 @@
 internal interface {{ callback.name()|ffi_callback_name }}: com.sun.jna.Callback {
     fun callback(
         {%- for arg in callback.arguments() -%}
-        {{ arg.name().borrow()|var_name }}: {{ arg.type_().borrow()|ffi_type_name_by_value }},
+        {{ arg.name().borrow()|var_name }}: {{ arg.type_().borrow()|ffi_type_name_by_value(ci) }},
         {%- endfor -%}
         {%- if callback.has_rust_call_status_arg() -%}
         uniffiCallStatus: UniffiRustCallStatus,
         {%- endif -%}
     )
-    {%- match callback.return_type() %}
-    {%- when Some(return_type) %}: {{ return_type|ffi_type_name_by_value }}
-    {%- when None %}
-    {%- endmatch %}
+    {%- if let Some(return_type) = callback.return_type() -%}
+    : {{ return_type|ffi_type_name_by_value(ci) }}
+    {%- endif %}
 }
 {%- when FfiDefinition::Struct(ffi_struct) %}
 @Structure.FieldOrder({% for field in ffi_struct.fields() %}"{{ field.name()|var_name_raw }}"{% if !loop.last %}, {% endif %}{% endfor %})
 internal open class {{ ffi_struct.name()|ffi_struct_name }}Struct(
     {%- for field in ffi_struct.fields() %}
-    @JvmField internal var {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }},
+    @JvmField internal var {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }},
     {%- endfor %}
 ) : com.sun.jna.Structure() {
     constructor(): this(
@@ -33,7 +32,7 @@ internal open class {{ ffi_struct.name()|ffi_struct_name }}Struct(
 
     internal class UniffiByValue(
         {%- for field in ffi_struct.fields() %}
-        {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct }},
+        {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }},
         {%- endfor %}
     ): {{ ffi_struct.name()|ffi_struct_name }}({%- for field in ffi_struct.fields() %}{{ field.name()|var_name }}, {%- endfor %}), Structure.ByValue
 }
@@ -86,8 +85,8 @@ internal interface UniffiLib : Library {
                 .also { lib: UniffiLib ->
                     uniffiCheckContractApiVersion(lib)
                     uniffiCheckApiChecksums(lib)
-                    {% for fn in self.initialization_fns() -%}
-                    {{ fn }}(lib)
+                    {% for init_fn in self.initialization_fns(ci) -%}
+                    {{ init_fn }}(lib)
                     {% endfor -%}
                 }
         }
@@ -102,7 +101,7 @@ internal interface UniffiLib : Library {
     {% for func in ci.iter_ffi_function_definitions() -%}
     fun {{ func.name() }}(
         {%- call kt::arg_list_ffi_decl(func, 8) %}
-    ): {% match func.return_type() %}{% when Some with (return_type) %}{{ return_type.borrow()|ffi_type_name_by_value }}{% when None %}Unit{% endmatch %}
+    ): {% match func.return_type() %}{% when Some(return_type) %}{{ return_type.borrow()|ffi_type_name_by_value(ci) }}{% when None %}Unit{% endmatch %}
     {% endfor %}
 }
 
@@ -125,4 +124,8 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     {%- endfor %}
+}
+
+fun uniffiEnsureInitialized() {
+    UniffiLib.INSTANCE
 }

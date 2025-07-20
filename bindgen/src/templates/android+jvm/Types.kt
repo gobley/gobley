@@ -1,7 +1,11 @@
 
 {%- import "macros.kt" as kt %}
 
-{%- for type_ in ci.iter_types() %}
+{%- if ci.has_object_definitions() %}
+{%- include "ObjectCleanerHelper.kt" %}
+{%- endif %}
+
+{%- for type_ in ci.iter_local_types() %}
 {%- let type_name = type_|type_name(ci) %}
 {%- let ffi_converter_name = type_|ffi_converter_name %}
 {%- let canonical_type_name = type_|canonical_name %}
@@ -65,17 +69,14 @@
 {% include "ffi/ErrorTemplate.kt" %}
 {%- endif -%}
 
-{%- when Type::Object { module_path, name, imp } %}
+{%- when Type::Object { module_path, name, .. } %}
 {% include "ffi/ObjectTemplate.kt" %}
-{%- let obj = ci|get_object_definition(name) %}
+{%- let obj = ci.get_object_definition(name).unwrap() %}
 {%- if obj.has_callback_interface() %}
 {%- let vtable = obj.vtable().expect("trait interface should have a vtable") %}
 {%- let vtable_methods = obj.vtable_methods() %}
 {%- let ffi_init_callback = obj.ffi_init_callback() %}
 {% include "CallbackInterfaceImpl.kt" %}
-{%- endif %}
-{%- if self.include_once_check("interface-support") %}
-    {%- include "ObjectCleanerHelper.kt" %}
 {%- endif %}
 
 {%- when Type::Record { name, module_path } %}
@@ -102,11 +103,14 @@
 {%- when Type::Custom { module_path, name, builtin } %}
 {% include "ffi/CustomTypeTemplate.kt" %}
 
-{%- when Type::External { module_path, name, namespace, kind, tagged } %}
-{% include "ExternalTypeTemplate.kt" %}
-
 {%- else %}
 {%- endmatch %}
+{%- endfor %}
+
+{%- for type_ in ci.iter_external_types() %}
+{%- let name = type_.name().unwrap() %}
+{%- let module_path = type_.module_path().unwrap() %}
+{% include "ExternalTypeTemplate.kt" %}
 {%- endfor %}
 
 {%- if ci.has_async_fns() %}
