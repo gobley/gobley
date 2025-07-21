@@ -48,6 +48,14 @@
 {%- endmacro -%}
 
 {%- macro func_decl(func_decl, callable, indent, is_decl_override) %}
+    {%- if (!self::throws_external_error(callable, ci)) %}
+        {%- call render_func_decl(func_decl, callable, indent, is_decl_override) %}
+    {%- else %}
+// Sorry, the callable "{{ callable.name() }}" isn't supported.
+    {%- endif %}
+{%- endmacro -%}
+
+{%- macro render_func_decl(func_decl, callable, indent, is_decl_override) %}
                         {%- call docstring(callable, indent) -%}
                         {%- match callable.throws_type() -%}
                         {%-     when Some(throwable) %}
@@ -66,6 +74,14 @@
 {% endmacro %}
 
 {%- macro func_decl_with_body(func_decl, callable, indent) %}
+    {%- if (!self::throws_external_error(callable, ci)) %}
+        {%- call render_func_decl_with_body(func_decl, callable, indent) %}
+    {%- else %}
+// Sorry, the callable "{{ callable.name() }}" isn't supported.
+    {%- endif %}
+{%- endmacro -%}
+
+{%- macro render_func_decl_with_body(func_decl, callable, indent) %}
                         {%- call docstring(callable, indent) -%}
                         {%- match callable.throws_type() -%}
                         {%-     when Some(throwable) %}
@@ -95,6 +111,14 @@
 {% endmacro %}
 
 {%- macro func_decl_with_stub(func_decl, callable, indent) %}
+    {%- if (!self::throws_external_error(callable, ci)) %}
+        {%- call render_func_decl_with_stub(func_decl, callable, indent) %}
+    {%- else %}
+// Sorry, the callable "{{ callable.name() }}" isn't supported.
+    {%- endif %}
+{%- endmacro -%}
+
+{%- macro render_func_decl_with_stub(func_decl, callable, indent) %}
                         {%- call docstring(callable, indent) %}
 {{ " "|repeat(indent) }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
                         {%- if callable.is_async() -%}suspend {% endif -%}
@@ -195,7 +219,7 @@
         {{ arg.name()|var_name }},
         {%- endif -%}
         {%- else %}
-        {{ arg.name()|var_name }}{{- arg.type_().borrow()|ffi_cast_to_local_rust_buffer_if_needed -}},
+        {{ arg.name()|var_name }}{{- arg.type_().borrow()|ffi_cast_to_local_rust_buffer_if_needed(ci) -}},
         {%- endif -%}
     {%- endfor -%}
     {%- if func.has_rust_call_status_arg() %}

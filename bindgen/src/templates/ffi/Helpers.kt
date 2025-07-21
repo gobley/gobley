@@ -24,7 +24,7 @@ internal fun UniffiRustCallStatusByValue.isPanic(): Boolean
 
 // Each top-level error class has a companion object that can lift the error from the call status's rust buffer
 interface UniffiRustCallStatusErrorHandler<E> {
-    fun lift(errorBuf: RustBufferByValue): E;
+    fun lift(errorBuf: RustBufferByValue): E
 }
 
 // Helpers for calling Rust

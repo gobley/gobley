@@ -883,13 +883,14 @@ pub enum DataClassFieldType {
     NullableNonBytes,
 }
 
+// The following workaround will be fixed on the Gobley side before 0.3.0 is released.
 // A work around for #2392 - we can't handle functions with external errors.
-fn can_render_callable(callable: &dyn Callable, ci: &ComponentInterface) -> bool {
-    // can't handle external errors.
+// fn can_render_callable(callable: &dyn Callable, ci: &ComponentInterface) -> bool {
+fn throws_external_error(callable: &dyn Callable, ci: &ComponentInterface) -> bool {
     callable
         .throws_type()
-        .map(|t| !ci.is_external(t))
-        .unwrap_or(true)
+        .map(|t| ci.is_external(t))
+        .unwrap_or(false)
 }
 
 mod filters {
@@ -1200,10 +1201,14 @@ mod filters {
     /// Convert an external RustBuffer to a local RustBuffer.
     pub fn ffi_cast_to_local_rust_buffer_if_needed(
         type_: &FfiType,
+        ci: &ComponentInterface,
     ) -> Result<String, askama::Error> {
         let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
+        if metadata.module_path == ci.crate_name() {
+            return Ok(String::new());
+        }
         Ok(format!(".from{}ToLocal()", metadata.name))
     }
 
