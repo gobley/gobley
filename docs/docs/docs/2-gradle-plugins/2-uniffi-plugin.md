@@ -76,8 +76,8 @@ uniffi {
         packageName = "com.example.foo"
         customType("Uuid") {
             typeName = "java.util.UUID"
-            intoCustom = "java.util.UUID.fromString({})"
-            fromCustom = "{}.toString()"
+            lift = "java.util.UUID.fromString({})"
+            lower = "{}.toString()"
         }
         usePascalCaseEnumClass = true
     }
