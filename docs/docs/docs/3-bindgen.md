@@ -81,7 +81,7 @@ or [
 | `kotlin_multiplatform`                 | Boolean      | When `false`, expect/actual declarations are not used.                                                                                                                                                                                                    |
 | `kotlin_targets`                       | String Array | The list of names of Kotlin targets of the bindings to generate. Possible values are: `jvm`, `android`, `native`, and `stub`.                                                                                                                             |
 | `generate_immutable_records`           | Boolean      | When `true`, generated data classes has `val` properties instead of `var`.                                                                                                                                                                                |
-| `custom_types`                         |              | See [the documentation](https://mozilla.github.io/uniffi-rs/0.29/types/custom_types.html#custom-types-in-the-bindings-code)                                                                                                                                 |
+| `custom_types`                         |              | See [the documentation](https://mozilla.github.io/uniffi-rs/0.29/types/custom_types.html#custom-types-in-the-bindings-code)                                                                                                                               |
 | `kotlin_target_version`                | String       | The Kotlin version used by your project. Newer syntax will be used (e.g. `data object` or `Enum.entries`) when the compiler of the specified version supports. This is automatically set to the Kotlin Gradle plugin version by the UniFFI Gradle plugin. |
 | `disable_java_cleaner`                 | Boolean      | When `true`, `com.sun.jna.internal.Cleaner` will be used instead of `android.system.SystemCleaner` or `java.lang.ref.Cleaner`. Defaults to `false`. Consider changing this option when your project targets JVM 1.8.                                      |
 | `generate_serializable_types`          | Boolean      | When `true`, data classes will be annotated with `@kotlinx.serialization.Serializable` when possible. This is automatically set to `true` by the UniFFI Gradle plugin when your Kotlin project uses KotlinX Serialization.                                |
@@ -111,7 +111,7 @@ binding generator versions such that each generator targets the same `uniffi-rs`
 Here is how `gobley-uniffi-bindgen` versions are tied to `uniffi-rs` are tied:
 
 | Gobley version | UniFFI version |
-| -------------- | -------------- |
+|----------------|----------------|
 | v0.1.0         | v0.28.3        |
 | v0.2.0         | v0.28.3        |
 | v0.3.0         | v0.29.3        |
