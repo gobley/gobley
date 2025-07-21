@@ -42,8 +42,8 @@ internal data class Config(
     internal data class CustomType(
         @SerialName("imports") val imports: List<String>? = null,
         @SerialName("type_name") val typeName: String? = null,
-        @SerialName("into_custom") val intoCustom: String? = null,
-        @SerialName("from_custom") val fromCustom: String? = null,
+        @SerialName("lift") val lift: String? = null,
+        @SerialName("lower") val lower: String? = null,
     )
 
     companion object {

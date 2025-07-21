@@ -125,8 +125,8 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
                         Config.CustomType(
                             imports = entry.value.imports.orNull,
                             typeName = entry.value.typeName.orNull,
-                            intoCustom = entry.value.intoCustom.orNull,
-                            fromCustom = entry.value.fromCustom.orNull,
+                            lift = entry.value.lift.orNull,
+                            lower = entry.value.lower.orNull,
                         )
                     }
                 }.orNull,

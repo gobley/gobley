@@ -26,11 +26,11 @@ abstract class CustomType @Inject constructor() {
      * The expression that converts an expression of the underlying type to an expression of the
      * custom type. The underlying type expression will be assigned to the placeholder, `{}`.
      */
-    abstract val intoCustom: Property<String>
+    abstract val lift: Property<String>
 
     /**
      * The expression that converts an expression of the custom type to an expression of the
      * underlying type. The custom type expression will be assigned to the placeholder, `{}`.
      */
-    abstract val fromCustom: Property<String>
+    abstract val lower: Property<String>
 }

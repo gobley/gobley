@@ -18,8 +18,8 @@ uniffi {
         customType("Url") {
             typeName = "io.ktor.http.Url"
             imports.add("io.ktor.http.Url")
-            intoCustom = "Url({})"
-            fromCustom = "{}.toString()"
+            lift = "Url({})"
+            lower = "{}.toString()"
         }
     }
 }
