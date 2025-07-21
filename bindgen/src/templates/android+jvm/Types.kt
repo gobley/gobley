@@ -1,6 +1,10 @@
 
 {%- import "macros.kt" as kt %}
 
+{%- if ci.has_callback_definitions() %}
+{%- include "ffi/CallbackInterfaceRuntime.kt" %}
+{%- endif %}
+
 {%- if ci.has_object_definitions() %}
 {%- include "ObjectCleanerHelper.kt" %}
 {%- endif %}
@@ -20,6 +24,7 @@
  #   - When adding additional types here, make sure to also add a match arm to that function.
  #   - To keep things manageable, let's try to limit ourselves to these 2 mega-matches
  #}
+
 {%- match type_ %}
 
 {%- when Type::Boolean %}

@@ -70,7 +70,7 @@ internal interface UniffiLib {
             {%- else -%}
             UniffiLibInstance().also { lib ->
             {%- for init_fn in self.initialization_fns(ci) %}
-                {{ init_fn }}(lib)
+                {{ init_fn }}
             {%- endfor %}
             }
             {%- endif %}
@@ -103,7 +103,7 @@ internal class UniffiLibInstance: UniffiLib {
         {%- call kt::arg_list_ffi_call_native(func) %}
     )
     {%- if let Some(return_type) = func.return_type() -%}
-    {{- return_type|ffi_cast_to_external_rust_buffer_if_needed -}}
+    {{- return_type|ffi_cast_to_external_rust_buffer_if_needed(ci) -}}
     {%- endif %}
     {% endfor %}
 }

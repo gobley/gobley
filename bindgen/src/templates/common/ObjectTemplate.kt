@@ -13,7 +13,10 @@
 {% if (is_error) %}
 expect open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-expect open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
+expect open class {{ impl_class_name }}: Disposable, {{ interface_name }}
+{%- for t in obj.trait_impls() -%}
+, {{ self::trait_interface_name(ci, t.trait_name)? }}
+{%- endfor %} {
 {%- endif %}
     /**
      * This constructor can be used to instantiate a fake object. Only used for tests. Any

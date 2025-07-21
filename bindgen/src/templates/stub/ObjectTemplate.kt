@@ -11,7 +11,10 @@
 {% if (is_error) %}
 actual open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-actual open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
+actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
+{%- for t in obj.trait_impls() -%}
+, {{ self::trait_interface_name(ci, t.trait_name)? }}
+{%- endfor %} {
 {%- endif %}
 
     /**

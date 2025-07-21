@@ -1186,10 +1186,14 @@ mod filters {
     /// Convert a local RustBuffer to an external RustBuffer.
     pub fn ffi_cast_to_external_rust_buffer_if_needed(
         type_: &FfiType,
+        ci: &ComponentInterface,
     ) -> Result<String, askama::Error> {
         let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
+        if metadata.module_path == ci.crate_name() {
+            return Ok(String::new());
+        }
         Ok(format!(".as{}()", metadata.name))
     }
 

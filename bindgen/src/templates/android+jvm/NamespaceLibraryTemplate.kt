@@ -85,9 +85,9 @@ internal interface UniffiLib : Library {
                 .also { lib: UniffiLib ->
                     uniffiCheckContractApiVersion(lib)
                     uniffiCheckApiChecksums(lib)
-                    {% for init_fn in self.initialization_fns(ci) -%}
-                    {{ init_fn }}(lib)
-                    {% endfor -%}
+                    {%- for init_fn in self.initialization_fns(ci) %}
+                    {{ init_fn }}
+                    {%- endfor %}
                 }
         }
         {% if ci.contains_object_types() %}

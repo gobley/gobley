@@ -25,7 +25,10 @@
 {% if (is_error) %}
 {% call emit_actual %}open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-{% call emit_actual %}open class {{ impl_class_name }}: Disposable, {{ interface_name }} {
+{% call emit_actual %}open class {{ impl_class_name }}: Disposable, {{ interface_name }}
+{%- for t in obj.trait_impls() -%}
+, {{ self::trait_interface_name(ci, t.trait_name)? }}
+{%- endfor %} {
 {%- endif %}
 
     constructor(pointer: Pointer) {
