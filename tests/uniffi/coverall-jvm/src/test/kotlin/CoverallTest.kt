@@ -14,6 +14,7 @@ import coverall.FalliblePatch
 import coverall.Getters
 import coverall.InternalException
 import coverall.NoPointer
+import coverall.Node
 import coverall.NodeTrait
 import coverall.OtherError
 import coverall.Patch
