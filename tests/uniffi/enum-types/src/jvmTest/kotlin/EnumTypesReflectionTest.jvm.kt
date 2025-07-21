@@ -22,6 +22,6 @@ class EnumTypesReflectionTest {
         // Assert that destroy() function is created for Enum with variants containing an object
         // Even though we are creating a non-object variant we still get it.
         val n: AnimalEnum = AnimalEnum.None
-        n::class.functions shouldHaveSingleElement exist { it.name == "destroy" }
+        n::class.functions shouldHaveSingleElement { it.name == "destroy" }
     }
 }

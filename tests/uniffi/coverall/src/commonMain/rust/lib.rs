@@ -9,6 +9,7 @@ use std::time::SystemTime;
 
 use once_cell::sync::Lazy;
 
+mod additional;
 #[cfg(test)]
 mod ffi_buffer_scaffolding_test;
 
