@@ -28,6 +28,7 @@ internal data class Config(
     @SerialName("kotlin_multiplatform") val kotlinMultiplatform: Boolean? = null,
     @SerialName("kotlin_targets") val kotlinTargets: List<String>? = null,
     @SerialName("generate_immutable_records") val generateImmutableRecords: Boolean? = null,
+    @SerialName("omit_checksums") val omitChecksums: Boolean? = null,
     @SerialName("custom_types") val customTypes: Map<String, CustomType>? = null,
     @SerialName("external_packages") val externalPackages: Map<String, String>? = null,
     @SerialName("kotlin_target_version") val kotlinTargetVersion: String? = null,

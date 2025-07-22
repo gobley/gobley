@@ -71,6 +71,13 @@ sealed class BindingsGeneration(internal val project: Project) {
     abstract val generateImmutableRecords: Property<Boolean>
 
     /**
+     * When `true`, the library checksums are not checked during initialization, making the process
+     * slightly faster. This may be problematic when you mix multiple libraries with varying UniFFI
+     * versions.
+     */
+    abstract val omitChecksums: Property<Boolean>
+
+    /**
      * When `true`, `com.sun.jna.internal.Cleaner` will be used instead of
      * `android.system.SystemCleaner` or `java.lang.ref.Cleaner`. Defaults to `false`. Consider
      * changing this option when your project targets JVM 1.8.

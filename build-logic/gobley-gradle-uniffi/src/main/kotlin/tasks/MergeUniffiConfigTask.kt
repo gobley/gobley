@@ -63,6 +63,10 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @get:Input
     @get:Optional
+    abstract val omitChecksums: Property<Boolean>
+
+    @get:Input
+    @get:Optional
     abstract val customTypes: MapProperty<String, CustomType>
 
     @get:InputFiles
@@ -118,6 +122,8 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
             ),
             generateImmutableRecords = originalConfig.generateImmutableRecords
                 ?: generateImmutableRecords.orNull,
+            omitChecksums = originalConfig.omitChecksums
+                ?: omitChecksums.orNull,
             customTypes = mergeMap(
                 originalConfig.customTypes,
                 customTypes.map {
