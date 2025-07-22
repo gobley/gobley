@@ -84,7 +84,9 @@ internal interface UniffiLib : Library {
             loadIndirect<UniffiLib>(componentName = "{{ ci.namespace() }}")
                 .also { lib: UniffiLib ->
                     uniffiCheckContractApiVersion(lib)
+                    {%- if !config.omit_checksums %}
                     uniffiCheckApiChecksums(lib)
+                    {%- endif %}
                     {%- for init_fn in self.initialization_fns(ci) %}
                     {{ init_fn }}
                     {%- endfor %}
@@ -115,6 +117,7 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
     }
 }
 
+{% if !config.omit_checksums -%}
 {% if ci.iter_checksums().next().is_none() -%}
 @Suppress("UNUSED_PARAMETER")
 {%- endif %}
@@ -125,6 +128,7 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     }
     {%- endfor %}
 }
+{%- endif %}
 
 fun uniffiEnsureInitialized() {
     UniffiLib.INSTANCE
