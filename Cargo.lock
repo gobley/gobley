@@ -938,7 +938,7 @@ dependencies = [
 
 [[package]]
 name = "gobley-uniffi-bindgen"
-version = "0.3.0-snapshot.20250710.0"
+version = "0.3.0-snapshot.20250725.0"
 dependencies = [
  "anyhow",
  "askama",
