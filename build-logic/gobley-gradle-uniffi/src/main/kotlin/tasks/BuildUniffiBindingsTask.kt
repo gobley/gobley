@@ -26,7 +26,7 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 
 @CacheableTask
-abstract class BuildBindingsTask : CargoPackageTask() {
+abstract class BuildUniffiBindingsTask : CargoPackageTask() {
     /**
      * Directory in which to write generated files. Default is same folder as .udl file.
      */

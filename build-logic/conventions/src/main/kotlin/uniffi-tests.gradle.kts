@@ -1,6 +1,6 @@
 import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.jvm
-import gobley.gradle.uniffi.tasks.InstallBindgenTask
+import gobley.gradle.uniffi.tasks.InstallUniffiBindgenTask
 
 plugins {
     id("host-jvm-native-tests")
@@ -18,6 +18,6 @@ uniffi {
     bindgenFromPath(rootProject.layout.projectDirectory.dir("bindgen"))
 }
 
-tasks.withType<InstallBindgenTask> {
+tasks.withType<InstallUniffiBindgenTask> {
     quiet = false
 }

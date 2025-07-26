@@ -20,9 +20,9 @@ import gobley.gradle.uniffi.dsl.BindingsGeneration
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromLibrary
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromUdl
 import gobley.gradle.uniffi.dsl.UniFfiExtension
-import gobley.gradle.uniffi.tasks.BuildBindingsTask
-import gobley.gradle.uniffi.tasks.GenerateProguardRulesTask
-import gobley.gradle.uniffi.tasks.InstallBindgenTask
+import gobley.gradle.uniffi.tasks.BuildUniffiBindingsTask
+import gobley.gradle.uniffi.tasks.GenerateUniffiProguardRulesTask
+import gobley.gradle.uniffi.tasks.InstallUniffiBindgenTask
 import gobley.gradle.uniffi.tasks.MergeUniffiConfigTask
 import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.GradleUtils
@@ -188,7 +188,7 @@ class UniFfiPlugin : Plugin<Project> {
             task.libraryFileByCrateType.map { it.toList().first().second }
         }
 
-        val installBindgen = tasks.register<InstallBindgenTask>("installBindgen") {
+        val installBindgen = tasks.register<InstallUniffiBindgenTask>("installUniffiBindgen") {
             group = TASK_GROUP
             binaryCrateSource.set(uniFfiExtension.bindgenSource)
             installDirectory.set(layout.buildDirectory.dir("gobley-tools-install/uniffi-bindgen"))
@@ -265,7 +265,7 @@ class UniFfiPlugin : Plugin<Project> {
         @OptIn(InternalGobleyGradleApi::class)
         DependencyUtils.addMergedUniffiConfigArtifact(this, mergeUniffiConfig)
 
-        val buildBindings = tasks.register<BuildBindingsTask>("buildBindings") {
+        val buildBindings = tasks.register<BuildUniffiBindingsTask>("buildUniffiBindings") {
             group = TASK_GROUP
 
             cargoPackage.set(cargoExtension.cargoPackage)
@@ -313,8 +313,8 @@ class UniFfiPlugin : Plugin<Project> {
 
         @OptIn(InternalGobleyGradleApi::class)
         if (::androidDelegate.isInitialized) {
-            val generateProguardRulesTask =
-                tasks.register<GenerateProguardRulesTask>("generateProguardRules") {
+            val generateUniffiProguardRulesTask =
+                tasks.register<GenerateUniffiProguardRulesTask>("generateUniffiProguardRules") {
                     outputFile.set(androidGeneratedProguardFile)
                 }
 
@@ -322,7 +322,7 @@ class UniFfiPlugin : Plugin<Project> {
                 androidDelegate.addProguardFiles(
                     project,
                     androidGeneratedProguardFile.get(),
-                    generateProguardRulesTask,
+                    generateUniffiProguardRulesTask,
                 )
             }
         }
@@ -354,7 +354,7 @@ class UniFfiPlugin : Plugin<Project> {
                     writeBytes(byteArrayOf())
                 }
             }
-            mustRunAfter(tasks.named("buildBindings"))
+            mustRunAfter(tasks.named("buildUniffiBindings"))
         }
 
         @OptIn(InternalGobleyGradleApi::class)

@@ -13,7 +13,7 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.OutputFile
 
 @CacheableTask
-abstract class InstallBindgenTask : CargoInstallTask() {
+abstract class InstallUniffiBindgenTask : CargoInstallTask() {
     @OptIn(InternalGobleyGradleApi::class)
     @get:OutputFile
     val bindgen = binaryCrateOutput(BuildConfig.BINDGEN_BIN)
