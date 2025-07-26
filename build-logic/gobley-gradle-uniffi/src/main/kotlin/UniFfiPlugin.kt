@@ -190,8 +190,8 @@ class UniFfiPlugin : Plugin<Project> {
 
         val installBindgen = tasks.register<InstallBindgenTask>("installBindgen") {
             group = TASK_GROUP
-            bindgenSource.set(uniFfiExtension.bindgenSource)
-            installDirectory.set(layout.buildDirectory.dir("bindgen-install"))
+            binaryCrateSource.set(uniFfiExtension.bindgenSource)
+            installDirectory.set(layout.buildDirectory.dir("gobley-tools-install/uniffi-bindgen"))
         }
 
         @OptIn(InternalGobleyGradleApi::class)

@@ -4,25 +4,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package gobley.gradle.uniffi.dsl
+package gobley.gradle.cargo.dsl
 
-import gobley.gradle.BuildConfig
-import gobley.gradle.InternalGobleyGradleApi
 import java.io.Serializable
 
-sealed class BindgenSource : Serializable {
-    data class Registry @OptIn(InternalGobleyGradleApi::class) constructor(
-        val packageName: String = BuildConfig.BINDGEN_CRATE,
-        val version: String = BuildConfig.BINDGEN_VERSION,
+sealed class CargoBinaryCrateSource : Serializable {
+    data class Registry(
+        val packageName: String,
+        val version: String,
         val registry: String? = null,
-    ) : BindgenSource(), Serializable
+    ) : CargoBinaryCrateSource(), Serializable
 
-    data class Path(val path: String) : BindgenSource(), Serializable
+    data class Path(val path: String) : CargoBinaryCrateSource(), Serializable
 
     data class Git(
         val repository: String,
         val commit: Commit? = null,
-    ) : BindgenSource(), Serializable {
+    ) : CargoBinaryCrateSource(), Serializable {
         sealed class Commit : Serializable {
             data class Branch(val branch: String) : Commit(), Serializable
             data class Tag(val tag: String) : Commit(), Serializable

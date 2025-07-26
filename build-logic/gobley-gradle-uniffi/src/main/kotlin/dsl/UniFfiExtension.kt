@@ -8,6 +8,7 @@ package gobley.gradle.uniffi.dsl
 
 import gobley.gradle.BuildConfig
 import gobley.gradle.InternalGobleyGradleApi
+import gobley.gradle.cargo.dsl.CargoBinaryCrateSource
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -18,8 +19,15 @@ import org.gradle.kotlin.dsl.property
 
 @Suppress("LeakingThis")
 abstract class UniFfiExtension(internal val project: Project) {
-    internal val bindgenSource: Property<BindgenSource> =
-        project.objects.property<BindgenSource>().convention(BindgenSource.Registry())
+    @OptIn(InternalGobleyGradleApi::class)
+    internal val bindgenSource: Property<CargoBinaryCrateSource> =
+        project.objects.property<CargoBinaryCrateSource>()
+            .convention(
+                CargoBinaryCrateSource.Registry(
+                    packageName = BuildConfig.BINDGEN_CRATE,
+                    version = BuildConfig.BINDGEN_VERSION,
+                )
+            )
 
     /**
      * Runs `ktlint` on the generated bindings
@@ -61,43 +69,43 @@ abstract class UniFfiExtension(internal val project: Project) {
         version: String = BuildConfig.BINDGEN_VERSION,
         registry: String? = null,
     ) {
-        bindgenSource.set(BindgenSource.Registry(packageName, version, registry))
+        bindgenSource.set(CargoBinaryCrateSource.Registry(packageName, version, registry))
     }
 
     /**
      * Install the bindgen located in the given [path].
      */
     fun bindgenFromPath(path: Directory) {
-        bindgenSource.set(BindgenSource.Path(path.asFile.absolutePath))
+        bindgenSource.set(CargoBinaryCrateSource.Path(path.asFile.absolutePath))
     }
 
     /**
      * Download and install the bindgen from the given Git repository. If [commit] is specified, `cargo install` will
      * install the bindgen of that [commit].
      */
-    fun bindgenFromGit(repository: String, commit: BindgenSource.Git.Commit? = null) {
-        bindgenSource.set(BindgenSource.Git(repository, commit))
+    fun bindgenFromGit(repository: String, commit: CargoBinaryCrateSource.Git.Commit? = null) {
+        bindgenSource.set(CargoBinaryCrateSource.Git(repository, commit))
     }
 
     /**
      * Download and install the bindgen from the given Git repository, using the given [branch].
      */
     fun bindgenFromGitBranch(repository: String, branch: String) {
-        bindgenFromGit(repository, BindgenSource.Git.Commit.Branch(branch))
+        bindgenFromGit(repository, CargoBinaryCrateSource.Git.Commit.Branch(branch))
     }
 
     /**
      * Download and install the bindgen from the given Git repository, using the given [tag].
      */
     fun bindgenFromGitTag(repository: String, tag: String) {
-        bindgenFromGit(repository, BindgenSource.Git.Commit.Tag(tag))
+        bindgenFromGit(repository, CargoBinaryCrateSource.Git.Commit.Tag(tag))
     }
 
     /**
      * Download and install the bindgen from the given Git repository, using the given commit [revision].
      */
     fun bindgenFromGitRevision(repository: String, revision: String) {
-        bindgenFromGit(repository, BindgenSource.Git.Commit.Revision(revision))
+        bindgenFromGit(repository, CargoBinaryCrateSource.Git.Commit.Revision(revision))
     }
 
     internal abstract val userProvidedBindingsGeneration: Property<BindingsGeneration>
