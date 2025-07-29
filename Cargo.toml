@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "bindgen",
+    "crates/gobley-uniffi-bindgen",
 
     "tests/build-common",
 

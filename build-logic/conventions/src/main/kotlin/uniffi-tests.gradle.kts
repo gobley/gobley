@@ -15,7 +15,7 @@ cargo {
 }
 
 uniffi {
-    bindgenFromPath(rootProject.layout.projectDirectory.dir("bindgen"))
+    bindgenFromPath(rootProject.layout.projectDirectory.dir("crates/gobley-uniffi-bindgen"))
 }
 
 tasks.withType<InstallUniffiBindgenTask> {

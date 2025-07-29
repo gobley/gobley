@@ -7,7 +7,7 @@ description = "A UniFFI Kotlin Multiplatform bindings generator for Rust"
 documentation = "https://github.com/gobley/gobley"
 homepage = "https://github.com/gobley/gobley"
 repository = "https://github.com/gobley/gobley"
-readme = "../README.md"
+readme = "../../README.md"
 license = "MPL-2.0"
 keywords = ["ffi", "bindgen", "kotlin"]
 

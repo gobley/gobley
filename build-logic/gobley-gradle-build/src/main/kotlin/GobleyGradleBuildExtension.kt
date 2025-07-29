@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 abstract class GobleyGradleBuildExtension(private val project: Project) {
     val bindgenInfo = BindgenInfo.fromCargoManifest(
-        project.rootProject.layout.projectDirectory.file("../bindgen/Cargo.toml").asFile
+        project.rootProject.layout.projectDirectory.file("../crates/gobley-uniffi-bindgen/Cargo.toml").asFile
     )
 
     fun configureGobleyGradleProject(
@@ -54,7 +54,7 @@ private fun Project.configureProjectProperties(
     description: String
 ) {
     val bindgenInfo = BindgenInfo.fromCargoManifest(
-        rootProject.layout.projectDirectory.file("../bindgen/Cargo.toml").asFile
+        rootProject.layout.projectDirectory.file("../crates/gobley-uniffi-bindgen/Cargo.toml").asFile
     )
     group = "dev.gobley.gradle"
     version = when {
