@@ -56,7 +56,8 @@ fun CargoBuildCollection<CargoBuild<*>>.desktop(action: CargoDesktopBuild<*>.() 
 val CargoBuildCollection<CargoBuild<*>>.jvm get() = withType(CargoJvmBuild::class.java)
 
 @JvmName("configureJvm")
-fun CargoBuildCollection<CargoBuild<*>>.jvm(action: CargoJvmBuild<*>.() -> Unit) = jvm.apply { configureEach(action) }
+fun CargoBuildCollection<CargoBuild<*>>.jvm(action: CargoJvmBuild<*>.() -> Unit) =
+    jvm.apply { configureEach(action) }
 
 @get:JvmName("mobile")
 val CargoBuildCollection<CargoBuild<*>>.mobile get() = withType(CargoMobileBuild::class.java)
@@ -99,6 +100,13 @@ val CargoBuildCollection<CargoBuild<*>>.macos get() = withType(CargoPosixBuild::
 @JvmName("configureMacos")
 fun CargoBuildCollection<CargoBuild<*>>.macos(action: CargoPosixBuild.() -> Unit) =
     macos.apply { configureEach(action) }
+
+@get:JvmName("wasm")
+val CargoBuildCollection<CargoBuild<*>>.wasm get() = withType(CargoWasmBuild::class.java)
+
+@JvmName("configureWasm")
+fun CargoBuildCollection<CargoBuild<*>>.wasm(action: CargoWasmBuild.() -> Unit) =
+    wasm.apply { configureEach(action) }
 
 @get:JvmName("windows")
 val CargoBuildCollection<CargoBuild<*>>.windows get() = withType(CargoWindowsBuild::class.java)
@@ -239,9 +247,11 @@ internal class CargoBuildCollectionImpl<T : CargoBuild<*>>(
     override fun <S : T> withType(type: Class<S>): CargoBuildCollection<S> =
         CargoBuildCollectionImpl(base.withType(type))
 
-    override fun matching(spec: Spec<in T>): CargoBuildCollection<T> = CargoBuildCollectionImpl(base.matching(spec))
+    override fun matching(spec: Spec<in T>): CargoBuildCollection<T> =
+        CargoBuildCollectionImpl(base.matching(spec))
 
-    override fun matching(spec: Closure<*>): CargoBuildCollection<T> = CargoBuildCollectionImpl(base.matching(spec))
+    override fun matching(spec: Closure<*>): CargoBuildCollection<T> =
+        CargoBuildCollectionImpl(base.matching(spec))
 
     @Throws(UnknownDomainObjectException::class)
     override fun <S : T> named(name: String, type: Class<S>): CargoBuildProvider<S> =

@@ -10,6 +10,7 @@ import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
+import gobley.gradle.rust.targets.RustWasmTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import java.io.File
@@ -82,6 +83,7 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
                 RustAndroidTarget.entries,
                 RustPosixTarget.windowsTargets.asList(),
                 RustPosixTarget.linuxTargets.asList(),
+                RustWasmTarget.entries,
                 RustWindowsTarget.entries,
             ).flatMap { it }.toTypedArray()
 
@@ -89,12 +91,14 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
                 RustAndroidTarget.entries,
                 RustAppleMobileTarget.entries,
                 RustPosixTarget.entries,
+                RustWasmTarget.entries,
             ).flatMap { it }.toTypedArray()
 
             private val linuxSupportedTargets: Array<RustTarget> = arrayOf(
                 RustAndroidTarget.entries,
                 RustPosixTarget.windowsTargets.asList(),
                 RustPosixTarget.linuxTargets.asList(),
+                RustWasmTarget.entries,
             ).flatMap { it }.toTypedArray()
         }
     }

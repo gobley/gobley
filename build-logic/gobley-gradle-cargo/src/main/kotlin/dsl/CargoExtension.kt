@@ -16,6 +16,7 @@ import gobley.gradle.rust.targets.RustAndroidTarget
 import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
+import gobley.gradle.rust.targets.RustWasmTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -35,7 +36,7 @@ import org.jetbrains.kotlin.gradle.plugin.HasProject
 import java.io.File
 
 abstract class CargoExtension(final override val project: Project) : HasProject, HasFeatures,
-    HasVariants<CargoExtensionVariant>, HasJvmVariant, HasNativeVariant {
+    HasVariants<CargoExtensionVariant>, HasJvmVariant, HasNativeVariant, HasWasmVariant {
     /**
      * The package directory.
      */
@@ -89,6 +90,7 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
                     is RustAndroidTarget -> CargoAndroidBuild::class
                     is RustAppleMobileTarget -> CargoAppleMobileBuild::class
                     is RustPosixTarget -> CargoPosixBuild::class
+                    is RustWasmTarget -> CargoWasmBuild::class
                     is RustWindowsTarget -> CargoWindowsBuild::class
                 },
                 rustTarget,

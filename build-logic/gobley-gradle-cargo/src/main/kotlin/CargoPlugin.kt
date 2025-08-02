@@ -21,6 +21,7 @@ import gobley.gradle.cargo.dsl.CargoNativeBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuildVariant
 import gobley.gradle.cargo.dsl.jvm
 import gobley.gradle.cargo.dsl.native
+import gobley.gradle.cargo.dsl.wasm
 import gobley.gradle.cargo.tasks.CargoCleanTask
 import gobley.gradle.cargo.tasks.CargoTask
 import gobley.gradle.cargo.tasks.RustUpTargetAddTask
@@ -82,6 +83,7 @@ class CargoPlugin : Plugin<Project> {
         cargoExtension.jvmVariant.convention(Variant.Debug)
         cargoExtension.jvmPublishingVariant.convention(Variant.Release)
         cargoExtension.nativeVariant.convention(Variant.Debug)
+        cargoExtension.wasmVariant.convention(Variant.Debug)
         readVariantsFromXcode()
         cargoExtension.builds.native {
             nativeVariant.convention(
@@ -92,6 +94,9 @@ class CargoPlugin : Plugin<Project> {
         cargoExtension.builds.jvm {
             jvmVariant.convention(cargoExtension.jvmVariant)
             jvmPublishingVariant.convention(cargoExtension.jvmPublishingVariant)
+        }
+        cargoExtension.builds.wasm {
+            wasmVariant.convention(cargoExtension.wasmVariant)
         }
         @OptIn(InternalGobleyGradleApi::class)
         target.useGlobalLock()

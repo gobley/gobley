@@ -67,6 +67,18 @@ enum class CrateType(private val actualName: String) {
     fun outputFileNameForLinux(crateName: String): String? =
         outputFileNameForPosix(crateName, "so")
 
+    fun outputFileNameForWasm(crateName: String): String? {
+        return when (this) {
+            Executable -> "${crateName}.wasm"
+            StaticLibrary -> "lib${crateName}.rlib"
+            // Not supported by wasm32-unknown-unknown
+            DynamicLibrary -> null
+            SystemStaticLibrary -> "lib${crateName}.a"
+            SystemDynamicLibrary -> "${crateName}.wasm"
+            else -> null
+        }
+    }
+
     override fun toString(): String = actualName
 }
 
