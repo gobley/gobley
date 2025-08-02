@@ -12,29 +12,15 @@ import kotlinx.serialization.decodeFromString
 import net.peanuuutz.tomlkt.Toml
 import java.io.File
 
-data class BindgenInfo(
-    val name: String,
-    val version: String,
-    val binaryName: String,
-) {
-    companion object {
-        fun fromCargoManifest(file: File): BindgenInfo {
-            val manifestString = file.readText(Charsets.UTF_8)
-            val manifest = CargoManifest.toml.decodeFromString<CargoManifest>(manifestString)
-            return BindgenInfo(
-                name = manifest.`package`.name,
-                version = manifest.`package`.version,
-                binaryName = manifest.binaries[0].name,
-            )
-        }
-    }
-}
-
 @Serializable
-internal data class CargoManifest(
+data class CargoManifest(
     @SerialName("package") val `package`: Package,
-    @SerialName("bin") val binaries: List<BinaryTarget>,
+    @SerialName("bin") val binaries: List<BinaryTarget> = listOf(),
 ) {
+    val name get() = `package`.name
+    val version get() = `package`.version
+    val firstBinaryName get() = binaries.firstOrNull()?.name ?: name
+
     @Serializable
     data class Package(
         val name: String,
@@ -47,9 +33,14 @@ internal data class CargoManifest(
     )
 
     companion object {
-        val toml = Toml {
+        private val toml = Toml {
             ignoreUnknownKeys = true
             explicitNulls = false
+        }
+
+        fun fromFile(file: File): CargoManifest {
+            val manifestString = file.readText(Charsets.UTF_8)
+            return toml.decodeFromString<CargoManifest>(manifestString)
         }
     }
 }

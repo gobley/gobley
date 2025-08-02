@@ -51,10 +51,15 @@ buildConfig {
         }
     }
 
-    val bindgenInfo = gobleyGradleBuild.bindgenInfo
-    buildConfigField("String", "BINDGEN_VERSION", "\"${bindgenInfo.version}\"")
-    buildConfigField("String", "BINDGEN_CRATE", "\"${bindgenInfo.name}\"")
-    buildConfigField("String", "BINDGEN_BIN", "\"${bindgenInfo.binaryName}\"")
+    val uniffiBindgenManifest = gobleyGradleBuild.uniffiBindgenManifest
+    buildConfigField("String", "UNIFFI_BINDGEN_VERSION", "\"${uniffiBindgenManifest.version}\"")
+    buildConfigField("String", "UNIFFI_BINDGEN_CRATE", "\"${uniffiBindgenManifest.name}\"")
+    buildConfigField("String", "UNIFFI_BINDGEN_BIN", "\"${uniffiBindgenManifest.firstBinaryName}\"")
+
+    val wasmTransformerManifest = gobleyGradleBuild.wasmTransformerManifest
+    buildConfigField("String", "WASM_TRANSFORMER_VERSION" ,"\"${wasmTransformerManifest.version}\"")
+    buildConfigField("String", "WASM_TRANSFORMER_CRATE", "\"${wasmTransformerManifest.name}\"")
+    buildConfigField("String", "WASM_TRANSFORMER_BIN", "\"${wasmTransformerManifest.firstBinaryName}\"")
 
     forClass("DependencyVersions") {
         buildConfigField("String", "OKIO", "\"${libs.versions.okio.get()}\"")

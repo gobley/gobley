@@ -6,6 +6,7 @@
 
 package gobley.gradle.cargo.dsl
 
+import gobley.gradle.BuildConfig
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
@@ -19,6 +20,7 @@ import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWasmTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.internal.plugins.DslObject
 import org.gradle.api.provider.MapProperty
@@ -152,4 +154,54 @@ abstract class CargoExtension(final override val project: Project) : HasProject,
      */
     val installTargetBeforeBuild: Property<Boolean> =
         project.objects.property<Boolean>().convention(true)
+
+    @OptIn(InternalGobleyGradleApi::class)
+    internal val wasmTransformerSource: Property<CargoBinaryCrateSource> =
+        project.objects.property<CargoBinaryCrateSource>()
+            .convention(
+                CargoBinaryCrateSource.Registry(
+                    packageName = BuildConfig.WASM_TRANSFORMER_CRATE,
+                    version = BuildConfig.WASM_TRANSFORMER_VERSION,
+                )
+            )
+
+    /**
+     * Install the WASM transformer located in the given [path].
+     */
+    fun wasmTransformerFromPath(path: Directory) {
+        wasmTransformerSource.set(CargoBinaryCrateSource.Path(path.asFile.absolutePath))
+    }
+
+    /**
+     * Download and install the WASM transformer from the given Git repository. If [commit] is specified, `cargo install` will
+     * install the WASM transformer of that [commit].
+     */
+    fun wasmTransformerFromGit(
+        repository: String,
+        commit: CargoBinaryCrateSource.Git.Commit? = null
+    ) {
+        wasmTransformerSource.set(CargoBinaryCrateSource.Git(repository, commit))
+    }
+
+    /**
+     * Download and install the WASM transformer from the given Git repository, using the given [branch].
+     */
+    fun wasmTransformerFromGitBranch(repository: String, branch: String) {
+        wasmTransformerFromGit(repository, CargoBinaryCrateSource.Git.Commit.Branch(branch))
+    }
+
+    /**
+     * Download and install the WASM transformer from the given Git repository, using the given [tag].
+     */
+    fun wasmTransformerFromGitTag(repository: String, tag: String) {
+        wasmTransformerFromGit(repository, CargoBinaryCrateSource.Git.Commit.Tag(tag))
+    }
+
+    /**
+     * Download and install the WASM transformer from the given Git repository, using the given commit [revision].
+     */
+    fun wasmTransformerFromGitRevision(repository: String, revision: String) {
+        wasmTransformerFromGit(repository, CargoBinaryCrateSource.Git.Commit.Revision(revision))
+    }
+
 }

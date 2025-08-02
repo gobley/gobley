@@ -12,6 +12,9 @@ cargo {
     builds.jvm {
         embedRustLibrary.set(rustTarget == GobleyHost.current.rustTarget)
     }
+    wasmTransformerFromPath(
+        rootProject.layout.projectDirectory.dir("crates/gobley-wasm-transformer")
+    )
 }
 
 uniffi {

@@ -17,8 +17,16 @@ import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 abstract class GobleyGradleBuildExtension(private val project: Project) {
-    val bindgenInfo = BindgenInfo.fromCargoManifest(
-        project.rootProject.layout.projectDirectory.file("../crates/gobley-uniffi-bindgen/Cargo.toml").asFile
+    val uniffiBindgenManifest = CargoManifest.fromFile(
+        project.rootProject.layout.projectDirectory.file(
+            "../crates/gobley-uniffi-bindgen/Cargo.toml"
+        ).asFile
+    )
+
+    val wasmTransformerManifest = CargoManifest.fromFile(
+        project.rootProject.layout.projectDirectory.file(
+            "../crates/gobley-wasm-transformer/Cargo.toml"
+        ).asFile
     )
 
     fun configureGobleyGradleProject(
@@ -53,13 +61,15 @@ private fun Project.configureGobleyGradleProject(
 private fun Project.configureProjectProperties(
     description: String
 ) {
-    val bindgenInfo = BindgenInfo.fromCargoManifest(
-        rootProject.layout.projectDirectory.file("../crates/gobley-uniffi-bindgen/Cargo.toml").asFile
+    val bindgenManifest = CargoManifest.fromFile(
+        rootProject.layout.projectDirectory.file(
+            "../crates/gobley-uniffi-bindgen/Cargo.toml"
+        ).asFile
     )
     group = "dev.gobley.gradle"
     version = when {
-        bindgenInfo.version.contains('-') -> bindgenInfo.version.substringBefore('-') + "-SNAPSHOT"
-        else -> bindgenInfo.version
+        bindgenManifest.version.contains('-') -> bindgenManifest.version.substringBefore('-') + "-SNAPSHOT"
+        else -> bindgenManifest.version
     }
     this.description = description
 }

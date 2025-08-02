@@ -24,8 +24,8 @@ abstract class UniFfiExtension(internal val project: Project) {
         project.objects.property<CargoBinaryCrateSource>()
             .convention(
                 CargoBinaryCrateSource.Registry(
-                    packageName = BuildConfig.BINDGEN_CRATE,
-                    version = BuildConfig.BINDGEN_VERSION,
+                    packageName = BuildConfig.UNIFFI_BINDGEN_CRATE,
+                    version = BuildConfig.UNIFFI_BINDGEN_VERSION,
                 )
             )
 
@@ -65,8 +65,8 @@ abstract class UniFfiExtension(internal val project: Project) {
      */
     @OptIn(InternalGobleyGradleApi::class)
     fun bindgenFromRegistry(
-        packageName: String = BuildConfig.BINDGEN_CRATE,
-        version: String = BuildConfig.BINDGEN_VERSION,
+        packageName: String = BuildConfig.UNIFFI_BINDGEN_CRATE,
+        version: String = BuildConfig.UNIFFI_BINDGEN_VERSION,
         registry: String? = null,
     ) {
         bindgenSource.set(CargoBinaryCrateSource.Registry(packageName, version, registry))

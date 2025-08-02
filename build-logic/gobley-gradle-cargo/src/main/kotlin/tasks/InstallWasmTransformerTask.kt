@@ -4,17 +4,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package gobley.gradle.uniffi.tasks
+package gobley.gradle.cargo.tasks
 
 import gobley.gradle.BuildConfig
 import gobley.gradle.InternalGobleyGradleApi
-import gobley.gradle.cargo.tasks.CargoInstallTask
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.OutputFile
 
 @CacheableTask
-abstract class InstallUniffiBindgenTask : CargoInstallTask() {
+abstract class InstallWasmTransformerTask : CargoInstallTask() {
     @OptIn(InternalGobleyGradleApi::class)
     @get:OutputFile
-    val bindgen = binaryCrateOutput(BuildConfig.UNIFFI_BINDGEN_BIN)
+    val wasmTransformer = binaryCrateOutput(BuildConfig.WASM_TRANSFORMER_BIN)
 }

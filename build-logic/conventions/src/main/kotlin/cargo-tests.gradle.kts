@@ -14,6 +14,9 @@ cargo {
         embedRustLibrary = (rustTarget == GobleyHost.current.rustTarget)
         resourcePrefix = "jvm"
     }
+    wasmTransformerFromPath(
+        rootProject.layout.projectDirectory.dir("crates/gobley-wasm-transformer")
+    )
 }
 
 kotlin.targets.withType(KotlinNativeTarget::class) {
