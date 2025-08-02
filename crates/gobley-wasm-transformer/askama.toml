@@ -1,0 +1,5 @@
+[general]
+dirs = ["src/templates"]
+
+[[syntax]]
+name = "kt"

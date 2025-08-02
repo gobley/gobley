@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/gobley-uniffi-bindgen",
+    "crates/gobley-wasm-transformer",
 
     "tests/build-common",
 
@@ -49,8 +50,10 @@ inherits = "dev"
 opt-level = 2
 
 [workspace.dependencies]
+askama = { version = "0.13.0", default-features = false }
 anyhow = "1.0.86"
 camino = "1.1.1"
+clap = "4.5.7"
 lazy_static = "1.4"
 once_cell = "1.18"
 thiserror = "1"

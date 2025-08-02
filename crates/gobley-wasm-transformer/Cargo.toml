@@ -1,5 +1,5 @@
 [package]
-name = "gobley-uniffi-bindgen"
+name = "gobley-wasm-transformer"
 version = "0.3.0-snapshot.20250725.0"
 edition = "2021"
 authors = ["Gobley Contributors"]
@@ -7,9 +7,8 @@ description = "A UniFFI Kotlin Multiplatform bindings generator for Rust"
 documentation = "https://github.com/gobley/gobley"
 homepage = "https://github.com/gobley/gobley"
 repository = "https://github.com/gobley/gobley"
-readme = "../../README.md"
 license = "MPL-2.0"
-keywords = ["ffi", "bindgen", "kotlin"]
+keywords = ["wasm", "kotlin"]
 
 [dependencies]
 anyhow = { workspace = true }
@@ -18,14 +17,7 @@ askama = { workspace = true, default-features = false, features = [
     "derive",
     "alloc",
 ] }
+base64 = "0.22"
 camino = { workspace = true }
 clap = { workspace = true, features = ["derive", "cargo", "std"] }
-fs-err = "2.11.0"
-heck = "0.5.0"
-serde = "1.0.203"
-textwrap = "0.16.1"
-toml = "0.5"
-uniffi_bindgen = { workspace = true }
-uniffi_meta = { workspace = true }
-# TODO: Remove the following after upgrading MSRV to 1.78. cargo-platform 0.1.9 does not support 1.77 or older.
-cargo-platform = "=0.1.8"
+walrus = "0.23"

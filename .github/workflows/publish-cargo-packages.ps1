@@ -5,7 +5,8 @@ ${env:RUSTFLAGS} = "-D warnings";
 cargo login "${env:GOBLEY_CRATES_IO_API_TOKEN}";
 
 $packageNames = @(
-    "gobley-uniffi-bindgen"
+    "gobley-uniffi-bindgen",
+    "gobley-wasm-transformer"
 );
 
 # Run checks before publishing
