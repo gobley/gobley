@@ -72,7 +72,9 @@ private fun GobleyKotlinSourceSetCollection(sourceSets: NamedDomainObjectCollect
             )
         }
 
-        override val jvmMain: KotlinSourceSet
-            get() = error("not supported")
+        override val jvmMain: KotlinSourceSet get() = error("not supported")
+        override val jsMain: KotlinSourceSet get() = error("not supported")
+        override val wasmJsMain: KotlinSourceSet get() = error("not supported")
+        override val wasmWasiMain: KotlinSourceSet get() = error("not supported")
     }
 }

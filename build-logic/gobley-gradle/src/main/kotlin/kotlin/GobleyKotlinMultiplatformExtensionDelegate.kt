@@ -15,9 +15,12 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetType
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 
 @OptIn(InternalGobleyGradleApi::class)
@@ -86,15 +89,48 @@ private fun GobleyKotlinSourceSetCollection(
             )
         }
 
-        private fun jvmTarget(): KotlinJvmTarget {
+        private fun getSourceSetByTarget(
+            targetName: String,
+            target: () -> KotlinTarget?
+        ): KotlinSourceSet {
+            val retrievedTarget = target() ?: error("$targetName target not present")
+            return sourceSets.getByName("${retrievedTarget.name}Main")
+        }
+
+        private fun jvmTarget(): KotlinJvmTarget? {
             return targets.filterIsInstance<KotlinJvmTarget>().firstOrNull()
-                ?: error("JVM target not present")
         }
 
         override val jvmMain: KotlinSourceSet
-            get() {
-                val jvmTarget = jvmTarget()
-                return sourceSets.getByName("${jvmTarget.name}Main")
+            get() = getSourceSetByTarget("JVM", ::jvmTarget)
+
+        private fun jsTarget(): KotlinJsIrTarget? {
+            val jsIrTarget = targets.firstOrNull {
+                it.platformType == KotlinPlatformType.js
+            } as? KotlinJsIrTarget
+            return jsIrTarget
+        }
+
+        override val jsMain: KotlinSourceSet
+            get() = getSourceSetByTarget("JS", ::jsTarget)
+
+        private fun wasmTarget(wasmTargetType: KotlinWasmTargetType): KotlinJsIrTarget? {
+            return targets
+                .filterIsInstance<KotlinJsIrTarget>()
+                .firstOrNull {
+                    it.platformType == KotlinPlatformType.wasm
+                            && it.wasmTargetType == wasmTargetType
+                }
+        }
+
+        override val wasmJsMain: KotlinSourceSet
+            get() = getSourceSetByTarget("WASM JS") {
+                wasmTarget(KotlinWasmTargetType.JS)
+            }
+
+        override val wasmWasiMain: KotlinSourceSet
+            get() = getSourceSetByTarget("WASM WASI") {
+                wasmTarget(KotlinWasmTargetType.WASI)
             }
     }
 }

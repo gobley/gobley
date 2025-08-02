@@ -54,5 +54,8 @@ private fun GobleyKotlinSourceSetCollection(sourceSets: NamedDomainObjectCollect
         override fun androidMain(variant: Variant?) = error("not supported")
         override fun androidUnitTest(variant: Variant?) = error("not supported")
         override val jvmMain: KotlinSourceSet get() = sourceSets.getByName("main")
+        override val jsMain: KotlinSourceSet get() = error("not supported")
+        override val wasmJsMain: KotlinSourceSet get() = error("not supported")
+        override val wasmWasiMain: KotlinSourceSet get() = error("not supported")
     }
 }

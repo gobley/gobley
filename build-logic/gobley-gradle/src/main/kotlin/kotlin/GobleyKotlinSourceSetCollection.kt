@@ -22,4 +22,7 @@ interface GobleyKotlinSourceSetCollection : NamedDomainObjectCollection<KotlinSo
     val androidUnitTest get() = androidUnitTest()
 
     val jvmMain: KotlinSourceSet
+    val jsMain: KotlinSourceSet
+    val wasmJsMain: KotlinSourceSet
+    val wasmWasiMain: KotlinSourceSet
 }
