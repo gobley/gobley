@@ -604,6 +604,9 @@ class CargoPlugin : Plugin<Project> {
             wasmTransformer.set(wasmBindgenInstallTask.get().wasmTransformer)
         }
 
+        if (!cargoBuildVariant.embedRustLibrary.get())
+            return
+
         @OptIn(InternalGobleyGradleApi::class)
         kotlinExtensionDelegate.sourceSets.run {
             jsMain.kotlin.srcDir(

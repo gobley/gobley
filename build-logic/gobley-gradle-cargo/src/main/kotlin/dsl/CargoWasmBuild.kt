@@ -10,6 +10,7 @@ import gobley.gradle.rust.targets.RustWasmTarget
 import org.gradle.api.Project
 import javax.inject.Inject
 
+@Suppress("LeakingThis")
 abstract class CargoWasmBuild @Inject constructor(
     project: Project,
     rustTarget: RustWasmTarget,
@@ -19,4 +20,8 @@ abstract class CargoWasmBuild @Inject constructor(
     rustTarget,
     extension,
     CargoWasmBuildVariant::class,
-), HasWasmVariant
+), HasWasmVariant, HasEmbeddableRustLibrary {
+    init {
+        embedRustLibrary.convention(true)
+    }
+}

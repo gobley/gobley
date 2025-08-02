@@ -6,11 +6,10 @@
 
 package gobley.gradle.cargo.dsl
 
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import java.io.File
 
-interface HasDynamicLibraries {
+interface HasDynamicLibraries : HasEmbeddableRustLibrary {
     /**
      * The set of directories containing the dynamic libraries required in runtime. This property is effective only for
      * Android and JVM targets.
@@ -45,27 +44,4 @@ interface HasDynamicLibraries {
      * ```
      */
     val dynamicLibraries: SetProperty<String>
-
-    /**
-     * Defaults to `true`.
-     *
-     * When `true`, the Rust shared library is built using Cargo and embedded into the Kotlin build result.
-     * For JVM targets, the shared library will included in the resulting `.jar` file. For Android targets,
-     * the shared library will be included in the resulting `.aab`, `.aar`, or `.apk` file.
-     *
-     * Set this to `false` when you implement your own build logic to load the shared library, another
-     * crate using UniFFI is referencing this crate (See the UniFFI external types documentation), or you
-     * just don't want to make your application/library target for that platform.
-     *
-     * When the host does not support building for this target, this property is ignored and considered `false`.
-     * When NDK ABI filters in the `android {}` block are configured to ignore this target, this property
-     * is ignored as well.
-     *
-     * [embedRustLibrary] in [CargoBuild] is set to the convention value of [embedRustLibrary] in
-     * [CargoBuildVariant]. The value in [CargoBuildVariant] is used.
-     *
-     * Even when [embedRustLibrary] is false, if the [CargoBuild] is chosen to be used to build UniFFI bindings,
-     * Cargo build will be invoked.
-     */
-    val embedRustLibrary: Property<Boolean>
 }

@@ -14,12 +14,18 @@ import gobley.gradle.rust.targets.RustWasmTarget
 import org.gradle.api.Project
 import javax.inject.Inject
 
+@Suppress("LeakingThis")
 abstract class CargoWasmBuildVariant @Inject constructor(
     project: Project,
     build: CargoWasmBuild,
     variant: Variant,
     extension: CargoExtension,
-) : DefaultCargoBuildVariant<RustWasmTarget, CargoWasmBuild>(project, build, variant, extension) {
+) : DefaultCargoBuildVariant<RustWasmTarget, CargoWasmBuild>(project, build, variant, extension),
+    HasEmbeddableRustLibrary {
+    init {
+        embedRustLibrary.convention(build.embedRustLibrary)
+    }
+
     val transformWasmProvider = project.tasks.register<TransformWasmTask>({
         +this@CargoWasmBuildVariant
     }) {
