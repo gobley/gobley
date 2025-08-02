@@ -1,8 +1,8 @@
 /*
-* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/.
-*/
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 use std::collections::HashMap;
 use std::error::Error;
@@ -11,11 +11,11 @@ use std::fs;
 use anyhow::Context as _;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::Parser;
-use uniffi_bindgen::BindgenCrateConfigSupplier;
 use gobley_uniffi_bindgen::KotlinBindingGenerator;
+use uniffi_bindgen::BindgenCrateConfigSupplier;
 
 #[derive(Parser)]
-#[clap(name = "uniffi-bindgen")]
+#[clap(name = clap::crate_name!())]
 #[clap(version = clap::crate_version!())]
 #[clap(propagate_version = true)]
 struct Cli {
