@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 
 use askama::Template;
 use base64::Engine;
-use walrus::{Function, ImportKind, Module, ValType};
+use walrus::{Export, ExportItem, Function, Global, Import, ImportKind, Module, ValType};
 
 use self::import::WasmFunctionImport;
 
@@ -41,23 +41,36 @@ impl<'a> KotlinJsRenderer<'a> {
         import_modules.iter().map(|i| i.to_string()).collect()
     }
 
-    fn import_functions_from_module<'b>(
+    fn imports_from_module<'b>(
         &'b self,
         module: impl AsRef<str> + 'b,
-    ) -> impl Iterator<Item = (&'a str, &'a Function)> + 'b {
+    ) -> impl Iterator<Item = &'a Import> + 'b {
         self.module
             .imports
             .iter()
             .filter(move |i| i.module == module.as_ref())
-            .filter_map(|i| {
-                Some((
-                    i.name.as_str(),
-                    self.module.funcs.get(match i.kind {
-                        ImportKind::Function(id) => id,
-                        _ => return None,
-                    }),
-                ))
-            })
+    }
+
+    fn import_to_kt_signature(&self, import: &Import) -> String {
+        match import.kind {
+            ImportKind::Function(id) => self.function_to_kt_signature(self.module.funcs.get(id)),
+            ImportKind::Table(_) => "WebAssembly.Table".to_string(),
+            ImportKind::Memory(_) => "WebAssembly.Memory".to_string(),
+            ImportKind::Global(id) => Self::global_to_kt_signature(self.module.globals.get(id)),
+        }
+    }
+
+    fn exports(&self) -> impl Iterator<Item = &Export> {
+        self.module.exports.iter()
+    }
+
+    fn export_to_kt_signature(&self, export: &Export) -> String {
+        match export.item {
+            ExportItem::Function(id) => self.function_to_kt_signature(self.module.funcs.get(id)),
+            ExportItem::Table(_) => "WebAssembly.Table".to_string(),
+            ExportItem::Memory(_) => "WebAssembly.Memory".to_string(),
+            ExportItem::Global(id) => Self::global_to_kt_signature(self.module.globals.get(id)),
+        }
     }
 
     fn function_to_kt_signature(&self, function: &Function) -> String {
@@ -66,16 +79,7 @@ impl<'a> KotlinJsRenderer<'a> {
         let mut first = true;
         output.push('(');
 
-        fn map_val_type_to_kt(ty: &ValType) -> &'static str {
-            match ty {
-                ValType::I32 => "Int",
-                ValType::F32 => "Float",
-                ValType::F64 => "Double",
-                _ => "Any",
-            }
-        }
-
-        for param_str in ty.params().iter().map(map_val_type_to_kt) {
+        for param_str in ty.params().iter().map(Self::map_val_type_to_kt) {
             if !first {
                 output.push_str(", ");
             }
@@ -86,12 +90,26 @@ impl<'a> KotlinJsRenderer<'a> {
         output.push_str(") -> ");
 
         if let Some(result) = ty.results().first() {
-            output.push_str(map_val_type_to_kt(result));
+            output.push_str(Self::map_val_type_to_kt(result));
         } else {
             output.push_str("Unit");
         }
 
         output
+    }
+
+    fn global_to_kt_signature(global: &Global) -> String {
+        let inner_ty = Self::map_val_type_to_kt(&global.ty);
+        format!("WebAssembly.Global<{inner_ty}>")
+    }
+
+    fn map_val_type_to_kt(ty: &ValType) -> &'static str {
+        match ty {
+            ValType::I32 => "Int",
+            ValType::F32 => "Float",
+            ValType::F64 => "Double",
+            _ => "Any",
+        }
     }
 }
 

@@ -1,6 +1,8 @@
 {%- if let Some(package_name) = package_name -%}
 package {{ package_name }}
 
+import org.khronos.webgl.ArrayBuffer
+
 {% endif -%}
 private const val BASE64 = "{{ base64 }}"
 
@@ -17,39 +19,47 @@ private external interface Uint8Array {
 }
 
 internal external class WebAssembly {
-    class Module {
-        internal constructor(buffer: Buffer)
-        internal constructor(buffer: Uint8Array)
-        companion object
-    }
+    class Module
 
-    class Instance<T: Exports>(module: Module, imports: Any) {
+    class Instance<T : Any>(module: Module, imports: Any) {
         val exports: T
     }
 
-    class Memory
-    interface Exports {
-        val memory: Memory
+    class Memory(descriptor: Any) {
+        val buffer: ArrayBuffer
+        fun grow(delta: Int)
+    }
+
+    class Table(descriptor: Any, value: Any = definedExternally) {
+        operator fun get(idx: Int): Any
+        operator fun set(idx: Int, value: Any)
+        val length: Int
+        fun grow(delta: Int, value: Any = definedExternally)
+    }
+
+    class Global<T : Any>(descriptor: Any, value: T? = definedExternally) {
+        var value: T
     }
 }
 
-internal external interface RustWebAssemblyExports : WebAssembly.Exports {
-    @JsName("__gobley_add_to_stack_pointer")
-    fun gobleyAddToStackPointer(amount: Int): Int
+internal external interface RustWebAssemblyExports {
+    {%- for export in exports() %}
+    val {{ export.name }}: {{ export_to_kt_signature(export) }}
+    {%- endfor %}
 }
 
 private external fun atob(s: String): String
 
 private fun isBufferUnavailable() = js("typeof Buffer === \"undefined\"")
 
+private fun moduleFromBuffer(buffer: Any): WebAssembly.Module = js("WebAssembly.Module(buffer)") as WebAssembly.Module
+
 private fun moduleFromBase64(string: String): WebAssembly.Module {
-    return if (isBufferUnavailable() as Boolean) {
-        val buffer = Uint8Array.from(atob(string)) { it[0].code.toByte() }
-        WebAssembly.Module(buffer)
+    return moduleFromBuffer(if (isBufferUnavailable() as Boolean) {
+        Uint8Array.from(atob(string)) { it[0].code.toByte() }
     } else {
-        val buffer = Buffer.from(string, "base64")
-        WebAssembly.Module(buffer)
-    }
+        Buffer.from(string, "base64")
+    })
 }
 
 internal val module: WebAssembly.Module by lazy {
@@ -58,13 +68,15 @@ internal val module: WebAssembly.Module by lazy {
 
 internal class RustWebAssemblyImports(
     {%- for import_module in import_modules() %}
-    {{ import_module }}: Import_{{ import_module }},
+    @JsName("{{ import_module }}")
+    val {{ import_module }}: Import_{{ import_module }},
     {%- endfor %}
 ) {
     {%- for import_module in import_modules() %}
     class Import_{{ import_module }}(
-        {%- for (import_name, import_function) in import_functions_from_module(import_module) %}
-        {{ import_name }}: {{ function_to_kt_signature(import_function) }},
+        {%- for import in imports_from_module(import_module) %}
+        @JsName("{{ import.name }}")
+        val {{ import.name }}: {{ import_to_kt_signature(import) }},
         {%- endfor %}
     )
     {%- endfor %}
