@@ -1,20 +1,25 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.2.0...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.0...HEAD)
+
+## [0.3.0](https://github.com/gobley/gobley/releases/tag/v0.3.0) - 2025-08-04
 
 ### New Features
 
 - `CargoCheckTask.extraArguments` ([#110](https://github.com/gobley/gobley/pull/110)).
 - `CargoExtension.installTargetBeforeBuild` to prevent `RustUpTargetAddTasks` from running ([#136](https://github.com/gobley/gobley/pull/136)).
 - ProGuard rule file generation for UniFFI ([#140](https://github.com/gobley/gobley/pull/140)).
-- UniFFI 0.29.3 support  ([#143](https://github.com/gobley/gobley/pull/143) & [#147](https://github.com/gobley/gobley/pull/147)).
+- UniFFI 0.29.3 support ([#143](https://github.com/gobley/gobley/pull/143) & [#147](https://github.com/gobley/gobley/pull/147)).
 - Bindgen option to bypass checksum checks ([#144](https://github.com/gobley/gobley/pull/144)).
+- WASM embedding into Kotlin/JS ([#151](https://github.com/gobley/gobley/pull/151)).
 
 ### Fixes
 
 - Fixed the build script library search path parsing logic using `--message-format json` ([#113](https://github.com/gobley/gobley/pull/113)).
 - Fixed MinGW DLL files not being included in the JAR files ([#137](https://github.com/gobley/gobley/pull/137)).
-- Workaround for `MethodTooLargeException` thrown from JNA ([#145](https://github.com/gobley/gobley/pull/145)).
+- Implemented workaround for `MethodTooLargeException` thrown from JNA ([#145](https://github.com/gobley/gobley/pull/145)).
+- Implemented proper handling of artifact resolution ([#158](https://github.com/gobley/gobley/pull/158)).
+- Fixed the Android API level conflict due to redundant C/CXX environment variables ([#159](https://github.com/gobley/gobley/pull/159)).
 
 ## [0.2.0](https://github.com/gobley/gobley/releases/tag/v0.2.0) - 2025-04-06
 
