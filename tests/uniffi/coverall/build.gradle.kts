@@ -37,4 +37,12 @@ kotlin {
     // wasmWasi {
     //     nodejs()
     // }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation(project(":tests:uniffi:coverall-pure-kotlin-dep"))
+            }
+        }
+    }
 }

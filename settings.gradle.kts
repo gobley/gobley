@@ -42,6 +42,7 @@ if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
     include(":tests:uniffi:coverall")
     include(":tests:uniffi:coverall-android")
     include(":tests:uniffi:coverall-jvm")
+    include(":tests:uniffi:coverall-pure-kotlin-dep")
     include(":tests:uniffi:docstring")
     include(":tests:uniffi:docstring-proc-macro")
     include(":tests:uniffi:enum-types")
