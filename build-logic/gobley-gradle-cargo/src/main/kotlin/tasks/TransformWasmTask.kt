@@ -14,6 +14,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -36,6 +37,11 @@ abstract class TransformWasmTask : CommandTask() {
     @get:Input
     abstract val crateName: Property<String>
 
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Optional
+    abstract val functionImportsFile: RegularFileProperty
+
     @TaskAction
     fun transformWasm() {
         @OptIn(InternalGobleyGradleApi::class)
@@ -54,6 +60,9 @@ abstract class TransformWasmTask : CommandTask() {
             arguments("--input", input.get())
             arguments("--output", outputDirectory.get().file("$packageName.kt"))
             arguments("--package-name", packageName)
+            if (functionImportsFile.isPresent) {
+                arguments("--function-imports-file", functionImportsFile.get())
+            }
         }.get().apply {
             assertNormalExitValue()
         }

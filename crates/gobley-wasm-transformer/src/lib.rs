@@ -4,12 +4,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+pub mod import;
+pub mod stack;
+
+use std::collections::BTreeSet;
+
 use askama::Template;
 use base64::Engine;
-use walrus::Module;
+use walrus::{Function, ImportKind, Module, ValType};
 
+use self::import::WasmFunctionImport;
+
+#[derive(Debug)]
 pub struct Transformer {
     module: Module,
+    function_imports: Vec<WasmFunctionImport>,
 }
 
 #[derive(Template)]
@@ -17,71 +26,101 @@ pub struct Transformer {
 pub struct KotlinJsRenderer<'a> {
     package_name: Option<&'a str>,
     base64: &'a str,
+    module: &'a Module,
+}
+
+impl<'a> KotlinJsRenderer<'a> {
+    fn import_modules(&self) -> Vec<String> {
+        let import_modules = self
+            .module
+            .imports
+            .iter()
+            .map(|i| &i.module)
+            .collect::<BTreeSet<_>>();
+
+        import_modules.iter().map(|i| i.to_string()).collect()
+    }
+
+    fn import_functions_from_module<'b>(
+        &'b self,
+        module: impl AsRef<str> + 'b,
+    ) -> impl Iterator<Item = (&'a str, &'a Function)> + 'b {
+        self.module
+            .imports
+            .iter()
+            .filter(move |i| i.module == module.as_ref())
+            .filter_map(|i| {
+                Some((
+                    i.name.as_str(),
+                    self.module.funcs.get(match i.kind {
+                        ImportKind::Function(id) => id,
+                        _ => return None,
+                    }),
+                ))
+            })
+    }
+
+    fn function_to_kt_signature(&self, function: &Function) -> String {
+        let ty = self.module.types.get(function.ty());
+        let mut output = String::new();
+        let mut first = true;
+        output.push('(');
+
+        fn map_val_type_to_kt(ty: &ValType) -> &'static str {
+            match ty {
+                ValType::I32 => "Int",
+                ValType::F32 => "Float",
+                ValType::F64 => "Double",
+                _ => "Any",
+            }
+        }
+
+        for param_str in ty.params().iter().map(map_val_type_to_kt) {
+            if !first {
+                output.push_str(", ");
+            }
+            first = false;
+            output.push_str(param_str);
+        }
+
+        output.push_str(") -> ");
+
+        if let Some(result) = ty.results().first() {
+            output.push_str(map_val_type_to_kt(result));
+        } else {
+            output.push_str("Unit");
+        }
+
+        output
+    }
 }
 
 impl Transformer {
-    pub fn new(input: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(input: &[u8], function_imports: Vec<WasmFunctionImport>) -> anyhow::Result<Self> {
         Ok(Self {
             module: Module::from_buffer(input)?,
+            function_imports,
         })
     }
 
-    pub fn transform(mut self) -> anyhow::Result<Vec<u8>> {
-        self.transform_inner()?;
-        let Self { mut module } = self;
-        Ok(module.emit_wasm())
+    fn transform(&mut self) -> anyhow::Result<()> {
+        self.inject_stack_pointer_shim()?;
+        self.inject_function_imports();
+        Ok(())
     }
 
-    pub fn transform_into_base64(self) -> anyhow::Result<String> {
+    pub fn render_into_kt(mut self, package_name: Option<&str>) -> anyhow::Result<String> {
         use base64::prelude::BASE64_STANDARD;
-        Ok(BASE64_STANDARD.encode(self.transform()?))
-    }
 
-    pub fn transform_into_kt(self, package_name: Option<&str>) -> anyhow::Result<String> {
-        let base64 = self.transform_into_base64()?;
+        self.transform()?;
+
+        let wasm = self.module.emit_wasm();
+        let wasm_base64 = BASE64_STANDARD.encode(wasm);
         let renderer = KotlinJsRenderer {
             package_name,
-            base64: &base64,
+            base64: &wasm_base64,
+            module: &self.module,
         };
         Ok(renderer.render()?)
-    }
-}
-
-impl Transformer {
-    fn transform_inner(&mut self) -> anyhow::Result<()> {
-        self.inject_stack_pointer_shim()?;
-        Ok(())
-    }
-
-    // Ported from wasm-bindgen
-    fn inject_stack_pointer_shim(&mut self) -> anyhow::Result<()> {
-        use walrus::ir::*;
-        use walrus::{FunctionBuilder, ValType};
-
-        let stack_pointer = match self.module.globals.iter().next().map(|g| g.id()) {
-            Some(s) => s,
-            None => anyhow::bail!("failed to find stack pointer"),
-        };
-
-        let mut builder =
-            FunctionBuilder::new(&mut self.module.types, &[ValType::I32], &[ValType::I32]);
-        builder.name("__gobley_add_to_stack_pointer".to_string());
-
-        let mut body = builder.func_body();
-        let arg = self.module.locals.add(ValType::I32);
-
-        body.local_get(arg)
-            .global_get(stack_pointer)
-            .binop(BinaryOp::I32Add)
-            .global_set(stack_pointer)
-            .global_get(stack_pointer);
-
-        let add_to_stack_pointer_func = builder.finish(vec![arg], &mut self.module.funcs);
-
-        self.module
-            .exports
-            .add("__gobley_add_to_stack_pointer", add_to_stack_pointer_func);
-
-        Ok(())
     }
 }

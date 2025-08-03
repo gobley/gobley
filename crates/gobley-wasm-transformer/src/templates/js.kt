@@ -4,13 +4,13 @@ package {{ package_name }}
 {% endif -%}
 private const val BASE64 = "{{ base64 }}"
 
-internal external interface Buffer {
+private external interface Buffer {
     companion object {
         fun from(string: String, encoding: String): Buffer
     }
 }
 
-internal external interface Uint8Array {
+private external interface Uint8Array {
     companion object {
         fun from(string: String, transform: (String) -> Byte): Uint8Array
     }
@@ -52,7 +52,26 @@ private fun moduleFromBase64(string: String): WebAssembly.Module {
     }
 }
 
-internal val instance: WebAssembly.Instance<RustWebAssemblyExports> by lazy {
-    val module = moduleFromBase64(BASE64)
-    WebAssembly.Instance(module, object {})
+internal val module: WebAssembly.Module by lazy {
+    moduleFromBase64(BASE64)
+}
+
+internal class RustWebAssemblyImports(
+    {%- for import_module in import_modules() %}
+    {{ import_module }}: Import_{{ import_module }},
+    {%- endfor %}
+) {
+    {%- for import_module in import_modules() %}
+    class Import_{{ import_module }}(
+        {%- for (import_name, import_function) in import_functions_from_module(import_module) %}
+        {{ import_name }}: {{ function_to_kt_signature(import_function) }},
+        {%- endfor %}
+    )
+    {%- endfor %}
+}
+
+internal fun createInstance(
+    imports: RustWebAssemblyImports,
+): WebAssembly.Instance<RustWebAssemblyExports> {
+    return WebAssembly.Instance(module, imports)
 }
