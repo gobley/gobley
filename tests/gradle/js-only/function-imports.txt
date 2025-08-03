@@ -1,0 +1,2 @@
+gradle_function_imports:kotlin_side_function_1:i32f32:f64
+gradle_function_imports:kotlin_side_function_2:i32:f32

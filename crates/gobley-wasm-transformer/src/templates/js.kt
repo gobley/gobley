@@ -48,11 +48,11 @@ internal external interface RustWebAssemblyExports {
     {%- endfor %}
 }
 
-private external fun atob(s: String): String
+private fun atob(s: String): String = js("atob(s)")
 
 private fun isBufferUnavailable() = js("typeof Buffer === \"undefined\"")
 
-private fun moduleFromBuffer(buffer: Any): WebAssembly.Module = js("WebAssembly.Module(buffer)") as WebAssembly.Module
+private fun moduleFromBuffer(buffer: Any): WebAssembly.Module = js("new WebAssembly.Module(buffer)") as WebAssembly.Module
 
 private fun moduleFromBase64(string: String): WebAssembly.Module {
     return moduleFromBuffer(if (isBufferUnavailable() as Boolean) {
