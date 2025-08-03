@@ -21,7 +21,7 @@ RUN apt update && \
       # For packages that builds OpenSSL from the source like blake3 used in examples
       perl \
       # For Boring SSL
-      git cmake && \
+      git cmake libclang-dev && \
     # Use Chrome for WASM/JS testing
     apt install -y \
       fonts-liberation \
