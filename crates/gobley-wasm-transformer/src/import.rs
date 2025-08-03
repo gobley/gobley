@@ -8,7 +8,8 @@ use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
 
-use walrus::{FunctionId, Module, ValType};
+use walrus::ir::Value;
+use walrus::{ConstExpr, ElementItems, ElementKind, FunctionId, Module, ValType};
 
 use crate::Transformer;
 
@@ -144,8 +145,9 @@ impl Error for InvalidWasmFunctionImport {}
 
 impl Transformer {
     pub(crate) fn inject_function_imports(&mut self) {
+        let mut function_ids = vec![];
         for function_import in std::mem::take(&mut self.function_imports) {
-            Self::inject_function_import(
+            let function_id = Self::inject_function_import(
                 &mut self.module,
                 &function_import.module,
                 &function_import.name,
@@ -157,6 +159,25 @@ impl Transformer {
                     .as_slice(),
                 function_import.result.map(Into::into).as_ref(),
             );
+            function_ids.push(function_id);
+        }
+
+        if let Some(main_function_table_id) =
+            self.module.tables.main_function_table().ok().flatten()
+        {
+            let main_function_table = self.module.tables.get_mut(main_function_table_id);
+            if let Some(maximum) = &mut main_function_table.maximum {
+                let num_functions_added = function_ids.len();
+                self.module.elements.add(
+                    ElementKind::Active {
+                        table: main_function_table_id,
+                        offset: ConstExpr::Value(Value::I32(*maximum as i32)),
+                    },
+                    ElementItems::Functions(function_ids),
+                );
+                *maximum += num_functions_added as u64;
+                main_function_table.initial = *maximum;
+            }
         }
     }
 

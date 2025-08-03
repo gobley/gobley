@@ -11,7 +11,10 @@ use std::collections::BTreeSet;
 
 use askama::Template;
 use base64::Engine;
-use walrus::{Export, ExportItem, Function, Global, Import, ImportKind, Module, ValType};
+use walrus::{
+    ir::Value, ConstExpr, ElementItems, ElementKind, Export, ExportItem, Function, Global,
+    GlobalKind, Import, ImportKind, Module, ModuleGlobals, ValType,
+};
 
 use self::import::WasmFunctionImport;
 
@@ -58,6 +61,67 @@ impl<'a> KotlinJsRenderer<'a> {
             ImportKind::Memory(_) => "WebAssembly.Memory".to_string(),
             ImportKind::Global(id) => Self::global_to_kt_signature(self.module.globals.get(id)),
         }
+    }
+
+    fn import_to_function_table_entry_idx(&self, import: &Import) -> Option<usize> {
+        let ImportKind::Function(function_id) = import.kind else {
+            return None;
+        };
+
+        let Ok(Some(main_function_table)) = self.module.tables.main_function_table() else {
+            return None;
+        };
+
+        for element in self.module.elements.iter() {
+            let ElementItems::Functions(function_ids) = &element.items else {
+                continue;
+            };
+            let Some(offset) = function_ids.iter().position(|id| *id == function_id) else {
+                continue;
+            };
+            let ElementKind::Active {
+                table,
+                offset: element_offset,
+            } = &element.kind
+            else {
+                continue;
+            };
+            if main_function_table != *table {
+                continue;
+            }
+
+            fn get_usize_from_constexpr(
+                globals: &ModuleGlobals,
+                expr: &ConstExpr,
+            ) -> Option<usize> {
+                Some(match expr {
+                    ConstExpr::Value(value) => match value {
+                        Value::I32(i32) => *i32 as usize,
+                        Value::I64(i64) => *i64 as usize,
+                        Value::F32(f32) => *f32 as usize,
+                        Value::F64(f64) => *f64 as usize,
+                        Value::V128(v128) => *v128 as usize,
+                    },
+                    ConstExpr::Global(id) => {
+                        return match &globals.get(*id).kind {
+                            GlobalKind::Local(expr) => get_usize_from_constexpr(globals, expr),
+                            _ => None,
+                        }
+                    }
+                    _ => return None,
+                })
+            }
+
+            let Some(element_offset) =
+                get_usize_from_constexpr(&self.module.globals, element_offset)
+            else {
+                continue;
+            };
+
+            return Some(offset + element_offset);
+        }
+
+        None
     }
 
     fn exports(&self) -> impl Iterator<Item = &Export> {
@@ -133,11 +197,12 @@ impl Transformer {
         self.transform()?;
 
         let wasm = self.module.emit_wasm();
-        let wasm_base64 = BASE64_STANDARD.encode(wasm);
+        let wasm_base64 = BASE64_STANDARD.encode(&wasm);
+        let module = Module::from_buffer(&wasm)?;
         let renderer = KotlinJsRenderer {
             package_name,
             base64: &wasm_base64,
-            module: &self.module,
+            module: &module,
         };
         Ok(renderer.render()?)
     }

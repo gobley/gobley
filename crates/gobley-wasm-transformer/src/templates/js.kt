@@ -78,7 +78,15 @@ internal class RustWebAssemblyImports(
         @JsName("{{ import.name }}")
         val {{ import.name }}: {{ import_to_kt_signature(import) }},
         {%- endfor %}
-    )
+    ) {
+        companion object {
+            {%- for import in imports_from_module(import_module) %}
+            {%- if let Some(table_entry_idx) = import_to_function_table_entry_idx(import ) %}
+            const val tblIdx_{{ import.name }}: Int = {{ table_entry_idx }}
+            {%- endif %}
+            {%- endfor %}
+        }
+    }
     {%- endfor %}
 }
 
