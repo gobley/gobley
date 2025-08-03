@@ -19,7 +19,9 @@ RUN apt update && \
       # For Zig and PowerShell
       wget \
       # For packages that builds OpenSSL from the source like blake3 used in examples
-      perl && \
+      perl \
+      # For Boring SSL
+      git && \
     # Use Chrome for WASM/JS testing
     apt install -y \
       fonts-liberation \
