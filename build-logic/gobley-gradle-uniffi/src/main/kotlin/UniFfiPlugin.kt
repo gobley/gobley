@@ -16,6 +16,7 @@ import gobley.gradle.cargo.dsl.CargoJvmBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuild
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
 import gobley.gradle.rust.targets.RustTarget
+import gobley.gradle.rust.targets.RustWasmTarget
 import gobley.gradle.uniffi.dsl.BindingsGeneration
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromLibrary
 import gobley.gradle.uniffi.dsl.BindingsGenerationFromUdl
@@ -163,6 +164,11 @@ class UniFfiPlugin : Plugin<Project> {
 
             (androidTargetsToBuild + jvmTargetsToBuild + nativeTargetsToBuild).first()
         }
+
+        if (buildRustTarget is RustWasmTarget) {
+            throw GradleException("$buildRustTarget not available for UniFFI. Try building with other targets.")
+        }
+
         val build = cargoExtension.builds.findByRustTarget(buildRustTarget)
             ?: throw GradleException("Cargo build for $buildRustTarget not available")
 
