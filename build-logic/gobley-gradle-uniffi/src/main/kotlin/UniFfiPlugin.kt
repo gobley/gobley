@@ -44,6 +44,7 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
@@ -80,6 +81,7 @@ class UniFfiPlugin : Plugin<Project> {
 
     private fun applyAfterEvaluate(target: Project): Unit = with(target) {
         findRequiredExtensions()
+        checkKotlinTargets()
         configureBindingTasks()
         configureKotlin()
         configureCleanTasks()
@@ -130,6 +132,21 @@ class UniFfiPlugin : Plugin<Project> {
                 it.root.file("src/${it.libraryCrateName}.udl")
             }
         )
+    }
+
+    @OptIn(InternalGobleyGradleApi::class)
+    private fun Project.checkKotlinTargets() {
+        val hasJsTargets =
+            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.js }
+        if (hasJsTargets) {
+            project.logger.warn("JS targets are added, but the UniFFI plugin does not support JS targets yet.")
+        }
+
+        val hasWasmTargets =
+            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.wasm }
+        if (hasWasmTargets) {
+            project.logger.warn("WASM targets are added, but the UniFFI plugin does not support WASM targets yet.")
+        }
     }
 
     private fun Project.configureBindingTasks() {
