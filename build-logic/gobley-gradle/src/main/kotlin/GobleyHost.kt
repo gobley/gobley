@@ -151,6 +151,7 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
             Platform.Windows -> listOf(
                 /* WinGet */ "${System.getenv("LOCALAPPDATA")}\\Microsoft\\WinGet\\Links",
                 /* Chocolatey */ "${System.getenv("ProgramData")}\\chocolatey\\bin",
+                /* Standalone CMake */ "C:\\Program Files\\CMake\\bin"
             )
 
             Platform.MacOS -> listOf(
@@ -159,6 +160,7 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
                     Arch.X64 -> "/usr/local/bin"
                     Arch.Arm64 -> "/opt/homebrew/bin"
                 },
+                /* Standalone CMake */ "/Applications/CMake.app/Contents/bin",
             )
 
             Platform.Linux -> listOf(
