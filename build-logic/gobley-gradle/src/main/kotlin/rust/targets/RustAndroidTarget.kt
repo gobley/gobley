@@ -94,8 +94,6 @@ enum class RustAndroidTarget(
             "CXX_$rustTriple" to clangCpp,
             "AR_$rustTriple" to ar,
             "RANLIB_$rustTriple" to ranlib,
-            "CFLAGS_$rustTriple" to "-D__ANDROID_MIN_SDK_VERSION__=$apiLevel",
-            "CXXFLAGS_$rustTriple" to "-D__ANDROID_MIN_SDK_VERSION__=$apiLevel",
         )
     }
 
