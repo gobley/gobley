@@ -1,0 +1,19 @@
+[package]
+name = "gobley-example-tokio-boring-app"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gobley_example_tokio_boring_app"
+crate-type = ["cdylib", "staticlib"]
+path = "src/commonMain/rust/lib.rs"
+
+[dependencies]
+# Latest released Boring SSL fails to build for iOS Simulator.
+# See https://github.com/cloudflare/boring/commit/c596d7d47ca3f284e618977a09e5ce29becd68a5"
+boring = { git = "https://github.com/cloudflare/boring", rev = "c596d7d47ca3f284e618977a09e5ce29becd68a5" }
+tokio-boring = { git = "https://github.com/cloudflare/boring", rev = "c596d7d47ca3f284e618977a09e5ce29becd68a5" }
+uniffi = { workspace = true, features = ["tokio"] }
+tokio = { workspace = true, features = ["net", "io-util"] }
+url = { workspace = true }

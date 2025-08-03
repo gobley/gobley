@@ -75,4 +75,5 @@ if (ext.propertyIsTrue("gobley.projects.examples")) {
     include(":examples:custom-types")
     include(":examples:todolist")
     include(":examples:tokio-blake3-app")
+    include(":examples:tokio-boring-app")
 }

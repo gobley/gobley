@@ -5,6 +5,9 @@
       location = "group:tokio-blake3-app/ios/TokioBlake3App.xcodeproj">
    </FileRef>
    <FileRef
+      location = "group:tokio-boring-app/ios/TokioBoringApp.xcodeproj">
+   </FileRef>
+   <FileRef
       location = "group:audio-cpp-app/ios/AudioCppApp.xcodeproj">
    </FileRef>
    <FileRef

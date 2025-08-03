@@ -1,0 +1,5 @@
+APP_NAME=TokioBoringApp
+PRODUCT_BUNDLE_IDENTIFIER=dev.gobley.uniffi.examples.tokioboringapp
+GRADLE_ROOT_PROJECT_DIR=$SRCROOT/../../..
+GRADLE_PROJECT_NAME=:examples:tokio-boring-app
+DEVELOPMENT_TEAM=

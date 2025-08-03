@@ -42,6 +42,7 @@ members = [
     "examples/custom-types",
     "examples/todolist",
     "examples/tokio-blake3-app",
+    "examples/tokio-boring-app",
 ]
 resolver = "2"
 
