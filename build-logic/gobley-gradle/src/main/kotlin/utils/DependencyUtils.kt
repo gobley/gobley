@@ -52,16 +52,23 @@ object DependencyUtils {
         }
     }
 
-    private val rustRuntimeRustTargetAttribute = Attribute.of("rustTarget", String::class.java)
-    private val rustVariantAttribute = Attribute.of("rustVariant", String::class.java)
+    private val kindAttribute = Attribute.of("dev.gobley.kind", String::class.java)
+    private const val KIND_RUST = "RUST"
+    private const val KIND_UNIFFI = "UNIFFI"
 
-    private fun Configuration.addAttributes(
-        superConfiguration: Configuration,
+    private val rustTargetAttribute = Attribute.of("dev.gobley.rust.target", String::class.java)
+    private val rustVariantAttribute = Attribute.of("dev.gobley.rust.variant", String::class.java)
+
+    private fun Configuration.addRustAttributes(
+        superConfiguration: Configuration? = null,
         rustTarget: RustTarget,
         variant: Variant,
     ) {
-        extendsFrom(superConfiguration)
-        attributes.attribute(rustRuntimeRustTargetAttribute, rustTarget.friendlyName)
+        if (superConfiguration != null) {
+            extendsFrom(superConfiguration)
+        }
+        attributes.attribute(kindAttribute, KIND_RUST)
+        attributes.attribute(rustTargetAttribute, rustTarget.friendlyName)
         attributes.attribute(rustVariantAttribute, variant.toString())
     }
 
@@ -80,7 +87,7 @@ object DependencyUtils {
                         rustTarget, variant
                     )
                 ) { configuration ->
-                    configuration.addAttributes(
+                    configuration.addRustAttributes(
                         superConfiguration = rustRuntimeOnlyConfiguration.get(),
                         rustTarget = rustTarget,
                         variant = variant,
@@ -91,7 +98,7 @@ object DependencyUtils {
                         rustTarget, variant
                     )
                 ) { configuration ->
-                    configuration.addAttributes(
+                    configuration.addRustAttributes(
                         superConfiguration = rustRuntimeOnlyConfiguration.get(),
                         rustTarget = rustTarget,
                         variant = variant,
@@ -128,7 +135,11 @@ object DependencyUtils {
         val dependencies = configuration.incoming
         val dependencyJars =
             currentProject.files(dependencies.artifacts.resolvedArtifacts.map { artifacts ->
-                artifacts.map { it.file }
+                artifacts.mapNotNull { artifact ->
+                    artifact.file.takeIf {
+                        artifact.variant.attributes.getAttribute(kindAttribute) == KIND_RUST
+                    }
+                }
             })
         val composePreviewVariant = GradleUtils.getComposePreviewVariant(currentProject.gradle)
         PluginUtils.withKotlinPlugin(currentProject) { delegate ->
@@ -183,14 +194,9 @@ object DependencyUtils {
         }.toString()
     }
 
-    private val uniFfiUsageAttribute = Attribute.of("uniFfiUsage", String::class.java)
-
-    private fun Configuration.addAttributes(
-        superConfiguration: Configuration,
-        uniffiUsage: String,
-    ) {
+    private fun Configuration.addUniffiAttributes(superConfiguration: Configuration) {
         extendsFrom(superConfiguration)
-        attributes.attribute(uniFfiUsageAttribute, uniffiUsage)
+        attributes.attribute(kindAttribute, KIND_UNIFFI)
     }
 
     fun createUniFfiConfigurations(currentProject: Project) {
@@ -199,15 +205,13 @@ object DependencyUtils {
         addDependencyEachCommonProjectDependencies(currentProject, "uniFfiImplementation")
 
         currentProject.configurations.resolvable("uniFfiConfiguration") { configuration ->
-            configuration.addAttributes(
+            configuration.addUniffiAttributes(
                 superConfiguration = uniFfiImplementationConfiguration.get(),
-                uniffiUsage = "uniFfiConfig"
             )
         }
         currentProject.configurations.consumable("uniFfiConfigurationConsumable") { configuration ->
-            configuration.addAttributes(
+            configuration.addUniffiAttributes(
                 superConfiguration = uniFfiImplementationConfiguration.get(),
-                uniffiUsage = "uniFfiConfig"
             )
         }
     }
@@ -224,7 +228,11 @@ object DependencyUtils {
             ?: return null
         val dependencies = configuration.incoming
         return dependencies.artifacts.resolvedArtifacts.map { artifacts ->
-            artifacts.map { it.file }
+            artifacts.mapNotNull { artifact ->
+                artifact.file.takeIf {
+                    artifact.variant.attributes.getAttribute(kindAttribute) == KIND_UNIFFI
+                }
+            }
         }
     }
 
