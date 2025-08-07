@@ -48,8 +48,10 @@ sealed class BindingsGeneration(internal val project: Project) {
 
     /**
      * The name of the resulting dynamic library without the prefix (e.g. `lib`) and the file
-     * extension. Defaults to the library's name when bindings are generated from it, or
-     * `uniffi_<namespace>` when generated from a UDL file.
+     * extension. When the bindings are generated from a dynamic library, the value of this property
+     * defaults to the library's name. When a static library or a UDL file is used, it is set to
+     * `uniffi_<namespace>`. When the `crate-type` field of the Cargo manifest contains `"cdylib"`,
+     * the UniFFI plugin will give priority to the dynamic library over the static library.
      */
     abstract val cdylibName: Property<String>
 
