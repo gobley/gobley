@@ -6,7 +6,7 @@ publish = false
 
 [lib]
 name = "gobley_fixture_coverall"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["staticlib", "cdylib"]
 path = "src/commonMain/rust/lib.rs"
 
 [dependencies]
