@@ -15,6 +15,7 @@ import gobley.gradle.cargo.dsl.CargoExtension
 import gobley.gradle.cargo.dsl.CargoJvmBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuild
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
+import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWasmTarget
 import gobley.gradle.uniffi.dsl.BindingsGeneration
@@ -208,7 +209,9 @@ class UniFfiPlugin : Plugin<Project> {
         val buildVariantForBindings = build.variant(variant)
         val cargoBuildTaskForBindings = buildVariantForBindings.buildTaskProvider
         val bindingsOutputFile = cargoBuildTaskForBindings.flatMap { task ->
-            task.libraryFileByCrateType.map { it.toList().first().second }
+            task.libraryFileByCrateType.map {
+                it[CrateType.SystemDynamicLibrary] ?: it.values.first()
+            }
         }
 
         val installBindgen = tasks.register<InstallUniffiBindgenTask>("installUniffiBindgen") {
