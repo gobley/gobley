@@ -17,6 +17,7 @@ uniffi {
 }
 
 kotlin {
+    explicitApi()
     compilerOptions {
         jvmTarget = JvmTarget.JVM_17
     }

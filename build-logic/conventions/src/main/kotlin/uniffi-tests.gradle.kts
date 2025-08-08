@@ -17,6 +17,10 @@ cargo {
     )
 }
 
+kotlin {
+    explicitApi()
+}
+
 uniffi {
     bindgenFromPath(rootProject.layout.projectDirectory.dir("crates/gobley-uniffi-bindgen"))
 }

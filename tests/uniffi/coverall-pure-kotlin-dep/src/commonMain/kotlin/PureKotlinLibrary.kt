@@ -4,6 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-object PureKotlinLibrary {
-    fun add(lhs: Int, rhs: Int) = lhs + rhs
+public object PureKotlinLibrary {
+    public fun add(lhs: Int, rhs: Int): Int = lhs + rhs
 }
