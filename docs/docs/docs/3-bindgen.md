@@ -116,3 +116,4 @@ Here is how `gobley-uniffi-bindgen` versions are tied to `uniffi-rs` are tied:
 | v0.1.0         | v0.28.3        |
 | v0.2.0         | v0.28.3        |
 | v0.3.0         | v0.29.3        |
+| v0.3.1         | v0.29.4        |
