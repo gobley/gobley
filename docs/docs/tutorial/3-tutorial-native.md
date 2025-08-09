@@ -86,7 +86,7 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    [dependencies]
    # We need to add this.
-   uniffi = "0.28.3"
+   uniffi = "0.29.4"
 
    # This as well.
    [lib]

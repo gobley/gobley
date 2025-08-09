@@ -92,7 +92,7 @@ Let's add a Cargo package to the Android project.
 
    [dependencies]
    # We need to add this.
-   uniffi = "0.28.3"
+   uniffi = "0.29.3"
 
    # This as well.
    [lib]
@@ -103,7 +103,7 @@ Let's add a Cargo package to the Android project.
 
    Let's see what each part of the modification does:
 
-    - `uniffi = "0.28.3"` downloads UniFFI, the library used to generate the Kotlin code (the "
+    - `uniffi = "0.29.3"` downloads UniFFI, the library used to generate the Kotlin code (the "
       bindings") that calls the Rust library.
     - `crate-type = ["cdylib"]` will make Cargo generate a `.so` (dynamic library) file that can be
       used by Gobley.
