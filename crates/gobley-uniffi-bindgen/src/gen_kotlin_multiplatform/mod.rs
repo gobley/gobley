@@ -128,6 +128,15 @@ pub struct Config {
     dynamic_library_dependencies: Vec<String>,
 }
 
+// TODO: Make this public in 0.4.0
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub(crate) enum Visibility {
+    #[serde(rename = "public")]
+    Public,
+    #[serde(rename = "internal")]
+    Internal,
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CustomTypeConfig {
@@ -267,7 +276,7 @@ pub fn generate_bindings(
     config: &Config,
     ci: &ComponentInterface,
 ) -> Result<MultiplatformBindings> {
-    let common = CommonKotlinWrapper::new("common", config.clone(), ci)
+    let common = CommonKotlinWrapper::new("common", Some(Visibility::Public), config.clone(), ci)
         .context("failed to create a common binding generator")?
         .render()
         .context("failed to render common Kotlin bindings")?;
@@ -285,35 +294,35 @@ pub fn generate_bindings(
     }
 
     let jvm = run_with_target(config, ConfigKotlinTarget::Jvm, || {
-        AndroidJvmKotlinWrapper::new("jvm", config.clone(), ci)
+        AndroidJvmKotlinWrapper::new("jvm", Some(Visibility::Public), config.clone(), ci)
             .context("failed to create a JVM binding generator")?
             .render()
             .context("failed to render Kotlin/JVM bindings")
     })?;
 
     let android = run_with_target(config, ConfigKotlinTarget::Android, || {
-        AndroidJvmKotlinWrapper::new("android", config.clone(), ci)
+        AndroidJvmKotlinWrapper::new("android", Some(Visibility::Public), config.clone(), ci)
             .context("failed to create a Android binding generator")?
             .render()
             .context("failed to render Android Kotlin/JVM bindings")
     })?;
 
     let native = run_with_target(config, ConfigKotlinTarget::Native, || {
-        NativeKotlinWrapper::new("native", config.clone(), ci)
+        NativeKotlinWrapper::new("native", Some(Visibility::Public), config.clone(), ci)
             .context("failed to create a native binding generator")?
             .render()
             .context("failed to render Kotlin/Native bindings")
     })?;
 
     let stub = run_with_target(config, ConfigKotlinTarget::Stub, || {
-        StubKotlinWrapper::new("stub", config.clone(), ci)
+        StubKotlinWrapper::new("stub", Some(Visibility::Public), config.clone(), ci)
             .context("failed to create a stub binding generator")?
             .render()
             .context("failed to render stub bindings")
     })?;
 
     let header = run_with_target(config, ConfigKotlinTarget::Native, || {
-        HeadersKotlinWrapper::new("headers", config.clone(), ci)
+        HeadersKotlinWrapper::new("headers", Some(Visibility::Public), config.clone(), ci)
             .context("failed to create a native header binding generator")?
             .render()
             .context("failed to render Kotlin/Native headers")
@@ -361,6 +370,7 @@ macro_rules! kotlin_type_renderer {
         #[allow(dead_code)]
         pub struct $TypeRenderer<'a> {
             module_name: &'a str,
+            visibility: Option<Visibility>,
             config: &'a Config,
             ci: &'a ComponentInterface,
             // Track imports added with the `add_import()` macro
@@ -369,9 +379,15 @@ macro_rules! kotlin_type_renderer {
 
         #[allow(dead_code)]
         impl<'a> $TypeRenderer<'a> {
-            fn new(module_name: &'a str, config: &'a Config, ci: &'a ComponentInterface) -> Self {
+            fn new(
+                module_name: &'a str,
+                visibility: Option<Visibility>,
+                config: &'a Config,
+                ci: &'a ComponentInterface,
+            ) -> Self {
                 Self {
                     module_name,
+                    visibility,
                     config,
                     ci,
                     imports: RefCell::new(BTreeSet::new()),
@@ -409,6 +425,14 @@ macro_rules! kotlin_type_renderer {
                     });
                 ""
             }
+
+            fn visibility(&self) -> &str {
+                match self.visibility {
+                    None => "",
+                    Some(Visibility::Public) => "public ",
+                    Some(Visibility::Internal) => "internal ",
+                }
+            }
         }
     };
 }
@@ -420,6 +444,7 @@ macro_rules! kotlin_wrapper {
         #[allow(dead_code)]
         pub struct $KotlinWrapper<'a> {
             module_name: &'a str,
+            visibility: Option<Visibility>,
             config: Config,
             ci: &'a ComponentInterface,
             type_helper_code: String,
@@ -430,14 +455,16 @@ macro_rules! kotlin_wrapper {
         impl<'a> $KotlinWrapper<'a> {
             pub fn new(
                 module_name: &'a str,
+                visibility: Option<Visibility>,
                 config: Config,
                 ci: &'a ComponentInterface,
             ) -> Result<Self> {
-                let type_renderer = $TypeRenderer::new(module_name, &config, ci);
+                let type_renderer = $TypeRenderer::new(module_name, visibility, &config, ci);
                 let type_helper_code = type_renderer.render()?;
                 let type_imports = type_renderer.imports.into_inner();
                 Ok(Self {
                     module_name,
+                    visibility,
                     config,
                     ci,
                     type_helper_code,
@@ -445,7 +472,7 @@ macro_rules! kotlin_wrapper {
                 })
             }
 
-            pub fn initialization_fns(&self, ci: &ComponentInterface) -> Vec<String> {
+            fn initialization_fns(&self, ci: &ComponentInterface) -> Vec<String> {
                 let init_fns = self
                     .ci
                     .iter_local_types()
@@ -472,8 +499,16 @@ macro_rules! kotlin_wrapper {
                 init_fns.chain(extern_module_init_fns).collect()
             }
 
-            pub fn imports(&self) -> Vec<ImportRequirement> {
+            fn imports(&self) -> Vec<ImportRequirement> {
                 self.type_imports.iter().cloned().collect()
+            }
+
+            fn visibility(&self) -> &str {
+                match self.visibility {
+                    None => "",
+                    Some(Visibility::Public) => "public ",
+                    Some(Visibility::Internal) => "internal ",
+                }
             }
         }
     };
