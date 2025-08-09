@@ -5,7 +5,7 @@
 {%- match def %}
 {%- when FfiDefinition::CallbackFunction(callback) %}
 internal interface {{ callback.name()|ffi_callback_name }}: com.sun.jna.Callback {
-    fun callback(
+    public fun callback(
         {%- for arg in callback.arguments() -%}
         {{ arg.name().borrow()|var_name }}: {{ arg.type_().borrow()|ffi_type_name_by_value(ci) }},
         {%- endfor -%}
@@ -21,10 +21,10 @@ internal interface {{ callback.name()|ffi_callback_name }}: com.sun.jna.Callback
 @Structure.FieldOrder({% for field in ffi_struct.fields() %}"{{ field.name()|var_name_raw }}"{% if !loop.last %}, {% endif %}{% endfor %})
 internal open class {{ ffi_struct.name()|ffi_struct_name }}Struct(
     {%- for field in ffi_struct.fields() %}
-    @JvmField var {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }},
+    @JvmField public var {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }},
     {%- endfor %}
 ) : com.sun.jna.Structure() {
-    constructor(): this(
+    internal constructor(): this(
         {% for field in ffi_struct.fields() %}
         {{ field.name()|var_name }} = {{ field.type_()|ffi_default_value }},
         {% endfor %}
@@ -178,6 +178,6 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
 }
 {%- endif %}
 
-fun uniffiEnsureInitialized() {
+{{ visibility() }}fun uniffiEnsureInitialized() {
     UniffiLib.INSTANCE
 }

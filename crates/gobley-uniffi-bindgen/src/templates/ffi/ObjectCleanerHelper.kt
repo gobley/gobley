@@ -5,12 +5,12 @@
 // The cleaner registers disposables and returns cleanables, so now we are
 // defining a `UniffiCleaner` with a `UniffiClenaer.Cleanable` to abstract the
 // different implementations available at compile time.
-interface UniffiCleaner {
-    interface Cleanable {
-        fun clean()
+{{ visibility() }}interface UniffiCleaner {
+    {{ visibility() }}interface Cleanable {
+        {{ visibility() }}fun clean()
     }
 
-    fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable
+    {{ visibility() }}fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable
 
-    companion object
+    {{ visibility() }}companion object
 }

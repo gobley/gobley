@@ -11,9 +11,9 @@
 {% if config.kotlin_multiplatform %}
 {% call kt::docstring(obj, 0) %}
 {% if (is_error) %}
-expect open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
+{{ visibility() }}expect open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-expect open class {{ impl_class_name }}: Disposable, {{ interface_name }}
+{{ visibility() }}expect open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 {%- for t in obj.trait_impls() -%}
 , {{ self::trait_interface_name(ci, t.trait_name)? }}
 {%- endfor %} {
@@ -33,7 +33,7 @@ expect open class {{ impl_class_name }}: Disposable, {{ interface_name }}
     {%- when None %}
     @Suppress("ConvertSecondaryConstructorToPrimary")
     {%- endmatch %}
-    constructor(noPointer: NoPointer)
+    {{ visibility() }}constructor(noPointer: NoPointer)
 
     {% match obj.primary_constructor() -%}
     {%- when Some(cons) -%}
@@ -41,7 +41,7 @@ expect open class {{ impl_class_name }}: Disposable, {{ interface_name }}
     // Note no constructor generated for this object as it is async.
     {%     else -%}
     {%- call kt::docstring(cons, 4) %}
-    constructor({% call kt::arg_list(cons, true) -%})
+    {{ visibility() }}constructor({% call kt::arg_list(cons, true) -%})
     {%-     endif %}
     {%- when None %}
     {%- endmatch %}
@@ -68,13 +68,13 @@ expect open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 
     {# XXX - "companion object" confusion? How to have alternate constructors *and* be an error? #}
     {%- if !obj.alternate_constructors().is_empty() -%}
-    companion object {
+    {{ visibility() }}companion object {
         {% for cons in obj.alternate_constructors() -%}
         {%- call kt::func_decl("", cons, 8, false) %}
         {% endfor %}
     }
     {% else %}
-    companion object
+    {{ visibility() }}companion object
     {%- endif %}
 }
 {% endif %}

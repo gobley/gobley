@@ -1,17 +1,17 @@
 {% include "ffi/RustBufferTemplate.kt" %}
 
-typealias RustBuffer = CPointer<{{ ci.namespace() }}.cinterop.RustBuffer>
+{{ visibility() }}typealias RustBuffer = CPointer<{{ ci.namespace() }}.cinterop.RustBuffer>
 
-var RustBuffer.capacity: Long
+{{ visibility() }}var RustBuffer.capacity: Long
     get() = pointed.capacity
     set(value) { pointed.capacity = value }
-var RustBuffer.len: Long
+{{ visibility() }}var RustBuffer.len: Long
     get() = pointed.len
     set(value) { pointed.len = value }
-var RustBuffer.data: Pointer?
+{{ visibility() }}var RustBuffer.data: Pointer?
     get() = pointed.data
     set(value) { pointed.data = value?.reinterpret() }
-fun RustBuffer.asByteBuffer(): ByteBuffer? {
+{{ visibility() }}fun RustBuffer.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("pointed.len") %}
     return ByteBuffer(
         pointed.data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,
@@ -19,8 +19,8 @@ fun RustBuffer.asByteBuffer(): ByteBuffer? {
     )
 }
 
-typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
-fun RustBufferByValue(
+{{ visibility() }}typealias RustBufferByValue = CValue<{{ ci.namespace() }}.cinterop.RustBuffer>
+{{ visibility() }}fun RustBufferByValue(
     capacity: Long,
     len: Long,
     data: Pointer?,
@@ -31,13 +31,13 @@ fun RustBufferByValue(
         this.data = data?.reinterpret()
     }
 }
-val RustBufferByValue.capacity: Long
+{{ visibility() }}val RustBufferByValue.capacity: Long
     get() = useContents { capacity }
-val RustBufferByValue.len: Long
+{{ visibility() }}val RustBufferByValue.len: Long
     get() = useContents { len }
-val RustBufferByValue.data: Pointer?
+{{ visibility() }}val RustBufferByValue.data: Pointer?
     get() = useContents { data }
-fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
+{{ visibility() }}fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("len") %}
     return ByteBuffer(
         data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,

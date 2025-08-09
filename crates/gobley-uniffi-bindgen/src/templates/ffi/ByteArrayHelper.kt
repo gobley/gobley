@@ -1,5 +1,5 @@
 
-object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
+{{ visibility() }}object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
     override fun read(buf: ByteBuffer): ByteArray {
         val len = buf.getInt()
         val byteArr = buf.get(len)

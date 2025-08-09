@@ -8,8 +8,8 @@
 
 {%- if e.is_flat() %}
 
-object {{ e|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
-    override fun read(buf: ByteBuffer) = try {
+{{ visibility() }}object {{ e|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
+    override fun read(buf: ByteBuffer): {{ type_name }} = try {
         {%- if config.use_enum_entries() %}
         {{ type_name }}.entries[buf.getInt() - 1]
         {%- else %}
@@ -19,7 +19,7 @@ object {{ e|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
         throw RuntimeException("invalid enum value, something is very wrong!!", e)
     }
 
-    override fun allocationSize(value: {{ type_name }}) = 4UL
+    override fun allocationSize(value: {{ type_name }}): ULong = 4UL
 
     override fun write(value: {{ type_name }}, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
@@ -28,7 +28,7 @@ object {{ e|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
 
 {%- else %}
 
-object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
+{{ visibility() }}object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
     override fun read(buf: ByteBuffer): {{ type_name }} {
         return when(buf.getInt()) {
             {%- for variant in e.variants() %}
@@ -42,7 +42,7 @@ object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}>{
         }
     }
 
-    override fun allocationSize(value: {{ type_name }}) = when(value) {
+    override fun allocationSize(value: {{ type_name }}): ULong = when(value) {
         {%- for variant in e.variants() %}
         is {{ type_name }}.{{ variant|variant_type_name(ci) }} -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields

@@ -54,7 +54,7 @@
 {{ " "|repeat(indent) }}@Throws({{ throwable|type_name(ci) }}::class {%- if callable.is_async() -%}, kotlin.coroutines.cancellation.CancellationException::class{%- endif -%})
                         {%-     else -%}
                         {%- endmatch %}
-{{ " "|repeat(indent) }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
+{{ " "|repeat(indent) }}{{ visibility() }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
                         {%- if callable.is_async() -%}suspend {% endif -%}
                         fun {{ callable.name()|fn_name }}(
                             {%- call arg_list(callable, is_decl_override || !callable.takes_self()) -%}
@@ -72,7 +72,7 @@
 {{ " "|repeat(indent) }}@Throws({{ throwable|type_name(ci) }}::class {%- if callable.is_async() -%}, kotlin.coroutines.cancellation.CancellationException::class{%- endif -%})
                         {%-     else -%}
                         {%- endmatch %}
-{{ " "|repeat(indent) }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
+{{ " "|repeat(indent) }}{{ visibility() }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
                         {%- if callable.is_async() -%}suspend {% endif -%}
                         fun {{ callable.name()|fn_name }}(
                             {%- call arg_list(callable, false) -%}
@@ -96,7 +96,7 @@
 
 {%- macro func_decl_with_stub(func_decl, callable, indent) %}
                         {%- call docstring(callable, indent) %}
-{{ " "|repeat(indent) }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
+{{ " "|repeat(indent) }}{{ visibility() }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
                         {%- if callable.is_async() -%}suspend {% endif -%}
                         fun {{ callable.name()|fn_name }}(
                             {%- call arg_list(callable, false) -%}

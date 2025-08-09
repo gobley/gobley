@@ -1,5 +1,5 @@
 
-object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
+{{ visibility() }}object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
     override fun lift(value: Byte): Boolean {
         return value.toInt() != 0
     }
@@ -12,7 +12,7 @@ object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
         return if (value) 1.toByte() else 0.toByte()
     }
 
-    override fun allocationSize(value: Boolean) = 1UL
+    override fun allocationSize(value: Boolean): ULong = 1UL
 
     override fun write(value: Boolean, buf: ByteBuffer) {
         buf.put(lower(value))

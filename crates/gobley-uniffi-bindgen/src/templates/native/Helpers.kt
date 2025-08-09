@@ -9,7 +9,7 @@ internal var UniffiRustCallStatus.errorBuf: RustBufferByValue
     set(value) { value.place(pointed.errorBuf.ptr) }
 
 internal typealias UniffiRustCallStatusByValue = CValue<{{ ci.namespace() }}.cinterop.UniffiRustCallStatus>
-fun UniffiRustCallStatusByValue(
+internal fun UniffiRustCallStatusByValue(
     code: Byte,
     errorBuf: RustBufferByValue
 ): UniffiRustCallStatusByValue {

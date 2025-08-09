@@ -1,7 +1,7 @@
 
 {%- let rec = ci.get_record_definition(name).unwrap() %}
 
-object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
+{{ visibility() }}object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
     override fun read(buf: ByteBuffer): {{ type_name }} {
         {%- if rec.has_fields() %}
         return {{ type_name }}(
@@ -14,7 +14,7 @@ object {{ rec|ffi_converter_name }}: FfiConverterRustBuffer<{{ type_name }}> {
         {%- endif %}
     }
 
-    override fun allocationSize(value: {{ type_name }}) = {%- if rec.has_fields() %} (
+    override fun allocationSize(value: {{ type_name }}): ULong = {%- if rec.has_fields() %} (
         {%- for field in rec.fields() %}
             {{ field|allocation_size_fn }}(value.{{ field.name()|var_name }}){% if !loop.last %} +{% endif %}
         {%- endfor %}

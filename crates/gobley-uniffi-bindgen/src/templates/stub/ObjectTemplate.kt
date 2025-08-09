@@ -9,9 +9,9 @@
 
 {%- call kt::docstring(obj, 0) %}
 {% if (is_error) %}
-actual open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
+{{ visibility() }}actual open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
+{{ visibility() }}actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 {%- for t in obj.trait_impls() -%}
 , {{ self::trait_interface_name(ci, t.trait_name)? }}
 {%- endfor %} {
@@ -22,7 +22,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
      * attempt to actually use an object constructed this way will fail as there is no
      * connected Rust object.
      */
-    actual constructor(noPointer: NoPointer)
+    {{ visibility() }}actual constructor(noPointer: NoPointer)
 
     {%- match obj.primary_constructor() %}
     {%- when Some(cons) %}
@@ -31,7 +31,7 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
     {%-     else %}
     {%- call kt::docstring(cons, 4) %}
 
-    actual constructor({% call kt::arg_list(cons, false) -%}) {
+    {{ visibility() }}actual constructor({% call kt::arg_list(cons, false) -%}) {
         TODO()
     }
     {%-     endif %}
@@ -71,12 +71,12 @@ actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 
     {# XXX - "companion object" confusion? How to have alternate constructors *and* be an error? #}
     {% if !obj.alternate_constructors().is_empty() -%}
-    actual companion object {
+    {{ visibility() }}actual companion object {
         {% for cons in obj.alternate_constructors() -%}
         {%- call kt::func_decl_with_stub("actual", cons, 8) %}
         {% endfor %}
     }
     {% else %}
-    actual companion object
+    {{ visibility() }}actual companion object
     {% endif %}
 }

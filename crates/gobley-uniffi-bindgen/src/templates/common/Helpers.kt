@@ -1,1 +1,1 @@
-class InternalException(message: String) : kotlin.Exception(message)
+{{ visibility() }}class InternalException(message: String) : kotlin.Exception(message)

@@ -1,13 +1,13 @@
 
-interface FfiConverter<KotlinType, FfiType> {
+{{ visibility() }}interface FfiConverter<KotlinType, FfiType> {
     // Convert an FFI type to a Kotlin type
-    fun lift(value: FfiType): KotlinType
+    {{ visibility() }}fun lift(value: FfiType): KotlinType
 
     // Convert an Kotlin type to an FFI type
-    fun lower(value: KotlinType): FfiType
+    {{ visibility() }}fun lower(value: KotlinType): FfiType
 
     // Read a Kotlin type from a `ByteBuffer`
-    fun read(buf: ByteBuffer): KotlinType
+    {{ visibility() }}fun read(buf: ByteBuffer): KotlinType
 
     // Calculate bytes to allocate when creating a `RustBuffer`
     //
@@ -17,10 +17,10 @@ interface FfiConverter<KotlinType, FfiType> {
     // encoding, so we pessimistically allocate the largest size possible (3
     // bytes per codepoint).  Allocating extra bytes is not really a big deal
     // because the `RustBuffer` is short-lived.
-    fun allocationSize(value: KotlinType): ULong
+    {{ visibility() }}fun allocationSize(value: KotlinType): ULong
 
     // Write a Kotlin type to a `ByteBuffer`
-    fun write(value: KotlinType, buf: ByteBuffer)
+    {{ visibility() }}fun write(value: KotlinType, buf: ByteBuffer)
 
     // Lower a value into a `RustBuffer`
     //
@@ -28,7 +28,7 @@ interface FfiConverter<KotlinType, FfiType> {
     // FfiType.  It's used by the callback interface code.  Callback interface
     // returns are always serialized into a `RustBuffer` regardless of their
     // normal FFI type.
-    fun lowerIntoRustBuffer(value: KotlinType): RustBufferByValue {
+    {{ visibility() }}fun lowerIntoRustBuffer(value: KotlinType): RustBufferByValue {
         val rbuf = RustBufferHelper.allocValue(allocationSize(value))
         val bbuf = rbuf.asByteBuffer()!!
         write(value, bbuf)
@@ -43,7 +43,7 @@ interface FfiConverter<KotlinType, FfiType> {
     //
     // This here mostly because of the symmetry with `lowerIntoRustBuffer()`.
     // It's currently only used by the `FfiConverterRustBuffer` class below.
-    fun liftFromRustBuffer(rbuf: RustBufferByValue): KotlinType {
+    {{ visibility() }}fun liftFromRustBuffer(rbuf: RustBufferByValue): KotlinType {
         val byteBuf = rbuf.asByteBuffer()!!
         try {
            val item = read(byteBuf)
@@ -58,7 +58,7 @@ interface FfiConverter<KotlinType, FfiType> {
 }
 
 // FfiConverter that uses `RustBuffer` as the FfiType
-interface FfiConverterRustBuffer<KotlinType>: FfiConverter<KotlinType, RustBufferByValue> {
-    override fun lift(value: RustBufferByValue) = liftFromRustBuffer(value)
-    override fun lower(value: KotlinType) = lowerIntoRustBuffer(value)
+{{ visibility() }}interface FfiConverterRustBuffer<KotlinType>: FfiConverter<KotlinType, RustBufferByValue> {
+    override fun lift(value: RustBufferByValue): KotlinType = liftFromRustBuffer(value)
+    override fun lower(value: KotlinType): RustBufferByValue = lowerIntoRustBuffer(value)
 }

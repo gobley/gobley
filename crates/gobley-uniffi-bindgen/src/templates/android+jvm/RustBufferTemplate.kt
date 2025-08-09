@@ -1,21 +1,21 @@
 {% include "ffi/RustBufferTemplate.kt" %}
 
 @Structure.FieldOrder("capacity", "len", "data")
-open class RustBufferStruct(
+{{ visibility() }}open class RustBufferStruct(
     // Note: `capacity` and `len` are actually `ULong` values, but JVM only supports signed values.
     // When dealing with these fields, make sure to call `toULong()`.
-    @JvmField var capacity: Long,
-    @JvmField var len: Long,
-    @JvmField var data: Pointer?,
+    @JvmField {{ visibility() }}var capacity: Long,
+    @JvmField {{ visibility() }}var len: Long,
+    @JvmField {{ visibility() }}var data: Pointer?,
 ) : Structure() {
-    constructor(): this(0.toLong(), 0.toLong(), null)
+    {{ visibility() }}constructor(): this(0.toLong(), 0.toLong(), null)
 
-    class ByValue(
+    {{ visibility() }}class ByValue(
         capacity: Long,
         len: Long,
         data: Pointer?,
     ): RustBuffer(capacity, len, data), Structure.ByValue {
-        constructor(): this(0.toLong(), 0.toLong(), null)
+        {{ visibility() }}constructor(): this(0.toLong(), 0.toLong(), null)
     }
 
     /**
@@ -24,17 +24,17 @@ open class RustBufferStruct(
      *
      * Size is the sum of all values in the struct.
      */
-    class ByReference(
+    {{ visibility() }}class ByReference(
         capacity: Long,
         len: Long,
         data: Pointer?,
     ): RustBuffer(capacity, len, data), Structure.ByReference {
-        constructor(): this(0.toLong(), 0.toLong(), null)
+        {{ visibility() }}constructor(): this(0.toLong(), 0.toLong(), null)
     }
 }
 
-typealias RustBuffer = RustBufferStruct
-typealias RustBufferByValue = RustBufferStruct.ByValue
+{{ visibility() }}typealias RustBuffer = RustBufferStruct
+{{ visibility() }}typealias RustBufferByValue = RustBufferStruct.ByValue
 
 internal fun RustBuffer.asByteBuffer(): ByteBuffer? {
     {% call kt::check_rust_buffer_length("this.len") %}
@@ -62,8 +62,6 @@ internal fun RustBufferByReference.getValue(): RustBufferByValue {
     value.writeField("data", pointer.getLong(16))
     return value
 }
-
-
 
 // This is a helper for safely passing byte references into the rust code.
 // It's not actually used at the moment, because there aren't many things that you

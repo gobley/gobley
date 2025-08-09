@@ -1,5 +1,5 @@
 
-object FfiConverterUByte: FfiConverter<UByte, Byte> {
+{{ visibility() }}object FfiConverterUByte: FfiConverter<UByte, Byte> {
     override fun lift(value: Byte): UByte {
         return value.toUByte()
     }
@@ -12,7 +12,7 @@ object FfiConverterUByte: FfiConverter<UByte, Byte> {
         return value.toByte()
     }
 
-    override fun allocationSize(value: UByte) = 1UL
+    override fun allocationSize(value: UByte): ULong = 1UL
 
     override fun write(value: UByte, buf: ByteBuffer) {
         buf.put(value.toByte())

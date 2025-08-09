@@ -1,5 +1,5 @@
 
-internal object FfiConverterTimestamp: FfiConverterRustBuffer<kotlinx.datetime.Instant> {
+{{ visibility() }}object FfiConverterTimestamp: FfiConverterRustBuffer<kotlinx.datetime.Instant> {
     override fun read(buf: ByteBuffer): kotlinx.datetime.Instant {
         val seconds = buf.getLong()
         val nanoseconds = buf.getInt()
@@ -16,7 +16,7 @@ internal object FfiConverterTimestamp: FfiConverterRustBuffer<kotlinx.datetime.I
     }
 
     // 8 bytes for seconds, 4 bytes for nanoseconds
-    override fun allocationSize(value: kotlinx.datetime.Instant) = 12UL
+    override fun allocationSize(value: kotlinx.datetime.Instant): ULong = 12UL
 
     override fun write(value: kotlinx.datetime.Instant, buf: ByteBuffer) {
         if (value.nanosecondsOfSecond < 0) {

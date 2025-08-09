@@ -1,64 +1,61 @@
 
 @kotlin.jvm.JvmInline
-value class ByteBuffer(private val inner: java.nio.ByteBuffer) {
+{{ visibility() }}value class ByteBuffer(private val inner: java.nio.ByteBuffer) {
     init {
         inner.order(java.nio.ByteOrder.BIG_ENDIAN)
     }
 
-    fun internal() = inner
+    {{ visibility() }}fun internal(): java.nio.ByteBuffer = inner
 
-    fun limit() = inner.limit()
+    {{ visibility() }}fun limit(): Int = inner.limit()
 
-    fun position() = inner.position()
+    {{ visibility() }}fun position(): Int = inner.position()
 
-    fun hasRemaining() = inner.hasRemaining()
+    {{ visibility() }}fun hasRemaining(): Boolean = inner.hasRemaining()
 
-    fun get() = inner.get()
+    {{ visibility() }}fun get(): Byte = inner.get()
 
-    fun get(bytesToRead: Int): ByteArray = ByteArray(bytesToRead).apply(inner::get)
+    {{ visibility() }}fun get(bytesToRead: Int): ByteArray = ByteArray(bytesToRead).apply(inner::get)
 
-    fun getShort() = inner.getShort()
+    {{ visibility() }}fun getShort(): Short = inner.getShort()
 
-    fun getInt() = inner.getInt()
+    {{ visibility() }}fun getInt(): Int = inner.getInt()
 
-    fun getLong() = inner.getLong()
+    {{ visibility() }}fun getLong(): Long = inner.getLong()
 
-    fun getFloat() = inner.getFloat()
+    {{ visibility() }}fun getFloat(): Float = inner.getFloat()
 
-    fun getDouble() = inner.getDouble()
+    {{ visibility() }}fun getDouble(): Double = inner.getDouble()
 
-
-
-    fun put(value: Byte) {
+    {{ visibility() }}fun put(value: Byte) {
         inner.put(value)
     }
 
-    fun put(src: ByteArray) {
+    {{ visibility() }}fun put(src: ByteArray) {
         inner.put(src)
     }
 
-    fun putShort(value: Short) {
+    {{ visibility() }}fun putShort(value: Short) {
         inner.putShort(value)
     }
 
-    fun putInt(value: Int) {
+    {{ visibility() }}fun putInt(value: Int) {
         inner.putInt(value)
     }
 
-    fun putLong(value: Long) {
+    {{ visibility() }}fun putLong(value: Long) {
         inner.putLong(value)
     }
 
-    fun putFloat(value: Float) {
+    {{ visibility() }}fun putFloat(value: Float) {
         inner.putFloat(value)
     }
 
-    fun putDouble(value: Double) {
+    {{ visibility() }}fun putDouble(value: Double) {
         inner.putDouble(value)
     }
 
-
-    fun writeUtf8(value: String) {
+    {{ visibility() }}fun writeUtf8(value: String) {
         Charsets.UTF_8.newEncoder().run {
             onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE)
             encode(java.nio.CharBuffer.wrap(value), inner, false)

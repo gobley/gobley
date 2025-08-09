@@ -1,5 +1,5 @@
 
-object FfiConverterInt: FfiConverter<Int, Int> {
+{{ visibility() }}object FfiConverterInt: FfiConverter<Int, Int> {
     override fun lift(value: Int): Int {
         return value
     }
@@ -12,7 +12,7 @@ object FfiConverterInt: FfiConverter<Int, Int> {
         return value
     }
 
-    override fun allocationSize(value: Int) = 4UL
+    override fun allocationSize(value: Int): ULong = 4UL
 
     override fun write(value: Int, buf: ByteBuffer) {
         buf.putInt(value)

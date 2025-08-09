@@ -23,8 +23,8 @@ internal fun UniffiRustCallStatusByValue.isPanic(): Boolean
     = code == UNIFFI_CALL_UNEXPECTED_ERROR
 
 // Each top-level error class has a companion object that can lift the error from the call status's rust buffer
-interface UniffiRustCallStatusErrorHandler<E> {
-    fun lift(errorBuf: RustBufferByValue): E
+{{ visibility() }}interface UniffiRustCallStatusErrorHandler<E> {
+    {{ visibility() }}fun lift(errorBuf: RustBufferByValue): E
 }
 
 // Helpers for calling Rust
@@ -61,7 +61,7 @@ internal fun<E: kotlin.Exception> uniffiCheckCallStatus(errorHandler: UniffiRust
 }
 
 // UniffiRustCallStatusErrorHandler implementation for times when we don't expect a CALL_ERROR
-object UniffiNullRustCallStatusErrorHandler: UniffiRustCallStatusErrorHandler<InternalException> {
+{{ visibility() }}object UniffiNullRustCallStatusErrorHandler: UniffiRustCallStatusErrorHandler<InternalException> {
     override fun lift(errorBuf: RustBufferByValue): InternalException {
         RustBufferHelper.free(errorBuf)
         return InternalException("Unexpected CALL_ERROR")

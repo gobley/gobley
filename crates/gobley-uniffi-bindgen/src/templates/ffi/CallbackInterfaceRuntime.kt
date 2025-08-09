@@ -5,7 +5,7 @@ internal const val UNIFFI_CALLBACK_SUCCESS = 0
 internal const val UNIFFI_CALLBACK_ERROR = 1
 internal const val UNIFFI_CALLBACK_UNEXPECTED_ERROR = 2
 
-abstract class FfiConverterCallbackInterface<CallbackInterface: Any>: FfiConverter<CallbackInterface, Long> {
+{{ visibility() }}abstract class FfiConverterCallbackInterface<CallbackInterface: Any>: FfiConverter<CallbackInterface, Long> {
     internal val handleMap = UniffiHandleMap<CallbackInterface>()
 
     internal fun drop(handle: Long) {
@@ -16,11 +16,11 @@ abstract class FfiConverterCallbackInterface<CallbackInterface: Any>: FfiConvert
         return handleMap.get(value)
     }
 
-    override fun read(buf: ByteBuffer) = lift(buf.getLong())
+    override fun read(buf: ByteBuffer): CallbackInterface = lift(buf.getLong())
 
-    override fun lower(value: CallbackInterface) = handleMap.insert(value)
+    override fun lower(value: CallbackInterface): Long = handleMap.insert(value)
 
-    override fun allocationSize(value: CallbackInterface) = 8UL
+    override fun allocationSize(value: CallbackInterface): ULong = 8UL
 
     override fun write(value: CallbackInterface, buf: ByteBuffer) {
         buf.putLong(lower(value))

@@ -1,7 +1,7 @@
 
 {%- let inner_type_name = inner_type|type_name(ci) %}
 
-object {{ ffi_converter_name }}: FfiConverterRustBuffer<List<{{ inner_type_name }}>> {
+{{ visibility() }}object {{ ffi_converter_name }}: FfiConverterRustBuffer<List<{{ inner_type_name }}>> {
     override fun read(buf: ByteBuffer): List<{{ inner_type_name }}> {
         val len = buf.getInt()
         return List<{{ inner_type_name }}>(len) {

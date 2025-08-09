@@ -1,5 +1,5 @@
 
-object FfiConverterUShort: FfiConverter<UShort, Short> {
+{{ visibility() }}object FfiConverterUShort: FfiConverter<UShort, Short> {
     override fun lift(value: Short): UShort {
         return value.toUShort()
     }
@@ -12,7 +12,7 @@ object FfiConverterUShort: FfiConverter<UShort, Short> {
         return value.toShort()
     }
 
-    override fun allocationSize(value: UShort) = 2UL
+    override fun allocationSize(value: UShort): ULong = 2UL
 
     override fun write(value: UShort, buf: ByteBuffer) {
         buf.putShort(value.toShort())

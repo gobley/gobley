@@ -1,7 +1,7 @@
 
 {%- let key_type_name = key_type|type_name(ci) %}
 {%- let value_type_name = value_type|type_name(ci) %}
-object {{ ffi_converter_name }}: FfiConverterRustBuffer<Map<{{ key_type_name }}, {{ value_type_name }}>> {
+{{ visibility() }}object {{ ffi_converter_name }}: FfiConverterRustBuffer<Map<{{ key_type_name }}, {{ value_type_name }}>> {
     override fun read(buf: ByteBuffer): Map<{{ key_type_name }}, {{ value_type_name }}> {
         val len = buf.getInt()
         return buildMap<{{ key_type_name }}, {{ value_type_name }}>(len) {

@@ -1,7 +1,7 @@
 
 {{ self.add_import("okio.utf8Size") }}
 
-object FfiConverterString: FfiConverter<String, RustBufferByValue> {
+{{ visibility() }}object FfiConverterString: FfiConverter<String, RustBufferByValue> {
     // Note: we don't inherit from FfiConverterRustBuffer, because we use a
     // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
     // store our length and avoid writing it out to the buffer.

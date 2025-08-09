@@ -6,7 +6,7 @@
 {%- if rec.has_fields() %}
 {%- call kt::docstring(rec, 0) %}
 {% if should_generate_serializable %}@kotlinx.serialization.Serializable{% endif %}
-data class {{ type_name }} (
+{{ visibility() }}data class {{ type_name }} (
     {%- for field in rec.fields() %}
     {%- call kt::docstring(field, 4) %}
     {% if config.generate_immutable_records() %}val{% else %}var{% endif %} {{ field.name()|var_name }}: {{ field|type_name(ci) -}}
@@ -25,9 +25,9 @@ data class {{ type_name }} (
         {%- call kt::destroy_fields(rec, 8) %}
     }
     {%- endif %}
-    companion object
+    {{ visibility() }}companion object
 }
 {%- else -%}
 {%- call kt::docstring(rec, 0) %}
-{% if config.use_data_objects() %}data {% endif %}object {{ type_name }}
+{{ visibility() }}{% if config.use_data_objects() %}data {% endif %}object {{ type_name }}
 {%- endif %}

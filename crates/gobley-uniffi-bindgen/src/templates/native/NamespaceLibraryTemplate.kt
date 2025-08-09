@@ -32,7 +32,7 @@ internal fun {{ ffi_struct.name()|ffi_struct_name }}.uniffiSetValue(other: {{ ff
 }
 
 internal typealias {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue = CValue<{{ ci.namespace() }}.cinterop.{{ ffi_struct.name()|ffi_struct_name }}>
-fun {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue(
+internal fun {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue(
     {%- for field in ffi_struct.fields() %}
     {{ field.name()|var_name }}: {{ field.type_().borrow()|ffi_type_name_for_ffi_struct(ci) }},
     {%- endfor %}
@@ -108,6 +108,6 @@ internal class UniffiLibInstance: UniffiLib {
     {% endfor %}
 }
 
-fun uniffiEnsureInitialized() {
+{{ visibility() }}fun uniffiEnsureInitialized() {
     UniffiLib.INSTANCE
 }

@@ -10,10 +10,10 @@
 // The easiest way to ensure this method is called is to use the `.use`
 // helper method to execute a block and destroy the object at the end.
 @OptIn(ExperimentalStdlibApi::class)
-interface Disposable : AutoCloseable {
-    fun destroy()
-    override fun close() = destroy()
-    companion object {
+{{ visibility() }}interface Disposable : AutoCloseable {
+    {{ visibility() }}fun destroy()
+    override fun close(): Unit = destroy()
+    {{ visibility() }}companion object {
         internal fun destroy(vararg args: Any?) {
             for (arg in args) {
                 when (arg) {
@@ -54,7 +54,7 @@ interface Disposable : AutoCloseable {
 }
 
 @OptIn(kotlin.contracts.ExperimentalContracts::class)
-inline fun <T : Disposable?, R> T.use(block: (T) -> R): R {
+{{ visibility() }}inline fun <T : Disposable?, R> T.use(block: (T) -> R): R {
     kotlin.contracts.contract {
         callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE)
     }
@@ -71,7 +71,7 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R): R {
 }
 
 /** Used to instantiate an interface without an actual pointer, for fakes in tests, mostly. */
-object NoPointer
+{{ visibility() }}object NoPointer
 
 {%- for type_ in ci.iter_local_types() %}
 {%- let type_name = type_|type_name(ci) %}

@@ -3,11 +3,11 @@
 {%- let ffi_converter_name = type_|ffi_converter_name %}
 {%- let canonical_type_name = type_|canonical_name %}
 
-object {{ type_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ type_name }}> {
+{{ visibility() }}object {{ type_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ type_name }}> {
     override fun lift(errorBuf: RustBufferByValue): {{ type_name }} = {{ ffi_converter_name }}.lift(errorBuf)
 }
 
-object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
+{{ visibility() }}object {{ e|ffi_converter_name }} : FfiConverterRustBuffer<{{ type_name }}> {
     override fun read(buf: ByteBuffer): {{ type_name }} {
         {%- if e.is_flat() %}
         return when (buf.getInt()) {

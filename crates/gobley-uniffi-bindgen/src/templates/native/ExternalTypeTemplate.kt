@@ -21,7 +21,7 @@
 {{ self.add_import_as(fully_qualified_rustbuffer_name, local_rustbuffer_name) }}
 {{ self.add_import_as(fully_qualified_rustbuffer_by_value_name, local_rustbuffer_by_value_name) }}
 
-fun RustBufferByValue.as{{ name }}(): {{ local_rustbuffer_by_value_name }} {
+internal fun RustBufferByValue.as{{ name }}(): {{ local_rustbuffer_by_value_name }} {
     return {{ local_rustbuffer_by_value_name }}(
         capacity = capacity,
         len = len,
@@ -29,7 +29,7 @@ fun RustBufferByValue.as{{ name }}(): {{ local_rustbuffer_by_value_name }} {
     )
 }
 
-fun {{ local_rustbuffer_by_value_name }}.from{{ name }}ToLocal(): RustBufferByValue {
+internal fun {{ local_rustbuffer_by_value_name }}.from{{ name }}ToLocal(): RustBufferByValue {
     return RustBufferByValue(
         capacity = capacity,
         len = len,
@@ -37,7 +37,7 @@ fun {{ local_rustbuffer_by_value_name }}.from{{ name }}ToLocal(): RustBufferByVa
     )
 }
 
-fun {{ fully_qualified_ffi_converter_name }}.read{{ name }}(buf: ByteBuffer): {{ name|class_name(ci) }} {
+internal fun {{ fully_qualified_ffi_converter_name }}.read{{ name }}(buf: ByteBuffer): {{ name|class_name(ci) }} {
     val externalBuffer = {{ package_name }}.ByteBuffer(
         pointer = buf.pointer,
         capacity = buf.capacity,
@@ -48,7 +48,7 @@ fun {{ fully_qualified_ffi_converter_name }}.read{{ name }}(buf: ByteBuffer): {{
     return result
 }
 
-fun {{ fully_qualified_ffi_converter_name }}.write{{ name }}(value: {{ name|class_name(ci) }}, buf: ByteBuffer) {
+internal fun {{ fully_qualified_ffi_converter_name }}.write{{ name }}(value: {{ name|class_name(ci) }}, buf: ByteBuffer) {
     val externalBuffer = {{ package_name }}.ByteBuffer(
         pointer = buf.pointer,
         capacity = buf.capacity,

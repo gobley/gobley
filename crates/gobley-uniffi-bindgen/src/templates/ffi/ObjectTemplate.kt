@@ -23,15 +23,15 @@
 
 {%- call kt::docstring(obj, 0) %}
 {% if (is_error) %}
-{% call emit_actual %}open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
+{{ visibility() }}{% call emit_actual %}open class {{ impl_class_name }} : kotlin.Exception, Disposable, {{ interface_name }} {
 {% else -%}
-{% call emit_actual %}open class {{ impl_class_name }}: Disposable, {{ interface_name }}
+{{ visibility() }}{% call emit_actual %}open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 {%- for t in obj.trait_impls() -%}
 , {{ self::trait_interface_name(ci, t.trait_name)? }}
 {%- endfor %} {
 {%- endif %}
 
-    constructor(pointer: Pointer) {
+    {{ visibility() }}constructor(pointer: Pointer) {
         this.pointer = pointer
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(pointer))
     }
@@ -41,7 +41,7 @@
      * attempt to actually use an object constructed this way will fail as there is no
      * connected Rust object.
      */
-    {% call emit_actual %}constructor(noPointer: NoPointer) {
+    {{ visibility() }}{% call emit_actual %}constructor(noPointer: NoPointer) {
         this.pointer = null
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(null))
     }
@@ -52,8 +52,7 @@
     // Note no constructor generated for this object as it is async.
     {%-     else %}
     {%- call kt::docstring(cons, 4) %}
-
-    {% call emit_actual %}constructor({% call kt::arg_list(cons, false) -%}) : this(
+    {{ visibility() }}{% call emit_actual %}constructor({% call kt::arg_list(cons, false) -%}) : this(
         {% call kt::to_ffi_call(cons, 8) %}
     )
     {%-     endif %}
@@ -127,7 +126,7 @@
         }
     }
 
-    fun uniffiClonePointer(): Pointer {
+    {{ visibility() }}fun uniffiClonePointer(): Pointer {
         return uniffiRustCall { status ->
             UniffiLib.INSTANCE.{{ obj.ffi_object_clone().name() }}(pointer!!, status)
         }!!
@@ -160,18 +159,18 @@
 
     {# XXX - "companion object" confusion? How to have alternate constructors *and* be an error? #}
     {% if !obj.alternate_constructors().is_empty() -%}
-    {% call emit_actual %}companion object {
+    {{ visibility() }}{% call emit_actual %}companion object {
         {% for cons in obj.alternate_constructors() -%}
         {%- call kt::func_decl_with_body(actual, cons, 8) %}
         {% endfor %}
     }
     {% else %}
-    {% call emit_actual %}companion object
+    {{ visibility() }}{% call emit_actual %}companion object
     {% endif %}
 }
 
 {% if is_error %}
-object {{ impl_class_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ impl_class_name }}> {
+{{ visibility() }}object {{ impl_class_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ impl_class_name }}> {
     override fun lift(errorBuf: RustBufferByValue): {{ impl_class_name }} {
         // Due to some mismatches in the ffi converter mechanisms, errors are a RustBuffer.
         val bb = errorBuf.asByteBuffer()
@@ -191,7 +190,7 @@ object {{ impl_class_name }}ErrorHandler : UniffiRustCallStatusErrorHandler<{{ i
 {%- endif -%}
 {%- endmacro %}
 
-object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, Pointer> {
+{{ visibility() }}object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, Pointer> {
     {%- if obj.has_callback_interface() %}
     internal val handleMap = UniffiHandleMap<{%- call converter_type(obj) -%}>()
     {%- endif %}
@@ -214,7 +213,7 @@ object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, 
         return lift(buf.getLong().toPointer())
     }
 
-    override fun allocationSize(value: {% call converter_type(obj) %}) = 8UL
+    override fun allocationSize(value: {% call converter_type(obj) %}): ULong = 8UL
 
     override fun write(value: {% call converter_type(obj) %}, buf: ByteBuffer) {
         // The Rust code always expects pointers written as 8 bytes,
