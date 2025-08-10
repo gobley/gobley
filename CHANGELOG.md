@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.0...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.1...HEAD)
+
+## [0.3.1](https://github.com/gobley/gobley/releases/tag/v0.3.1) - 2025-08-10
+
+## Fixes
+
+- Prioritized shared libraries over static libraries when generating UniFFI bindings ([#165](https://github.com/gobley/gobley/pull/165)).
+- Explicit visibility modifier in UniFFI bindings ([#169](https://github.com/gobley/gobley/pull/169)).
+
+## Dependencies
+
+- Upgraded UniFFI from 0.29.3 to 0.29.4 ([#167](https://github.com/gobley/gobley/pull/167)).
 
 ## [0.3.0](https://github.com/gobley/gobley/releases/tag/v0.3.0) - 2025-08-04
 
