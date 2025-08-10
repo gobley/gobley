@@ -114,8 +114,8 @@ Let's add a Cargo package to the Android project.
    ```kotlin
    plugins {
        // Other plugins here
-       id("dev.gobley.cargo") version "0.3.0"
-       id("dev.gobley.uniffi") version "0.3.0"
+       id("dev.gobley.cargo") version "0.3.1"
+       id("dev.gobley.uniffi") version "0.3.1"
        kotlin("plugin.atomicfu") version libs.versions.kotlin
    }
    ```
