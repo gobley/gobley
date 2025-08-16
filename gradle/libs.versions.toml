@@ -22,7 +22,6 @@ androidx-test-runner = "1.6.2"
 jna = "5.17.0"
 junit = "4.13.2"
 ktor = "3.0.3"
-okio = "3.9.1"
 tomlkt = "0.3.7"
 semver = "2.0.0"
 
@@ -62,7 +61,6 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 ktor-http = { module = "io.ktor:ktor-http", version.ref = "ktor" }
-okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 tomlkt = { module = "net.peanuuutz.tomlkt:tomlkt", version.ref = "tomlkt" }
 semver = { module = "io.github.z4kn4fein:semver", version.ref = "semver" }
 

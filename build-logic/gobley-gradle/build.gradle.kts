@@ -62,7 +62,6 @@ buildConfig {
     buildConfigField("String", "WASM_TRANSFORMER_BIN", "\"${wasmTransformerManifest.firstBinaryName}\"")
 
     forClass("DependencyVersions") {
-        buildConfigField("String", "OKIO", "\"${libs.versions.okio.get()}\"")
         buildConfigField("String", "KOTLINX_ATOMICFU", "\"${libs.versions.kotlinx.atomicfu.get()}\"")
         buildConfigField("String", "KOTLINX_DATETIME", "\"${libs.versions.kotlinx.datetime.get()}\"")
         buildConfigField("String", "KOTLINX_COROUTINES", "\"${libs.versions.kotlinx.coroutines.get()}\"")

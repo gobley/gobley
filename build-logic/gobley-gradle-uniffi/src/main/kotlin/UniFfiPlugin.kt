@@ -427,9 +427,6 @@ class UniFfiPlugin : Plugin<Project> {
             }
             if (uniFfiExtension.addDependencies.get()) {
                 dependencies {
-                    implementation("com.squareup.okio:okio") {
-                        version { prefer(DependencyVersions.OKIO) }
-                    }
                     implementation("org.jetbrains.kotlinx:atomicfu") {
                         version { prefer(DependencyVersions.KOTLINX_ATOMICFU) }
                     }
