@@ -9,6 +9,7 @@ plugins {
 
 cargo {
     builds.jvm {
+        resourcePrefix = ""
         embedRustLibrary = rustTarget == GobleyHost.current.rustTarget
     }
 }
