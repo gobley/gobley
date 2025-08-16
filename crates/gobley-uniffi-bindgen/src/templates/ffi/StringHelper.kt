@@ -21,7 +21,7 @@
 
     override fun lower(value: String): RustBufferByValue {
         // TODO: prevent allocating a new byte array here
-        val encoded = value.encodeToByteArray()
+        val encoded = value.encodeToByteArray(throwOnInvalidSequence = true)
         return RustBufferHelper.allocValue(encoded.size.toULong()).apply {
             asByteBuffer()!!.put(encoded)
         }
@@ -38,7 +38,7 @@
 
     override fun write(value: String, buf: ByteBuffer) {
         // TODO: prevent allocating a new byte array here
-        val encoded = value.encodeToByteArray()
+        val encoded = value.encodeToByteArray(throwOnInvalidSequence = true)
         buf.putInt(encoded.size)
         buf.put(encoded)
     }
