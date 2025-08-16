@@ -47,7 +47,7 @@ kotlin {
     //     }
     //     it.compilations.getByName("main") {
     //         cinterops.register("gtk") {
-    //             defFile("src/linuxMain/cinterop/gtk.def")
+    //             defFile("src/gtkMain/cinterop/gtk.def")
     //             packageName("org.gnome.gitlab.gtk")
     //         }
     //     }
@@ -113,6 +113,11 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.androidx.activity.compose)
         }
+
+        // val gtkMain by creating
+        // linuxMain {
+        //     dependsOn(gtkMain)
+        // }
     }
 }
 
