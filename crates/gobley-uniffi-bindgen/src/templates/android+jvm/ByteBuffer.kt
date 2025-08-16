@@ -54,11 +54,4 @@
     {{ visibility() }}fun putDouble(value: Double) {
         inner.putDouble(value)
     }
-
-    {{ visibility() }}fun writeUtf8(value: String) {
-        Charsets.UTF_8.newEncoder().run {
-            onMalformedInput(java.nio.charset.CodingErrorAction.REPLACE)
-            encode(java.nio.CharBuffer.wrap(value), inner, false)
-        }
-    }
 }

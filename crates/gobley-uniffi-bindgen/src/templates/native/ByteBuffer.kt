@@ -106,9 +106,4 @@
     {{ visibility() }}fun putFloat(value: Float): Unit = putInt(value.toRawBits())
 
     {{ visibility() }}fun putDouble(value: Double): Unit = putLong(value.toRawBits())
-
-    {{ visibility() }}fun writeUtf8(value: String) {
-        // TODO: prevent allocating a new byte array here
-        put(value.encodeToByteArray())
-    }
 }

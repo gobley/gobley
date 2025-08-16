@@ -1,6 +1,4 @@
 
-{{ self.add_import("okio.utf8Size") }}
-
 {{ visibility() }}object FfiConverterString: FfiConverter<String, RustBufferByValue> {
     // Note: we don't inherit from FfiConverterRustBuffer, because we use a
     // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
@@ -22,8 +20,10 @@
     }
 
     override fun lower(value: String): RustBufferByValue {
-        return RustBufferHelper.allocValue(value.utf8Size().toULong()).apply {
-            asByteBuffer()!!.writeUtf8(value)
+        // TODO: prevent allocating a new byte array here
+        val encoded = value.encodeToByteArray()
+        return RustBufferHelper.allocValue(encoded.size.toULong()).apply {
+            asByteBuffer()!!.put(encoded)
         }
     }
 
@@ -37,7 +37,9 @@
     }
 
     override fun write(value: String, buf: ByteBuffer) {
-        buf.putInt(value.utf8Size().toInt())
-        buf.writeUtf8(value)
+        // TODO: prevent allocating a new byte array here
+        val encoded = value.encodeToByteArray()
+        buf.putInt(encoded.size)
+        buf.put(encoded)
     }
 }
