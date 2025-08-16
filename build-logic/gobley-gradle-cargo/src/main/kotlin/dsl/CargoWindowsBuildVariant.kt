@@ -11,6 +11,7 @@ import gobley.gradle.cargo.tasks.FindDynamicLibrariesTask
 import gobley.gradle.cargo.utils.register
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustWindowsTarget
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.jvm.tasks.Jar
@@ -55,11 +56,14 @@ abstract class CargoWindowsBuildVariant @Inject constructor(
     }) {
         from(libraryFiles)
         into(resourcePrefix)
-        val variantSuffix = when (variant) {
-            Variant.Debug -> "-$variant"
-            else -> ""
-        }
-        archiveClassifier.set(resourcePrefix.map { "$it$variantSuffix" })
+        archiveClassifier.set(resourcePrefix.map {
+            val prefix = it.takeIf(String::isNotEmpty) ?: rustTarget.jnaResourcePrefix
+            val variantSuffix = when (variant) {
+                Variant.Debug -> "-$variant"
+                else -> ""
+            }
+            "$prefix$variantSuffix"
+        })
         dependsOn(buildTaskProvider, findDynamicLibrariesTaskProvider)
     }
 }

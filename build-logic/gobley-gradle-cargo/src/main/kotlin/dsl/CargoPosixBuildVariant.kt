@@ -11,9 +11,9 @@ import gobley.gradle.cargo.tasks.FindDynamicLibrariesTask
 import gobley.gradle.cargo.utils.register
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustPosixTarget
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.listProperty
 import java.io.File
@@ -36,13 +36,14 @@ abstract class CargoPosixBuildVariant @Inject constructor(
         androidUnitTest.convention(build.androidUnitTest)
     }
 
-    override val findDynamicLibrariesTaskProvider = project.tasks.register<FindDynamicLibrariesTask>({
-        +this@CargoPosixBuildVariant
-    }) {
-        rustTarget.set(this@CargoPosixBuildVariant.rustTarget)
-        libraryNames.set(this@CargoPosixBuildVariant.dynamicLibraries)
-        searchPaths.set(this@CargoPosixBuildVariant.dynamicLibrarySearchPaths)
-    }
+    override val findDynamicLibrariesTaskProvider =
+        project.tasks.register<FindDynamicLibrariesTask>({
+            +this@CargoPosixBuildVariant
+        }) {
+            rustTarget.set(this@CargoPosixBuildVariant.rustTarget)
+            libraryNames.set(this@CargoPosixBuildVariant.dynamicLibraries)
+            searchPaths.set(this@CargoPosixBuildVariant.dynamicLibrarySearchPaths)
+        }
 
     override val libraryFiles: Provider<List<File>> = project.objects.listProperty<File>().apply {
         add(buildTaskProvider.flatMap { task ->
@@ -57,11 +58,14 @@ abstract class CargoPosixBuildVariant @Inject constructor(
     }) {
         from(libraryFiles)
         into(resourcePrefix)
-        val variantSuffix = when (variant) {
-            Variant.Debug -> "-$variant"
-            else -> ""
-        }
-        archiveClassifier.set(resourcePrefix.map { "$it$variantSuffix" })
+        archiveClassifier.set(resourcePrefix.map {
+            val prefix = it.takeIf(String::isNotEmpty) ?: rustTarget.jnaResourcePrefix
+            val variantSuffix = when (variant) {
+                Variant.Debug -> "-$variant"
+                else -> ""
+            }
+            "$prefix$variantSuffix"
+        })
         dependsOn(buildTaskProvider, findDynamicLibrariesTaskProvider)
     }
 }
