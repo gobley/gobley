@@ -11,6 +11,7 @@ plugins {
 }
 
 kotlin {
+    applyDefaultHierarchyTemplate()
     androidTarget {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
@@ -22,7 +23,24 @@ kotlin {
         mingwX64(),
     ).forEach {
         it.binaries.executable {
-            entryPoint = "dev.gobley.uniffi.examples.app.main"
+            entryPoint = "gobley.uniffi.examples.app.main"
+        }
+        it.compilations.configureEach {
+            useRustUpLinker()
+        }
+    }
+
+    // Test using command-line
+    arrayOf(
+        androidNativeArm64(),
+        androidNativeArm32(),
+        androidNativeX64(),
+        androidNativeX86(),
+        linuxX64(),
+        linuxArm64(),
+    ).forEach {
+        it.binaries.executable {
+            entryPoint = "gobley.uniffi.examples.app.main"
         }
         it.compilations.configureEach {
             useRustUpLinker()
@@ -118,6 +136,16 @@ kotlin {
         // linuxMain {
         //     dependsOn(gtkMain)
         // }
+
+        val cmdlineMain by creating {
+            dependsOn(commonMain.get())
+        }
+        androidNativeMain {
+            dependsOn(cmdlineMain)
+        }
+        linuxMain {
+            dependsOn(cmdlineMain)
+        }
     }
 }
 
