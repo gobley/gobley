@@ -195,7 +195,8 @@ class UniFfiPlugin : Plugin<Project> {
                 is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
                 is KotlinAndroidTarget -> Variant.values().toList()
                 is KotlinNativeTarget -> listOf((build as CargoNativeBuild<*>).nativeVariant.get())
-                else -> emptyList<Variant>()
+                else -> listOf(Variant.Debug)
+                // else -> emptyList<Variant>()
             }
         }.distinct()
 
