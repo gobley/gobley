@@ -121,9 +121,13 @@ abstract class CargoBuildTask : CargoPackageTask() {
                             ?.readLines(Charsets.UTF_8)
                         if (buildScriptOutput != null) {
                             for (line in buildScriptOutput) {
-                                val searchPath = line.substringAfter("cargo:", "").trim(':')
+                                val searchPath = line
+                                    .substringAfter("cargo:", "")
+                                    .trim(':')
                                     .substringAfter("rustc-link-search=", "")
-                                    .takeIf(String::isNotEmpty)?.split('=')
+                                    .takeIf(String::isNotEmpty)
+                                    ?.replace("\\", "/")
+                                    ?.split('=')
                                 when (searchPath?.size) {
                                     1 -> librarySearchPaths.add(searchPath[0])
                                     2 -> if (searchPath[1] != "crate" && searchPath[1] != "dependency") {
