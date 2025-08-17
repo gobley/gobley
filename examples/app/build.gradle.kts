@@ -103,7 +103,7 @@ kotlin {
     //     linuxArm64(),
     // ).forEach {
     //     it.binaries.executable {
-    //         entryPoint = "dev.gobley.uniffi.examples.app.main"
+    //         entryPoint = "gobley.uniffi.examples.app.main"
     //     }
     //     it.compilations.getByName("main") {
     //         cinterops.register("gtk") {
@@ -119,7 +119,7 @@ kotlin {
             macosX64(),
         ).forEach {
             it.binaries.executable {
-                entryPoint = "dev.gobley.uniffi.examples.app.main"
+                entryPoint = "gobley.uniffi.examples.app.main"
             }
         }
 
