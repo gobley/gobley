@@ -1,15 +1,31 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.1...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.2...HEAD)
+
+## [0.3.2](https://github.com/gobley/gobley/releases/tag/v0.3.2) - 2025-08-17
+
+### New Features
+
+- Android NDK Kotlin/Native target support ([#177](https://github.com/gobley/gobley/pull/177)).
+
+### Fixes
+
+- Made `jarJvmRustRuntime` tasks use `jnaResourcePrefix` if `resourcePreix` is empty ([#178](https://github.com/gobley/gobley/pull/178)).
+- Made `CargoBuildTask` print human-readable error messages ([#180](https://github.com/gobley/gobley/pull/180)).
+- Made `CargoBuildTask` replace backslashes in paths with slashes when rendering `nativeStaticLibsDefFile` on Windows ([#183](https://github.com/gobley/gobley/pull/183)).
+
+### Dependencies
+
+- Deleted the dependency on Okio ([#176](https://github.com/gobley/gobley/pull/176)).
 
 ## [0.3.1](https://github.com/gobley/gobley/releases/tag/v0.3.1) - 2025-08-10
 
-## Fixes
+### Fixes
 
 - Prioritized shared libraries over static libraries when generating UniFFI bindings ([#165](https://github.com/gobley/gobley/pull/165)).
 - Explicit visibility modifier in UniFFI bindings ([#169](https://github.com/gobley/gobley/pull/169)).
 
-## Dependencies
+### Dependencies
 
 - Upgraded UniFFI from 0.29.3 to 0.29.4 ([#167](https://github.com/gobley/gobley/pull/167)).
 

@@ -108,8 +108,8 @@ Let's add a Cargo package to the Kotlin/JVM project.
    ```kotlin
    plugins {
        // Other plugins here
-       id("dev.gobley.cargo") version "0.3.1"
-       id("dev.gobley.uniffi") version "0.3.1"
+       id("dev.gobley.cargo") version "0.3.2"
+       id("dev.gobley.uniffi") version "0.3.2"
        kotlin("plugin.atomicfu") version libs.versions.kotlin
    }
    ```

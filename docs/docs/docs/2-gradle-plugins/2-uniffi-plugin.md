@@ -17,8 +17,8 @@ import gobley.gradle.rust.targets.RustAndroidTarget
 
 plugins {
     kotlin("multiplatform")
-    id("dev.gobley.cargo") version "0.3.1"
-    id("dev.gobley.uniffi") version "0.3.1"
+    id("dev.gobley.cargo") version "0.3.2"
+    id("dev.gobley.uniffi") version "0.3.2"
 }
 
 uniffi {
