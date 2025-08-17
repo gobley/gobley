@@ -133,7 +133,7 @@ If you installed Zig with Homebrew on a Apple Silicon Mac, the content is:
 
 ```shell
 #! /bin/sh
-/opt/homebrew/bin/zig -target x86_64-linux-gnu "$@"
+/opt/homebrew/bin/zig cc -target x86_64-linux-gnu "$@"
 ```
 
 Similarly, in `aarch64-unknown-linux-gnu-cc.sh`, put as follows:
