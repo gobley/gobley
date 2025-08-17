@@ -79,11 +79,30 @@ abstract class CargoBuildTask : CargoPackageTask() {
                 arguments("--print", "native-static-libs")
             }
             suppressXcodeIosToolchains()
-            if (nativeStaticLibsDefFile.isPresent) {
-                captureStandardOutput()
-            }
+            captureStandardError()
+            captureStandardOutput()
         }.get().apply {
-            assertNormalExitValue()
+            for (line in standardOutput!!.split('\n')) {
+                val message = runCatching { CargoMessage(line) }.getOrNull()
+                if (message == null) {
+                    logger.lifecycle(line)
+                    continue
+                }
+
+                if (message !is CargoMessage.CompilerMessage) {
+                    continue
+                }
+
+                when (message.message.level) {
+                    "error" -> logger.error(message.message.rendered)
+                    "warning" -> logger.warn(message.message.rendered)
+                    else -> logger.lifecycle(message.message.rendered)
+                }
+            }
+            assertNormalExitValueUsingLogger(
+                printStdout = false,
+                printStderr = true,
+            )
         }
 
         if (nativeStaticLibsDefFile.isPresent) {
