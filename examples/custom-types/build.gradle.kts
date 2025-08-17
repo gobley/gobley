@@ -8,7 +8,7 @@ plugins {
     id("dev.gobley.cargo")
     id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
-    alias(libs.plugins.android.library)
+     alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
 uniffi {
@@ -25,10 +25,17 @@ uniffi {
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
-        }
+//    androidTarget {
+//        compilerOptions {
+//            jvmTarget = JvmTarget.JVM_17
+//        }
+//    }
+    @Suppress("UnstableApiUsage")
+    androidLibrary {
+        namespace = "dev.gobley.uniffi.examples.customtypes"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        packaging.resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        optimization.consumerKeepRules.file("proguard-rules.pro")
     }
     jvmToolchain(17)
     jvm("desktop")
@@ -69,26 +76,26 @@ kotlin {
     }
 }
 
-android {
-    namespace = "dev.gobley.uniffi.examples.customtypes"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
-        ndk.abiFilters.add("arm64-v8a")
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
+//android {
+//    namespace = "dev.gobley.uniffi.examples.customtypes"
+//    compileSdk = libs.versions.android.compileSdk.get().toInt()
+//
+//    defaultConfig {
+//        consumerProguardFiles("proguard-rules.pro")
+//        ndk.abiFilters.add("arm64-v8a")
+//    }
+//
+//    packaging {
+//        resources {
+//            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+//        }
+//    }
+//
+//    compileOptions {
+//        sourceCompatibility = JavaVersion.VERSION_17
+//        targetCompatibility = JavaVersion.VERSION_17
+//    }
+//}
 
 java {
     toolchain {
