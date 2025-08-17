@@ -88,15 +88,21 @@ abstract class CargoBuildTask : CargoPackageTask() {
                     logger.lifecycle(line)
                     continue
                 }
-
                 if (message !is CargoMessage.CompilerMessage) {
                     continue
                 }
-
+                val renderedMessage =
+                    message.message.rendered?.trim()?.takeIf(String::isNotEmpty) ?: continue
+                if (
+                    arrayOf(
+                        "note: Link against",
+                        "note: native-static-libs:",
+                    ).any(renderedMessage::startsWith)
+                ) continue
                 when (message.message.level) {
-                    "error" -> logger.error(message.message.rendered)
-                    "warning" -> logger.warn(message.message.rendered)
-                    else -> logger.lifecycle(message.message.rendered)
+                    "error" -> logger.error(renderedMessage)
+                    "warning" -> logger.warn(renderedMessage)
+                    else -> logger.lifecycle(renderedMessage)
                 }
             }
             assertNormalExitValueUsingLogger(
