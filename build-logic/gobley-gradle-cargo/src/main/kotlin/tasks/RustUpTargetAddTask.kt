@@ -10,7 +10,6 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.tasks.GloballyLockedTask
 import gobley.gradle.tasks.globalLock
-import io.github.z4kn4fein.semver.Version
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
@@ -58,7 +57,7 @@ abstract class RustUpTargetAddTask : RustUpTask(), GloballyLockedTask {
             if (!isToolchainInstalled()) {
                 rustUp("target", "add", rustTarget.get().rustTriple)
                     .get().apply {
-                        assertNormalExitValue()
+                        assertNormalExitValueUsingLogger()
                     }
             }
         }

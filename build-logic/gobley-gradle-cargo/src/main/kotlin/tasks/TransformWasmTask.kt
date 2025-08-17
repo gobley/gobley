@@ -64,7 +64,7 @@ abstract class TransformWasmTask : CommandTask() {
                 arguments("--function-imports-file", functionImportsFile.get())
             }
         }.get().apply {
-            assertNormalExitValue()
+            assertNormalExitValueUsingLogger()
         }
     }
 }

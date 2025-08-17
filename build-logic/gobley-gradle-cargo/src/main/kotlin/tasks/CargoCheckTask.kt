@@ -52,7 +52,7 @@ abstract class CargoCheckTask : CargoPackageTask() {
             }
             suppressXcodeIosToolchains()
         }.get().apply {
-            assertNormalExitValue()
+            assertNormalExitValueUsingLogger()
         }
     }
 }

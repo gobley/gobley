@@ -8,11 +8,13 @@ package gobley.gradle.utils
 
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -228,29 +230,54 @@ data class CommandResult(
     val standardError: String?,
     val statusCode: Int,
 ) {
-    fun assertNormalExitValue() {
+    fun DefaultTask.assertNormalExitValueUsingLogger(
+        printStdout: Boolean = true,
+        printStderr: Boolean = true,
+    ) {
+        assertNormalExitValue(
+            logger = logger,
+            printStdout = printStdout,
+            printStderr = printStderr,
+        )
+    }
+
+    fun assertNormalExitValue(
+        logger: Logger? = null,
+        printStdout: Boolean = true,
+        printStderr: Boolean = true,
+    ) {
         if (statusCode != 0) {
-            val message = StringBuilder().apply {
+            val commandFailedMessage = StringBuilder().apply {
                 append("command ${listOf(command) + arguments} failed with code $statusCode:\n")
                 append("cwd: $workingDirectory\n")
-                val standardOutput =
-                    standardOutput?.trim(Char::isWhitespace)?.takeIf(String::isNotEmpty)
-                val standardError =
-                    standardError?.trim(Char::isWhitespace)?.takeIf(String::isNotEmpty)
-                if (standardOutput != null) {
-                    if (standardError != null) {
-                        append("stdout:\n")
-                    }
-                    append(standardOutput)
-                }
-                if (standardError != null) {
+            }.toString()
+            val message = StringBuilder().apply {
+                if (printStdout) {
+                    val standardOutput =
+                        standardOutput?.trim(Char::isWhitespace)?.takeIf(String::isNotEmpty)
                     if (standardOutput != null) {
-                        append("\nstderr:\n")
+                        if (printStderr && standardError != null) {
+                            append("stdout:\n")
+                        }
+                        append(standardOutput)
                     }
-                    append(standardError)
                 }
+                if (printStderr) {
+                    val standardError =
+                        standardError?.trim(Char::isWhitespace)?.takeIf(String::isNotEmpty)
+                    if (standardError != null) {
+                        if (printStdout && standardOutput != null) {
+                            append("\nstderr:\n")
+                        }
+                        append(standardError)
+                    }
+                }
+            }.toString()
+            if (logger != null) {
+                logger.error(message)
+                throw ExecException(commandFailedMessage)
             }
-            throw ExecException(message.toString())
+            throw ExecException(commandFailedMessage + message)
         }
     }
 }
