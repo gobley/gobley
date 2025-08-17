@@ -67,6 +67,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+import kotlin.reflect.full.superclasses
 
 class CargoPlugin : Plugin<Project> {
     companion object {
@@ -179,8 +180,16 @@ class CargoPlugin : Plugin<Project> {
         }
     }
 
+    private val KotlinTarget.androidKmpLibraryCompatiblePlatformType: KotlinPlatformType
+        get() {
+            if (this::class.superclasses.any { type -> type.qualifiedName == "com.android.build.api.dsl.KotlinMultiplatformAndroidTarget" }) {
+                return KotlinPlatformType.androidJvm
+            }
+            return platformType
+        }
+
     private fun KotlinTarget.requiredRustTargets(): List<RustTarget> {
-        return when (platformType) {
+        return when (androidKmpLibraryCompatiblePlatformType) {
             KotlinPlatformType.jvm -> {
                 GobleyHost.current.platform.supportedTargets.filterIsInstance<RustJvmTarget>()
             }
@@ -205,13 +214,13 @@ class CargoPlugin : Plugin<Project> {
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.checkKotlinTargets() {
         val hasWasmTargets =
-            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.wasm }
+            kotlinExtensionDelegate.targets.any { it.androidKmpLibraryCompatiblePlatformType == KotlinPlatformType.wasm }
         if (hasWasmTargets) {
             project.logger.warn("WASM targets are added, but Gobley does not support WASM targets yet.")
         }
 
         val hasAndroidJvmTargets =
-            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.androidJvm }
+            kotlinExtensionDelegate.targets.any { it.androidKmpLibraryCompatiblePlatformType == KotlinPlatformType.androidJvm }
         if (hasAndroidJvmTargets && !::androidDelegate.isInitialized) {
             throw GradleException("Android JVM targets are added, but Android Gradle Plugin is not found.")
         }
@@ -221,7 +230,7 @@ class CargoPlugin : Plugin<Project> {
         val requiredCrateTypes = cargoExtension
             .builds
             .flatMap { it.kotlinTargets }
-            .map { it.platformType.requiredCrateType() }
+            .map { it.androidKmpLibraryCompatiblePlatformType.requiredCrateType() }
             .distinct()
         val actualCrateTypes = cargoExtension.cargoPackage.get().libraryCrateTypes
         if (!actualCrateTypes.containsAll(requiredCrateTypes)) {
@@ -312,7 +321,7 @@ class CargoPlugin : Plugin<Project> {
                 }
             }
             for (kotlinTarget in cargoBuild.kotlinTargets) {
-                when (kotlinTarget.platformType) {
+                when (kotlinTarget.androidKmpLibraryCompatiblePlatformType) {
                     KotlinPlatformType.jvm -> {
                         cargoBuild as CargoJvmBuild<*>
                         cargoBuild.variants {
@@ -549,9 +558,11 @@ class CargoPlugin : Plugin<Project> {
 
         tasks.withType<Jar> {
             if (name.lowercase().contains("android") && variant != null) {
-                if (cargoBuildVariant.variant == variant!!) {
-                    inputs.dir(copyDestination)
-                    dependsOn(copyTask)
+                if (variant != null) {
+                    if (cargoBuildVariant.variant == variant!!) {
+                        inputs.dir(copyDestination)
+                        dependsOn(copyTask)
+                    }
                 }
             }
         }
