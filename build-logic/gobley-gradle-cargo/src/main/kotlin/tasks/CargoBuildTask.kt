@@ -91,8 +91,8 @@ abstract class CargoBuildTask : CargoPackageTask() {
                 if (message !is CargoMessage.CompilerMessage) {
                     continue
                 }
-                val renderedMessage =
-                    message.message.rendered?.trim()?.takeIf(String::isNotEmpty) ?: continue
+                val renderedMessage = message.message.rendered?.takeIf(String::isNotBlank)
+                    ?: continue
                 if (
                     arrayOf(
                         "note: Link against",
