@@ -46,7 +46,8 @@ kotlin {
     }
     arrayOf(
         androidNativeArm64(),
-        androidNativeArm32(),
+        // Konan has libunwind.a for Arm32
+        // androidNativeArm32(),
         androidNativeX64(),
         androidNativeX86(),
     ).forEach {
