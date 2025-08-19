@@ -1,3 +1,4 @@
+{{- self.add_import("kotlinx.cinterop.convert") -}}
 
 {{ visibility() }}class ByteBuffer(
     internal val pointer: CPointer<kotlinx.cinterop.ByteVar>,
@@ -25,7 +26,7 @@
         val result = ByteArray(bytesToRead)
         if (result.isNotEmpty()) {
             result.usePinned { pinned ->
-                memcpy(pinned.addressOf(0), pointer + position, bytesToRead.toULong())
+                memcpy(pinned.addressOf(0), pointer + position, bytesToRead.convert())
             }
             position += bytesToRead
         }
@@ -71,7 +72,7 @@
         checkRemaining(src.size)
         if (src.isNotEmpty()) {
             src.usePinned { pinned ->
-                memcpy(pointer + position, pinned.addressOf(0), src.size.toULong())
+                memcpy(pointer + position, pinned.addressOf(0), src.size.convert())
             }
             position += src.size
         }
