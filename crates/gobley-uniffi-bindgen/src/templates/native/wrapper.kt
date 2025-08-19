@@ -36,6 +36,7 @@ import kotlinx.cinterop.useContents
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.cValue
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.plus
 import kotlinx.cinterop.ptr

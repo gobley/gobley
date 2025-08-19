@@ -1,4 +1,3 @@
-{{- self.add_import("kotlinx.cinterop.convert") -}}
 
 {{ visibility() }}class ByteBuffer(
     internal val pointer: CPointer<kotlinx.cinterop.ByteVar>,
