@@ -44,49 +44,51 @@ kotlin {
             entryPoint = "gobley.uniffi.examples.app.main"
         }
     }
+
+    arrayOf(
+        androidNativeArm32()
+    ).forEach {
+        it.binaries.configureEach {
+             linkerOpts("-Wl,--allow-multiple-definition")
+//            linkerOpts(
+//                "-Wl,--exclude-libs,libunwind.a",
+//                "-Wl,--exclude-libs,libgcc.a",
+//                "-Wl,--exclude-libs,libgcc_real.a",
+//            )
+        }
+    }
+
     arrayOf(
         androidNativeArm64(),
-        // Konan has libunwind.a for Arm32
-        // androidNativeArm32(),
         androidNativeX64(),
         androidNativeX86(),
     ).forEach {
-        it.compilations.configureEach {
-            compileTaskProvider.configure {
-                val linkerFlagsArg = StringBuilder().apply {
-                    // Override Konan properties to link libunwind.a
-                    append("-Xoverride-konan-properties=linkerKonanFlags.")
-                    append(it.konanTarget.name)
-                    // Copied from https://github.com/JetBrains/kotlin/blob/6dff5659f42b0b90863d10ee503efd5a8ebb1034/kotlin-native/konan/konan.properties#L839
-                    append("=-lm -lc++_static -lc++abi -landroid -llog -latomic ")
-                    // Find the directory containing libunwind.a
-                    val ndkHostTag = when (GobleyHost.Platform.current) {
-                        GobleyHost.Platform.Windows -> "windows-x86_64"
-                        GobleyHost.Platform.MacOS -> "darwin-x86_64"
-                        GobleyHost.Platform.Linux -> "linux-x86_64"
-                    }
-                    val toolchainDir = android.ndkDirectory
-                        .resolve("toolchains/llvm/prebuilt")
-                        .resolve(ndkHostTag)
-                    val clangResourceDir = toolchainDir
-                        .resolve("lib/clang")
-                        .listFiles()
-                        ?.firstOrNull { file -> !file.name.startsWith(".") }
-                        ?: error("Couldn't find Clang resource directory")
-                    val clangRuntimeDir = clangResourceDir
-                        .resolve("lib/linux")
-                        .resolve(
-                            when (it.konanTarget.architecture) {
-                                Architecture.ARM64 -> "aarch64"
-                                Architecture.ARM32 -> "arm"
-                                Architecture.X64 -> "x86_64"
-                                Architecture.X86 -> "i386"
-                            }
-                        )
-                    append("-L${clangRuntimeDir.absolutePath}")
-                }.toString()
-                compilerOptions.freeCompilerArgs.add(linkerFlagsArg)
+        it.binaries.configureEach {
+            // Find the directory containing libunwind.a
+            val ndkHostTag = when (GobleyHost.Platform.current) {
+                GobleyHost.Platform.Windows -> "windows-x86_64"
+                GobleyHost.Platform.MacOS -> "darwin-x86_64"
+                GobleyHost.Platform.Linux -> "linux-x86_64"
             }
+            val toolchainDir = android.ndkDirectory
+                .resolve("toolchains/llvm/prebuilt")
+                .resolve(ndkHostTag)
+            val clangResourceDir = toolchainDir
+                .resolve("lib/clang")
+                .listFiles()
+                ?.firstOrNull { file -> !file.name.startsWith(".") }
+                ?: error("Couldn't find Clang resource directory")
+            val clangRuntimeDir = clangResourceDir
+                .resolve("lib/linux")
+                .resolve(
+                    when (it.konanTarget.architecture) {
+                        Architecture.ARM64 -> "aarch64"
+                        Architecture.ARM32 -> "arm"
+                        Architecture.X64 -> "x86_64"
+                        Architecture.X86 -> "i386"
+                    }
+                )
+            linkerOpts("-L${clangRuntimeDir.absolutePath}")
         }
     }
 
