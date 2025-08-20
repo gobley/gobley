@@ -2,22 +2,22 @@ $ErrorActionPreference = "Stop";
 $PSNativeCommandUseErrorActionPreference = $true;
 
 try {
-    ./gradlew check `
+    ./gradlew build `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false" `
         "-Pgobley.projects.uniffiTests.generateImmutableRecords=false" `
         "-Pgobley.projects.uniffiTests.omitChecksums=false";
-    ./gradlew check `
+    ./gradlew build `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false" `
         "-Pgobley.projects.uniffiTests.generateImmutableRecords=true" `
         "-Pgobley.projects.uniffiTests.omitChecksums=false";
-    ./gradlew check `
+    ./gradlew build `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false" `
         "-Pgobley.projects.uniffiTests.generateImmutableRecords=false" `
         "-Pgobley.projects.uniffiTests.omitChecksums=true";
-    ./gradlew check `
+    ./gradlew build `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false" `
         "-Pgobley.projects.uniffiTests.generateImmutableRecords=true" `
