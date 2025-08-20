@@ -3,6 +3,7 @@ name: Feature Request
 about: Help us improve and enhance Gobley
 title: ''
 labels: ['enhancement']
+type: 'Feature'
 assignees: []
 ---
 

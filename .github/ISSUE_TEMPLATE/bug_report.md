@@ -3,6 +3,7 @@ name: Bug Report
 about: Help us identify the bug you encountered
 title: ''
 labels: ['bug']
+type: 'Bug'
 assignees: []
 ---
 
