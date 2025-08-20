@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.2...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.3...HEAD)
+
+## [0.3.3](https://github.com/gobley/gobley/releases/tag/v0.3.3) - 2025-08-20
+
+### Fixes
+
+- Made the bindgen use `kotlinx.cinterop.convert` to cast `Int` to `size_t` ([#187](https://github.com/gobley/gobley/pull/187)).
 
 ## [0.3.2](https://github.com/gobley/gobley/releases/tag/v0.3.2) - 2025-08-17
 
@@ -10,7 +16,7 @@
 
 ### Fixes
 
-- Made `jarJvmRustRuntime` tasks use `jnaResourcePrefix` if `resourcePreix` is empty ([#178](https://github.com/gobley/gobley/pull/178)).
+- Made `jarJvmRustRuntime` tasks use `jnaResourcePrefix` if `resourcePrefix` is empty ([#178](https://github.com/gobley/gobley/pull/178)).
 - Made `CargoBuildTask` print human-readable error messages ([#180](https://github.com/gobley/gobley/pull/180)).
 - Made `CargoBuildTask` replace backslashes in paths with slashes when rendering `nativeStaticLibsDefFile` on Windows ([#183](https://github.com/gobley/gobley/pull/183)).
 

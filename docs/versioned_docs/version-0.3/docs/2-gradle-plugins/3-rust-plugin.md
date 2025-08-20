@@ -17,7 +17,7 @@ automatically passed to the Cargo or the UniFFI plugins.
 
 ```kotlin
 plugins {
-    id("dev.gobley.rust") version "0.3.2"
+    id("dev.gobley.rust") version "0.3.3"
 }
 
 rust {
@@ -78,6 +78,6 @@ error during Android local unit tests. Simply apply the Rust plugin to resolve t
 
 ```kotlin
 plugins {
-    id("dev.gobley.rust") version "0.3.2"
+    id("dev.gobley.rust") version "0.3.3"
 }
 ```
