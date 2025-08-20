@@ -48,13 +48,15 @@ kotlin {
     arrayOf(
         androidNativeArm32()
     ).forEach {
-        it.binaries.configureEach {
-             linkerOpts("-Wl,--allow-multiple-definition")
-//            linkerOpts(
-//                "-Wl,--exclude-libs,libunwind.a",
-//                "-Wl,--exclude-libs,libgcc.a",
-//                "-Wl,--exclude-libs,libgcc_real.a",
-//            )
+        it.compilations.configureEach {
+            compileTaskProvider.configure {
+                // Override Konan properties to make sure libgcc.a is mentioned before any other Rust static libraries
+                // The original linkerKonanFlags.android_arm32 is copied from:
+                // https://github.com/JetBrains/kotlin/blob/6dff5659f42b0b90863d10ee503efd5a8ebb1034/kotlin-native/konan/konan.properties#L839
+                compilerOptions.freeCompilerArgs.add(
+                    "-Xoverride-konan-properties=linkerKonanFlags.android_arm32=-lgcc -lm -lc++_static -lc++abi -landroid -llog -latomic"
+                )
+            }
         }
     }
 
