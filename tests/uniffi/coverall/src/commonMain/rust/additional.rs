@@ -4,9 +4,11 @@
 
 use std::sync::Arc;
 
+// #74
 #[derive(uniffi::Object)]
 struct NotConstructible {}
 
+// #74
 #[uniffi::export]
 impl NotConstructible {
     #[uniffi::constructor]
@@ -15,20 +17,24 @@ impl NotConstructible {
     }
 }
 
+// #74
 #[uniffi::export]
 fn new_not_constructible() -> Arc<NotConstructible> {
     panic!("function panic")
 }
 
+// #74
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 enum NotConstructibleError {
     #[error("not constructible")]
     NotConstructible,
 }
 
+// #74
 #[derive(uniffi::Object)]
 struct NotConstructible2 {}
 
+// #74
 #[uniffi::export]
 impl NotConstructible2 {
     #[uniffi::constructor]
@@ -37,7 +43,22 @@ impl NotConstructible2 {
     }
 }
 
+// #74
 #[uniffi::export]
 fn new_not_constructible2() -> Result<Arc<NotConstructible2>, NotConstructibleError> {
     Err(NotConstructibleError::NotConstructible)
+}
+
+// #193
+#[derive(uniffi::Enum)]
+enum EnumWithVariousVariants {
+    First,
+    Second(i32, f32),
+    Third(i32, Vec<u8>, String),
+    Fourth { val: i32 },
+    Fifth {
+        val1: i32,
+        val2: Vec<u8>,
+        val3: String,
+    },
 }
