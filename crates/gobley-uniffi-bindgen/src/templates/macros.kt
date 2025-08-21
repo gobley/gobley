@@ -240,30 +240,30 @@ v{{- field_num -}}
                             {%-     for field in data_class.fields() %}
                             {%-         match field|as_data_class_field_type -%}
                             {%-             when DataClassFieldType::Bytes %}
-{{ " "|repeat(indent) }}    return {{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})
+{{ " "|repeat(indent) }}    return {% call field_name(field, loop.index) %}.contentEquals(other.{% call field_name(field, loop.index) %})
                             {%-             when DataClassFieldType::NullableBytes %}
-{{ " "|repeat(indent) }}    if ({{ field.name()|var_name }} != null) {
-{{ " "|repeat(indent) }}        if (other.{{ field.name()|var_name }} == null) return false
-{{ " "|repeat(indent) }}        if (!{{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})) return false
+{{ " "|repeat(indent) }}    if ({% call field_name(field, loop.index) %} != null) {
+{{ " "|repeat(indent) }}        if (other.{% call field_name(field, loop.index) %} == null) return false
+{{ " "|repeat(indent) }}        if (!{% call field_name(field, loop.index) %}.contentEquals(other.{% call field_name(field, loop.index) %})) return false
 {{ " "|repeat(indent) }}    }
 
 {{ " "|repeat(indent) }}    return true
                             {%-             else %}
-{{ " "|repeat(indent) }}    return {{ field.name()|var_name }} == other.{{ field.name()|var_name }}
+{{ " "|repeat(indent) }}    return {% call field_name(field, loop.index) %} == other.{% call field_name(field, loop.index) %}
                             {%-         endmatch -%}
                             {%-     endfor -%}
                             {%- else -%}
                             {%-     for field in data_class.fields() -%}
                             {%-         match field|as_data_class_field_type -%}
                             {%-             when DataClassFieldType::Bytes %}
-{{ " "|repeat(indent) }}    if (!{{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})) return false
+{{ " "|repeat(indent) }}    if (!{% call field_name(field, loop.index) %}.contentEquals(other.{% call field_name(field, loop.index) %})) return false
                             {%-             when DataClassFieldType::NullableBytes %}
-{{ " "|repeat(indent) }}    if ({{ field.name()|var_name }} != null) {
-{{ " "|repeat(indent) }}        if (other.{{ field.name()|var_name }} == null) return false
-{{ " "|repeat(indent) }}        if (!{{ field.name()|var_name }}.contentEquals(other.{{ field.name()|var_name }})) return false
+{{ " "|repeat(indent) }}    if ({% call field_name(field, loop.index) %} != null) {
+{{ " "|repeat(indent) }}        if (other.{% call field_name(field, loop.index) %} == null) return false
+{{ " "|repeat(indent) }}        if (!{% call field_name(field, loop.index) %}.contentEquals(other.{% call field_name(field, loop.index) %})) return false
 {{ " "|repeat(indent) }}    }
                             {%-             else %}
-{{ " "|repeat(indent) }}    if ({{ field.name()|var_name }} != other.{{ field.name()|var_name }}) return false
+{{ " "|repeat(indent) }}    if ({% call field_name(field, loop.index) %} != other.{% call field_name(field, loop.index) %}) return false
                             {%-         endmatch -%}
                             {%-     endfor %}
 
@@ -283,13 +283,13 @@ v{{- field_num -}}
                             {%-     endif -%}
                             {%-     match field|as_data_class_field_type -%}
                             {%-         when DataClassFieldType::Bytes -%}
-                            {{ field.name()|var_name }}.contentHashCode()
+                            {% call field_name(field, loop.index) %}.contentHashCode()
                             {%-         when DataClassFieldType::NullableBytes -%}
-                            ({{ field.name()|var_name }}?.contentHashCode() ?: 0)
+                            ({% call field_name(field, loop.index) %}?.contentHashCode() ?: 0)
                             {%-         when DataClassFieldType::NonNullableNonBytes -%}
-                            {{ field.name()|var_name }}.hashCode()
+                            {% call field_name(field, loop.index) %}.hashCode()
                             {%-         when DataClassFieldType::NullableNonBytes -%}
-                            ({{ field.name()|var_name }}?.hashCode() ?: 0)
+                            ({% call field_name(field, loop.index) %}?.hashCode() ?: 0)
                             {%-     endmatch -%}
                             {%- endfor -%}
                             {%- if data_class.fields().len() > 1 %}
