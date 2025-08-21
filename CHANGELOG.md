@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.3...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.4...HEAD)
+
+## [0.3.4](https://github.com/gobley/gobley/releases/tag/v0.3.4) - 2025-08-22
+
+### Fixes
+
+- Fixed empty field names being used in `equals()` of tuple variants of enums ([#194](https://github.com/gobley/gobley/pull/194)).
 
 ## [0.3.3](https://github.com/gobley/gobley/releases/tag/v0.3.3) - 2025-08-20
 

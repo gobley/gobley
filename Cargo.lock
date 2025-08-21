@@ -1111,7 +1111,7 @@ dependencies = [
 
 [[package]]
 name = "gobley-uniffi-bindgen"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "anyhow",
  "askama",
@@ -1129,7 +1129,7 @@ dependencies = [
 
 [[package]]
 name = "gobley-wasm-transformer"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "anyhow",
  "askama",
