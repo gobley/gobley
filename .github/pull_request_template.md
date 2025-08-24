@@ -1,6 +1,13 @@
 > Thank you for taking the time to improve and enhance Gobley! If this is your
 > first time contributing to Gobley, Please read `CONTRIBUTING.md` before
 > creating a PR.
+>
+> Please DO NOT use AI to generate the content of this pull request. If you're
+> having trouble filling in the sections below, please leave them blank, so we
+> can complete them together later.
+>
+> If you have trouble filling out the sections below in English, you can write
+> them in your own language, with an optional AI-assisted English translation.
 
 ## Changes
 
