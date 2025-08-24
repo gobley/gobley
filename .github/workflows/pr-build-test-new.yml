@@ -1,0 +1,39 @@
+name: Build and run tests (new)
+
+on:
+  push:
+    branches: [ "main*" ]
+  pull_request:
+    branches: [ "main*" ]
+
+jobs:
+  build-and-test:
+    name: Build and run unit tests
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        test-name:
+          - cargo-tests
+          - examples
+          - gradle-plugin-tests
+          - gradle-tests
+          - uniffi-tests
+        os:
+          - windows-latest
+          - macos-latest
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        shell: pwsh
+        run:
+          ./.github/workflows/pr-build-test-${{ matrix.test-name }}.ps1
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
+        with:
+          name: junit-test-results-${{ matrix.test-name }}
+          path: './**/test-results/*est/TEST-*.xml'
+          retention-days: 1
