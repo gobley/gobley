@@ -30,6 +30,9 @@ jobs:
       - name: Install Zig
         shell: pwsh
         run: ./.github/workflows/pr-build-test-dependencies-zig.ps1
+      - name: Install additional dependencies
+        shell: pwsh
+        run: ./.github/workflows/pr-build-test-dependencies-${{ matrix.os }}.ps1
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
