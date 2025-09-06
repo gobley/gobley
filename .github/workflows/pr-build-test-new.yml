@@ -52,6 +52,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
         with:
-          name: junit-test-results-${{ matrix.test-name }}
-          path: './**/test-results/*est/TEST-*.xml'
+          name: junit-test-results-${{ matrix.test-name }}-${{ matrix.os }}
+          path: './.github/workflows/pr-build-test/**/*est/TEST-*.xml'
           retention-days: 1
