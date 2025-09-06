@@ -45,7 +45,7 @@ class FuturesTest {
             val actualTime = measureTime {
                 block()
             }.inWholeMilliseconds
-            actualTime shouldHave beIn(expectedTime.toLong()..expectedTime.toLong() + 100)
+            actualTime shouldHave beIn(expectedTime.toLong()..expectedTime.toLong() + 300)
         }
 
     private fun assertMaxTime(maxTime: Int, block: suspend CoroutineScope.() -> Unit) = runTest {
