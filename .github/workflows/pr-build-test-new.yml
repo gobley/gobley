@@ -25,6 +25,11 @@ jobs:
           - ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Check out the main branch
+        uses: actions/checkout@v4
+      - name: Install Zig
+        shell: pwsh
+        run: ./.github/workflows/pr-build-test-dependencies-zig.ps1
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -37,12 +42,9 @@ jobs:
         run: |
           sdkmanager --install "ndk;27.0.12077973"
           "ANDROID_HOME=${env:ANDROID_SDK_ROOT}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-      - name: Check out the main branch
-        uses: actions/checkout@v4
       - name: Run tests
         shell: pwsh
-        run:
-          ./.github/workflows/pr-build-test-${{ matrix.test-name }}.ps1
+        run: ./.github/workflows/pr-build-test-${{ matrix.test-name }}.ps1
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
