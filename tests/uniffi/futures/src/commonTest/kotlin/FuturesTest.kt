@@ -206,7 +206,7 @@ class FuturesTest {
             tryDelayUsingTrait(traitObj, "one")
         }
         val completedDelaysBefore = traitObj.completedDelays
-        cancelDelayUsingTrait(traitObj, 1000 /* delay enough amount to pass in CI */)
+        cancelDelayUsingTrait(traitObj, 2000 /* delay enough amount to pass in CI */)
         // sleep long enough so that the `delay()` call would finish if it wasn't cancelled.
         delay(100)
         // If the task was cancelled, then completedDelays won't have increased
