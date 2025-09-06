@@ -19,9 +19,14 @@ pub extern "C" fn consume_big_struct(s: &BigStruct) -> i32 {
     s.content.iter().sum()
 }
 
+#[cfg(target_arch = "wasm32")]
 unsafe extern "C" {
     fn external_function();
 }
+
+// To prevent undefined symbol error in CI when building for the host target
+#[cfg(not(target_arch = "wasm32"))]
+unsafe fn external_function() {}
 
 #[no_mangle]
 pub extern "C" fn call_external_function_twice() {
