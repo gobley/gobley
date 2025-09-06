@@ -43,7 +43,8 @@ val anotherCustomCppLibraryBuildTasks = androidTargets.associateWith {
             "-DANDROID_NDK=${android.ndkDirectory}",
             "-DCMAKE_TOOLCHAIN_FILE=${android.ndkDirectory}/build/cmake/android.toolchain.cmake",
             "-DCMAKE_MAKE_PROGRAM=$androidSdkNinja",
-            "-G Ninja",
+            "-G",
+            "Ninja",
         )
 
         inputs.dir(anotherCustomCppLibraryRoot)
