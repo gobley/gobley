@@ -1,0 +1,54 @@
+name: Build and run tests in Docker
+
+on:
+  push:
+    branches: [ "main*" ]
+  pull_request:
+    branches: [ "main*" ]
+
+jobs:
+  build-image:
+    name: Build Docker image containing required dependencies
+    uses: ./.github/workflows/dependency-image.yml
+    secrets: inherit
+    with:
+      trigger-event: ${{ github.event_name }}
+  build-and-test:
+    name: Build and run tests in Docker
+    timeout-minutes: 120
+    runs-on: ubuntu-latest
+    needs: build-image
+    strategy:
+      fail-fast: false
+      matrix:
+        test-name:
+          - cargo-tests
+          - examples
+          - gradle-plugin-tests
+          - gradle-tests
+          - uniffi-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker login to GitHub Container Registry
+        run: docker login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
+      - name: Build without pushing the image if not present
+        if: ${{ needs.build-image.outputs.build-image-hash == 'pr-latest' }}
+        run: |
+          docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
+        env:
+          BUILD_IMAGE: ${{ needs.build-image.outputs.build-image }}
+      - name: Run tests in container
+        run: |
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}":/home/pr-build-test/workspace \
+            -w /home/pr-build-test/workspace \
+            -e GOBLEY_PR_BUILD_TEST_USER="$(id -u):$(id -g)" \
+            ${{ needs.build-image.outputs.build-image }} \
+            /usr/bin/pwsh -c ./.github/workflows/pr-build-test/${{ matrix.test-name }}.ps1
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
+        with:
+          name: junit-test-results-${{ matrix.test-name }}-docker
+          path: './.github/workflows/pr-build-test/test-results/**/*est/TEST-*.xml'
+          retention-days: 1

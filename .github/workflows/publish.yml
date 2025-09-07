@@ -39,7 +39,7 @@ jobs:
             -e ORG_GRADLE_PROJECT_signingInMemoryKeyId="${GOBLEY_MAVEN_CENTRAL_SIGNING_KEY_ID}" \
             -e ORG_GRADLE_PROJECT_signingInMemoryKeyPassword="${GOBLEY_MAVEN_CENTRAL_SIGNING_PASSWORD}" \
             ${{ needs.build-image.outputs.build-image }} \
-            /usr/bin/pwsh -c ./.github/workflows/publish-${{ matrix.publish-name }}.ps1
+            /usr/bin/pwsh -c ./.github/workflows/publish/${{ matrix.publish-name }}.ps1
         env:
           GOBLEY_CRATES_IO_API_TOKEN: ${{ secrets.CRATES_IO_API_TOKEN }}
           GOBLEY_MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}

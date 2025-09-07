@@ -2,7 +2,9 @@ name: Report test results
 
 on:
   workflow_run:
-    workflows: [ 'Build and run tests' ]
+    workflows:
+      - 'Build and run tests'
+      - 'Build and run tests in Docker'
     types: [ completed ]
 
 permissions:
@@ -21,16 +23,21 @@ jobs:
           - gradle-plugin-tests
           - gradle-tests
           - uniffi-tests
+        environment:
+          - docker
+          - windows-latest
+          - macos-latest
+          - linux-latest
     steps:
       - name: Download test results
         uses: actions/download-artifact@v4
         with:
-          name: junit-test-results-${{ matrix.test-name }}
+          name: junit-test-results-${{ matrix.test-name }}-${{ matrix.environment }}
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Report test results
         uses: mikepenz/action-junit-report@v5
         with:
-          check_name: 'JUnit test report (${{ matrix.test-name }})'
+          check_name: 'JUnit test report (${{ matrix.test-name }}, ${{ matrix.environment }})'
           commit: ${{ github.event.workflow_run.head_sha }}
           report_paths: '**/test-results/*est/TEST-*.xml'

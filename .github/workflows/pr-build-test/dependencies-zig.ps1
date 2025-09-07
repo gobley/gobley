@@ -133,6 +133,7 @@ try {
             }
             Pop-Location;
         }
+        "CC_=$zigCompilerScriptPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
         Write-Host "Configuration for $rustTarget done.";
     }
 } finally {

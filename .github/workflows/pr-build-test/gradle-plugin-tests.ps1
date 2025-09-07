@@ -15,8 +15,8 @@ try {
         }
     }
 } finally {
-    ./.github/workflows/pr-build-test-copy-test-result.ps1;
-    ./.github/workflows/pr-build-test-change-file-owner.ps1;
+    ./.github/workflows/pr-build-test/copy-test-result.ps1;
+    ./.github/workflows/pr-build-test/change-file-owner.ps1;
     if ($error) {
         exit 1;
     }
