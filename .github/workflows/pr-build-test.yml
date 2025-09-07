@@ -9,7 +9,7 @@ on:
 jobs:
   build-and-test:
     name: Build and run unit tests
-    timeout-minutes: 120
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
@@ -20,10 +20,63 @@ jobs:
           - gradle-tests
           - uniffi-tests
         os:
-          - windows-latest
-          - macos-latest
-          - ubuntu-latest
-    runs-on: ${{ matrix.os }}
+          - windows
+          - macos
+          - linux
+        include:
+          # cargo-tests -> normal runners
+          - test-name: cargo-tests
+            os: windows
+            runner: windows-latest
+          - test-name: cargo-tests
+            os: macos
+            runner: macos-latest
+          - test-name: cargo-tests
+            os: linux
+            runner: ubuntu-latest
+          # examples -> large runners on macOS
+          # macOS examples need to build iOS, tvOS, and watchOS, resulting in a significant build time
+          - test-name: examples
+            os: windows
+            runner: windows-latest
+          - test-name: examples
+            os: macos
+            runner: macos-latest-xlarge
+          - test-name: examples
+            os: linux
+            runner: ubuntu-latest
+          # gradle-plugin-tests -> normal runners
+          - test-name: gradle-plugin-tests
+            os: windows
+            runner: windows-latest
+          - test-name: gradle-plugin-tests
+            os: macos
+            runner: macos-latest
+          - test-name: gradle-plugin-tests
+            os: linux
+            runner: ubuntu-latest
+          # gradle-tests -> normal runners
+          - test-name: gradle-tests
+            os: windows
+            runner: windows-latest
+          - test-name: gradle-tests
+            os: macos
+            runner: macos-latest
+          - test-name: gradle-tests
+            os: linux
+            runner: ubuntu-latest
+          # uniffi-tests -> large runners on Windows & macOS
+          # FuturesTest fails a lot on standard Windows and macOS runners
+          - test-name: uniffi-tests
+            os: windows
+            runner: windows-latest-x64-large
+          - test-name: uniffi-tests
+            os: macos
+            runner: macos-latest-xlarge
+          - test-name: uniffi-tests
+            os: linux
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out the main branch
         uses: actions/checkout@v4

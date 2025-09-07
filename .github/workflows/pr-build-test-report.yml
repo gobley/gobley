@@ -25,9 +25,9 @@ jobs:
           - uniffi-tests
         environment:
           - docker
-          - windows-latest
-          - macos-latest
-          - linux-latest
+          - windows
+          - macos
+          - linux
     steps:
       - name: Download test results
         uses: actions/download-artifact@v4
