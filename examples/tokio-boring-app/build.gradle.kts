@@ -18,15 +18,18 @@ uniffi {
     generateFromLibrary()
 }
 
-cargo {
-    builds.android {
-        variants {
-            // Windows CMake uses Visual Studio as the default generator
-            buildTaskProvider.configure {
-                additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
-            }
-            checkTaskProvider.configure {
-                additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
+if (GobleyHost.Platform.Windows.isCurrent) {
+    cargo {
+        builds.android {
+            variants {
+                // Windows CMake uses Visual Studio as the default generator.
+                // Ensure Ninja is used as the CMake generator.
+                buildTaskProvider.configure {
+                    additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
+                }
+                checkTaskProvider.configure {
+                    additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
+                }
             }
         }
     }
