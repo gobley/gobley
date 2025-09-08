@@ -7,6 +7,7 @@ try {
         "-Pgobley.projects.examples=false";
 } finally {
     ./.github/workflows/pr-build-test/copy-test-result.ps1;
+    ./gradlew --stop;
     ./gradlew clean `
         "-Pgobley.projects.uniffiTests=false" `
         "-Pgobley.projects.examples=false";

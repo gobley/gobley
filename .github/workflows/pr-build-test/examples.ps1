@@ -8,18 +8,20 @@ $projects = Get-ChildItem ./examples |
 try {
     foreach ($project in $projects) {
         try {
-            ./gradlew ":examples:$project:build" `
+            ./gradlew ":examples:${project}:build" `
                 "-Pgobley.projects.gradleTests=false" `
                 "-Pgobley.projects.uniffiTests=false";
         } finally {
             ./.github/workflows/pr-build-test/copy-test-result.ps1;
-            ./gradlew ":examples:$project:build" `
+            ./gradlew --stop;
+            ./gradlew ":examples:${project}:clean" `
                 "-Pgobley.projects.gradleTests=false" `
                 "-Pgobley.projects.uniffiTests=false";
         }
     }
     
 } finally {
+    ./gradlew --stop;
     ./gradlew clean `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.uniffiTests=false";

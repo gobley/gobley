@@ -24,6 +24,7 @@ try {
         "-Pgobley.projects.uniffiTests.omitChecksums=true";
 } finally {
     ./.github/workflows/pr-build-test/copy-test-result.ps1;
+    ./gradlew --stop;
     ./gradlew clean `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.examples=false";
