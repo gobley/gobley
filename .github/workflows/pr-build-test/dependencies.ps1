@@ -14,6 +14,9 @@ if ($IsWindows) {
 } elseif ($IsMacOS) {
     brew update;
     brew install mingw-w64;
+    # Workaround for #205
+    rustup install nightly;
+    rustup component add rust-src --toolchain nightly;
 } elseif ($IsLinux) {
     sudo apt-get update;
     sudo apt-get install -y mingw-w64;
