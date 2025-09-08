@@ -1,4 +1,5 @@
 import gobley.gradle.GobleyHost
+import gobley.gradle.cargo.dsl.android
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -10,6 +11,49 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     id(libs.plugins.kotlin.serialization.get().pluginId)
+}
+
+if (GobleyHost.Platform.Windows.isCurrent) {
+    afterEvaluate {
+        cargo {
+            // A workaround for #207
+            builds.android {
+                val envVariables = rustTarget.ndkEnvVariables(
+                    sdkRoot = android.sdkDirectory,
+                    apiLevel = android.defaultConfig.minSdk ?: 21,
+                    ndkVersion = android.ndkVersion,
+                    ndkRoot = android.ndkPath?.let(::File),
+                ).toMutableMap()
+                val envVariableNamesToModify = arrayOf(
+                    "ANDROID_HOME",
+                    "ANDROID_NDK_HOME",
+                    "ANDROID_NDK_ROOT",
+                    "CC_${rustTarget.rustTriple}",
+                    "CXX_${rustTarget.rustTriple}",
+                    "AR_${rustTarget.rustTriple}",
+                    "RANLIB_${rustTarget.rustTriple}",
+                )
+                for (envVariableNameToModify in envVariableNamesToModify) {
+                    var envVariable = envVariables[envVariableNameToModify]!! as File
+                    if (envVariableNameToModify.startsWith("CC_")) {
+                        envVariable = envVariable.parentFile!!.resolve("clang.exe")
+                    }
+                    if (envVariableNameToModify.startsWith("CXX_")) {
+                        envVariable = envVariable.parentFile!!.resolve("clang++.exe")
+                    }
+                    envVariables[envVariableNameToModify] = envVariable.path.replace('\\', '/')
+                }
+                variants {
+                    buildTaskProvider.configure {
+                        additionalEnvironment.putAll(envVariables)
+                    }
+                    checkTaskProvider.configure {
+                        additionalEnvironment.putAll(envVariables)
+                    }
+                }
+            }
+        }
+    }
 }
 
 uniffi {
