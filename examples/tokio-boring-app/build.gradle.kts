@@ -1,4 +1,5 @@
 import gobley.gradle.GobleyHost
+import gobley.gradle.cargo.dsl.android
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -15,6 +16,20 @@ plugins {
 uniffi {
     bindgenFromPath(rootProject.layout.projectDirectory.dir("crates/gobley-uniffi-bindgen"))
     generateFromLibrary()
+}
+
+cargo {
+    builds.android {
+        variants {
+            // Windows CMake uses Visual Studio as the default generator
+            buildTaskProvider.configure {
+                additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
+            }
+            checkTaskProvider.configure {
+                additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
+            }
+        }
+    }
 }
 
 kotlin {
