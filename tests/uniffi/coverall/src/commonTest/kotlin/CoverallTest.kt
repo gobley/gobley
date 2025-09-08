@@ -575,9 +575,9 @@ class CoverallTest {
             val coroutineScope = CoroutineScope(multithreadedCoroutineContext)
             try {
                 val busyWaiting = coroutineScope.launch {
-                    // 300 ms should be long enough for the other thread to easily finish
+                    // 1000 ms should be long enough for the other thread to easily finish
                     // its loop, but not so long as to annoy the user with a slow test.
-                    counter.busyWait(300)
+                    counter.busyWait(1000)
                 }
                 val incrementing = coroutineScope.async {
                     var count = 0
