@@ -1,27 +1,32 @@
 $ErrorActionPreference = "Stop";
 $PSNativeCommandUseErrorActionPreference = $true;
 
+$configurations = @(
+    @{ GenerateImmutableRecords = $false; OmitChecksums = $false; Futures = $false },
+    @{ GenerateImmutableRecords = $true; OmitChecksums = $false; Futures = $false },
+    @{ GenerateImmutableRecords = $false; OmitChecksums = $true; Futures = $false },
+    @{ GenerateImmutableRecords = $true; OmitChecksums = $true; Futures = $false },
+    @{ GenerateImmutableRecords = $false; OmitChecksums = $false; Futures = $true },
+    @{ GenerateImmutableRecords = $true; OmitChecksums = $false; Futures = $true },
+    @{ GenerateImmutableRecords = $false; OmitChecksums = $true; Futures = $true },
+    @{ GenerateImmutableRecords = $true; OmitChecksums = $true; Futures = $true }
+);
+
 try {
-    ./gradlew build `
-        "-Pgobley.projects.gradleTests=false" `
-        "-Pgobley.projects.examples=false" `
-        "-Pgobley.projects.uniffiTests.generateImmutableRecords=false" `
-        "-Pgobley.projects.uniffiTests.omitChecksums=false";
-    ./gradlew build `
-        "-Pgobley.projects.gradleTests=false" `
-        "-Pgobley.projects.examples=false" `
-        "-Pgobley.projects.uniffiTests.generateImmutableRecords=true" `
-        "-Pgobley.projects.uniffiTests.omitChecksums=false";
-    ./gradlew build `
-        "-Pgobley.projects.gradleTests=false" `
-        "-Pgobley.projects.examples=false" `
-        "-Pgobley.projects.uniffiTests.generateImmutableRecords=false" `
-        "-Pgobley.projects.uniffiTests.omitChecksums=true";
-    ./gradlew build `
-        "-Pgobley.projects.gradleTests=false" `
-        "-Pgobley.projects.examples=false" `
-        "-Pgobley.projects.uniffiTests.generateImmutableRecords=true" `
-        "-Pgobley.projects.uniffiTests.omitChecksums=true";
+    foreach ($configuration in $configurations) {
+        $generateImmutableRecords = $configuration.GenerateImmutableRecords;
+        $omitChecksums = $configuration.OmitChecksums;
+        $futures = $configuration.Futures;
+        $additionalArguments = if ($futures) { @("--max-workers=1") } else { @() };
+        ./gradlew build `
+            $additionalArguments `
+            "-Pgobley.projects.gradleTests=false" `
+            "-Pgobley.projects.examples=false" `
+            "-Pgobley.projects.uniffiTests=$(-not $futures)" `
+            "-Pgobley.projects.uniffiTests.futures=$futures" `
+            "-Pgobley.projects.uniffiTests.generateImmutableRecords=$generateImmutableRecords" `
+            "-Pgobley.projects.uniffiTests.omitChecksums=$omitChecksums";
+    }
 } finally {
     ./.github/workflows/pr-build-test/copy-test-result.ps1;
     ./gradlew --stop;

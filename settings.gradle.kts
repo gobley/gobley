@@ -56,7 +56,6 @@ if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
     include(":tests:uniffi:ext-types:http-headermap")
     include(":tests:uniffi:ext-types:sub-lib")
     include(":tests:uniffi:ext-types:uniffi-one")
-    include(":tests:uniffi:futures")
     include(":tests:uniffi:keywords")
     include(":tests:uniffi:large-enum")
     include(":tests:uniffi:large-error")
@@ -66,6 +65,10 @@ if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
     include(":tests:uniffi:struct-default-values")
     include(":tests:uniffi:trait-methods")
     include(":tests:uniffi:type-limits")
+}
+// Run :tests:uniffi:futures separately
+if (ext.propertyIsTrue("gobley.projects.uniffiTests.futures")) {
+    include(":tests:uniffi:futures")
 }
 
 if (ext.propertyIsTrue("gobley.projects.examples")) {
