@@ -1,15 +1,51 @@
 name: Build and run tests
 
 on:
-  push:
-    branches: [ "main*" ]
-  pull_request:
-    branches: [ "main*" ]
+  schedule:
+    - cron: "0 20 * * 3"
+  workflow_dispatch:
+    inputs:
+      run-windows-tests:
+        description: "Run Windows tests"
+        required: true
+        default: true
+        type: boolean
+      run-macos-tests:
+        description: "Run macOS tests"
+        required: true
+        default: true
+        type: boolean
+      run-linux-tests:
+        description: "Run Linux tests"
+        required: true
+        default: true
+        type: boolean
 
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.prepare-matrix.outputs.platforms }}
+    steps:
+      - id: prepare-matrix
+        shell: pwsh
+        run: |
+          $eventName = "${{ github.event_name }}"
+          if ($eventName -eq "schedule") {
+            $platforms = @("windows", "macos", "linux");
+          } else {
+            $os = @();
+            if ("${{ github.event.inputs['run-windows-tests'] || 'false' }}" -eq "true") { $os += "windows"; }
+            if ("${{ github.event.inputs['run-macos-tests'] || 'false' }}" -eq "true") { $os += "macos"; }
+            if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $os += "linux"; }
+          }
+          $platformsJson = $platforms | ConvertTo-Json -Compress;
+          "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
   build-and-test:
     name: Build and run unit tests
     timeout-minutes: 240
+    needs: prepare-matrix
+    if: ${{ needs.prepare-matrix.outputs.platforms != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -19,18 +55,8 @@ jobs:
           - gradle-plugin-tests
           - gradle-tests
           - uniffi-tests
-        os:
-          - windows
-          - macos
-          - linux
-        include:
-          - os: windows
-            runner: windows-latest
-          - os: macos
-            runner: macos-latest
-          - os: linux
-            runner: ubuntu-latest
-    runs-on: ${{ matrix.runner }}
+        platform: ${{ fromJSON(needs.prepare-matrix.outputs.platforms) }}
+    runs-on: ${{ matrix.platform }}-latest
     steps:
       - name: Check out the main branch
         uses: actions/checkout@v4
@@ -59,6 +85,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
         with:
-          name: junit-test-results-${{ matrix.test-name }}-${{ matrix.os }}
-          path: './.github/workflows/pr-build-test/test-results/**/*est/TEST-*.xml'
+          name: junit-test-results-${{ matrix.test-name }}-${{ matrix.platform }}
+          path: "./.github/workflows/pr-build-test/test-results/**/*est/TEST-*.xml"
           retention-days: 1
