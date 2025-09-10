@@ -3,7 +3,8 @@
 [![License](https://img.shields.io/github/license/gobley/gobley)](https://github.com/gobley/gobley/blob/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/gobley-uniffi-bindgen)](https://crates.io/crates/gobley-uniffi-bindgen)
 [![Gradle Plugin Portal](https://img.shields.io/maven-central/v/dev.gobley.gradle/gobley-gradle)](https://central.sonatype.com/artifact/dev.gobley.gradle/gobley-gradle)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/gobley/gobley/pr-build-test.yml?branch=main&label=tests)](https://github.com/gobley/gobley/actions/workflows/pr-build-test.yml?query=branch%3Amain)
+[![GitHub Actions Workflow Status (All Platforms)](https://img.shields.io/github/actions/workflow/status/gobley/gobley/pr-build-test.yml?branch=main&label=tests:%20Windows%20•%20macOS%20•%20Linux)](https://github.com/gobley/gobley/actions/workflows/pr-build-test.yml?query=branch%3Amain)
+[![GitHub Actions Workflow Status (Docker)](https://img.shields.io/github/actions/workflow/status/gobley/gobley/pr-build-test-docker.yml?branch=main&label=tests:%20Docker)](https://github.com/gobley/gobley/actions/workflows/pr-build-test-docker.yml?query=branch%3Amain)
 
 <img align="right" src=".idea/icon.svg" width="20%">
 
