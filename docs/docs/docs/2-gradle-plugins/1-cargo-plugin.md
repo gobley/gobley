@@ -376,9 +376,29 @@ cargo {
 }
 ```
 
-Some directories like the NDK installation directory or the Cargo build output directory are already
-registered in `dynamicLibrarySearchPaths`. If your build system uses another directory, add that to
-this property.
+The Cargo plugin will automatically configure several directories as the paths to locate the dynamic
+libraries.
+
+- The Cargo build output directory (e.g., `target/<triplet>/<profile>`).
+- The Cargo build script output directory (e.g.,
+  `target/<triplet>/<profile>/build/<crate>-<hash>/out`). Use the [
+  `OUT_DIR`](https://doc.rust-lang.org/cargo/reference/environment-variables.html) environment
+  variable to determine the value of this path in your build script.
+- (Android only) The NDK library directories (e.g.,
+  `<NDK ROOT>/toolchains/llvm/prebuilt/<host>/sysroot/usr/lib/<triplet>[/<API Level>]`).
+  These directories contain C++ runtime libraries like `libc++_shared.so` and NDK libraries like
+  `libaaudio.so`.
+
+If your build system uses other directories, add their paths to `dynamicLibrarySearchPaths`.
+
+```kotlin
+cargo {
+    builds.jvm {
+        dynamicLibrarySearchPaths.add(File("/path/to/libraries"))
+        dynamicLibraries.add("foo")
+    }
+}
+```
 
 ## Configuring Cargo to use different Cargo features or build profiles
 
