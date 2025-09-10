@@ -14,5 +14,6 @@ object CppLibrary : Library {
         Native.register(CppLibrary::class.java, "gobley-fixture-gradle-jvm-only-cpp")
     }
 
+    @JvmName("my_pow")
     external fun pow(lhs: Int, rhs: Int): Int
 }

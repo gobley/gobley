@@ -6,10 +6,10 @@
 
 #include <cstdint>
 
-int32_t pow(int32_t lhs, int32_t rhs) {
+extern "C" int32_t my_pow(int32_t lhs, int32_t rhs) {
     if (rhs < 0) return 0;
     if (rhs == 0) return 1;
-    int32_t result = pow(lhs, rhs / 2);
+    int32_t result = my_pow(lhs, rhs / 2);
     result *= result;
     if (rhs % 2 != 0) result *= lhs;
     return result;
