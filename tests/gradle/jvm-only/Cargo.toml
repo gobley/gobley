@@ -8,3 +8,6 @@ publish = false
 name = "gobley_fixture_gradle_jvm_only"
 crate-type = ["cdylib"]
 path = "src/main/rust/lib.rs"
+
+[build-dependencies]
+cmake = "0.1"
