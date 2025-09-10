@@ -27,12 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.prepare-matrix.outputs.platforms }}
+      runners: ${{ steps.prepare-matrix.outputs.runners }}
     steps:
       - name: Prepare matrix
         id: prepare-matrix
         shell: pwsh
         run: |
-          $eventName = "${{ github.event_name }}"
+          $eventName = "${{ github.event_name }}";
           if ($eventName -eq "schedule") {
             $platforms = @("windows", "macos", "linux");
           } else {
@@ -42,7 +43,13 @@ jobs:
             if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $platforms += "linux"; }
           }
           $platformsJson = $platforms | ConvertTo-Json -Compress;
+          $runnersJson = @{
+            windows = "windows-latest";
+            macos = "macos-latest";
+            linux = "ubuntu-latest";
+          } | ConvertTo-Json -Compress;
           "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
+          "runners=$runnersJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
   build-and-test:
     name: Build and run unit tests
     timeout-minutes: 240
@@ -58,7 +65,7 @@ jobs:
           - gradle-tests
           - uniffi-tests
         platform: ${{ fromJSON(needs.prepare-matrix.outputs.platforms) }}
-    runs-on: ${{ matrix.platform }}-latest
+    runs-on: ${{ fromJSON(needs.prepare-matrix.outputs.runners)[matrix.platform] }}
     steps:
       - name: Check out the main branch
         uses: actions/checkout@v4
