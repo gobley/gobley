@@ -12,6 +12,7 @@ import gobley.gradle.cargo.profiles.CargoProfile
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustNativeTarget
 import gobley.gradle.rust.targets.RustTarget
+import gobley.gradle.utils.CommandResult
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -20,6 +21,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.OutputFiles
@@ -52,9 +54,24 @@ abstract class CargoBuildTask : CargoPackageTask() {
             }.toMap()
         }
 
+    // TODO: Annotate this with InternalGobleyGradleApi
     @get:OutputFile
     @get:Optional
     abstract val nativeStaticLibsDefFile: RegularFileProperty
+
+    // TODO: Annotate this with InternalGobleyGradleApi
+    // TODO: Make it public in the next version
+    @get:OutputFile
+    @get:Optional
+    internal abstract val buildScriptOutputDirectoriesFile: RegularFileProperty
+
+    // TODO: Annotate this with InternalGobleyGradleApi
+    // TODO: Make it public in the next version
+    @Internal
+    internal val buildScriptOutputDirectories: Provider<List<File>> =
+        buildScriptOutputDirectoriesFile.map {
+            it.asFile.readText().split(' ').filter(String::isNotEmpty).map(::File)
+        }
 
     @TaskAction
     @OptIn(InternalGobleyGradleApi::class)
@@ -111,78 +128,114 @@ abstract class CargoBuildTask : CargoPackageTask() {
             )
         }
 
-        if (nativeStaticLibsDefFile.isPresent) {
-            val nativeStaticLibsDefFile = nativeStaticLibsDefFile.get().asFile.apply {
-                parentFile?.mkdirs()
+        if (nativeStaticLibsDefFile.isPresent || buildScriptOutputDirectoriesFile.isPresent) {
+            val cargoMessages = result.toCargoMessages()
+            if (nativeStaticLibsDefFile.isPresent) {
+                populateNativeStaticLibsDefFile(cargoMessages)
             }
-            val messages = result.standardOutput!!.split('\n')
-                .mapNotNull { runCatching { CargoMessage(it) }.getOrNull() }
+            if (buildScriptOutputDirectoriesFile.isPresent) {
+                populateBuildScriptOutputDirectoriesFile(cargoMessages)
+            }
+        }
+    }
 
-            val librarySearchPaths = mutableListOf<String>()
-            var staticLibraries: String? = null
-            for (message in messages) {
-                when (message) {
-                    is CargoMessage.BuildScriptExecuted -> {
-                        val buildScriptOutput = File(message.outDir).parentFile?.resolve("output")
-                            ?.readLines(Charsets.UTF_8)
-                        if (buildScriptOutput != null) {
-                            for (line in buildScriptOutput) {
-                                val searchPath = line
-                                    .substringAfter("cargo:", "")
-                                    .trim(':')
-                                    .substringAfter("rustc-link-search=", "")
-                                    .takeIf(String::isNotEmpty)
-                                    ?.replace("\\", "/")
-                                    ?.split('=')
-                                when (searchPath?.size) {
-                                    1 -> librarySearchPaths.add(searchPath[0])
-                                    2 -> if (searchPath[1] != "crate" && searchPath[1] != "dependency") {
-                                        librarySearchPaths.add(searchPath[1])
-                                    }
+    @OptIn(InternalGobleyGradleApi::class)
+    private fun CommandResult.toCargoMessages(): List<CargoMessage> {
+        return standardOutput!!
+            .split('\n')
+            .mapNotNull { runCatching { CargoMessage(it) }.getOrNull() }
+    }
+
+    private fun populateNativeStaticLibsDefFile(messages: List<CargoMessage>) {
+        val librarySearchPaths = mutableListOf<String>()
+        var staticLibraries: String? = null
+        for (message in messages) {
+            when (message) {
+                is CargoMessage.BuildScriptExecuted -> {
+                    val buildScriptOutput = File(message.outDir).parentFile?.resolve("output")
+                        ?.readLines(Charsets.UTF_8)
+                    if (buildScriptOutput != null) {
+                        for (line in buildScriptOutput) {
+                            val searchPath = line
+                                .substringAfter("cargo:", "")
+                                .trim(':')
+                                .substringAfter("rustc-link-search=", "")
+                                .takeIf(String::isNotEmpty)
+                                ?.replace("\\", "/")
+                                ?.split('=')
+                            when (searchPath?.size) {
+                                1 -> librarySearchPaths.add(searchPath[0])
+                                2 -> if (searchPath[1] != "crate" && searchPath[1] != "dependency") {
+                                    librarySearchPaths.add(searchPath[1])
                                 }
                             }
                         }
-
                     }
 
-                    is CargoMessage.CompilerMessage -> {
-                        if (staticLibraries == null) {
-                            val note = message.message.rendered?.trim()
-                            staticLibraries =
-                                note?.trim()?.substringAfter("note: native-static-libs: ", "")
-                                    ?.takeIf(String::isNotEmpty)
-                        }
-                    }
-
-                    else -> {}
                 }
-            }
 
-            val linkerOptName = if (target is RustNativeTarget) {
-                "linkerOpts.${target.cinteropName}"
-            } else {
-                "linkerOpts"
-            }
-            val linkerFlag = StringBuilder().apply {
-                if (librarySearchPaths.isNotEmpty()) {
-                    append(librarySearchPaths.joinToString(" ") { "-L$it" })
-                    if (staticLibraries != null) {
-                        append(' ')
+                is CargoMessage.CompilerMessage -> {
+                    if (staticLibraries == null) {
+                        val note = message.message.rendered?.trim()
+                        staticLibraries =
+                            note?.trim()?.substringAfter("note: native-static-libs: ", "")
+                                ?.takeIf(String::isNotEmpty)
                     }
                 }
+
+                else -> {}
+            }
+        }
+
+        val target = target.get()
+        val linkerOptName = if (target is RustNativeTarget) {
+            "linkerOpts.${target.cinteropName}"
+        } else {
+            "linkerOpts"
+        }
+        val linkerFlag = StringBuilder().apply {
+            if (librarySearchPaths.isNotEmpty()) {
+                append(librarySearchPaths.joinToString(" ") { "-L$it" })
                 if (staticLibraries != null) {
-                    append(staticLibraries)
+                    append(' ')
                 }
             }
-            nativeStaticLibsDefFile.writeText(StringBuilder().apply {
-                if (linkerFlag.isNotEmpty()) {
-                    append("$linkerOptName = $linkerFlag\n")
+            if (staticLibraries != null) {
+                append(staticLibraries)
+            }
+        }
+        val nativeStaticLibsDefFile = nativeStaticLibsDefFile.get().asFile.apply {
+            parentFile?.mkdirs()
+        }
+        nativeStaticLibsDefFile.writeText(StringBuilder().apply {
+            if (linkerFlag.isNotEmpty()) {
+                append("$linkerOptName = $linkerFlag\n")
+            }
+            val libraryFile = libraryFileByCrateType.get()[CrateType.SystemStaticLibrary]
+            if (libraryFile != null) {
+                append("staticLibraries = ${libraryFile.asFile.name}")
+            }
+        }.toString())
+    }
+
+    private fun populateBuildScriptOutputDirectoriesFile(messages: List<CargoMessage>) {
+        val buildScriptOutputDirectoriesFile = buildScriptOutputDirectoriesFile.get().asFile.apply {
+            parentFile?.mkdirs()
+        }
+        buildScriptOutputDirectoriesFile.outputStream().use { outputStream ->
+            outputStream.writer(Charsets.UTF_8).use { writer ->
+                var first = true
+                for (message in messages) {
+                    if (message !is CargoMessage.BuildScriptExecuted) {
+                        continue
+                    }
+                    if (!first) {
+                        writer.append(' ')
+                    }
+                    first = false
+                    writer.write(message.outDir)
                 }
-                val libraryFile = libraryFileByCrateType.get()[CrateType.SystemStaticLibrary]
-                if (libraryFile != null) {
-                    append("staticLibraries = ${libraryFile.asFile.name}")
-                }
-            }.toString())
+            }
         }
     }
 }
