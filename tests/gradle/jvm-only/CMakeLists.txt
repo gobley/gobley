@@ -8,4 +8,7 @@ project(gobley-fixture-gradle-jvm-only-cpp)
 
 add_library(gobley-fixture-gradle-jvm-only-cpp SHARED src/main/cpp/lib.cpp)
 
-install(TARGETS gobley-fixture-gradle-jvm-only-cpp LIBRARY DESTINATION lib)
+install(TARGETS gobley-fixture-gradle-jvm-only-cpp
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION lib
+)
