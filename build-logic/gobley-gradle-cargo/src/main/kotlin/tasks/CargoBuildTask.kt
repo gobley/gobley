@@ -67,7 +67,7 @@ abstract class CargoBuildTask : CargoPackageTask() {
 
     // TODO: Annotate this with InternalGobleyGradleApi
     // TODO: Make it public in the next version
-    @Internal
+    @get:Internal
     internal val buildScriptOutputDirectories: Provider<List<File>> =
         buildScriptOutputDirectoriesFile.map {
             it.asFile.readText().split(' ').filter(String::isNotEmpty).map(::File)
