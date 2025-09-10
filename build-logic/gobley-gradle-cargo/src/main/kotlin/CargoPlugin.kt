@@ -271,7 +271,13 @@ class CargoPlugin : Plugin<Project> {
                     nativeStaticLibsDefFile.set(
                         projectLayout.outputCacheFile(
                             this,
-                            "nativeStaticLibsDefFile"
+                            "nativeStaticLibsDefFile",
+                        )
+                    )
+                    buildScriptOutputDirectoriesFile.set(
+                        projectLayout.outputCacheFile(
+                            this,
+                            "buildScriptOutputDirectoriesFile",
                         )
                     )
                     if (cargoBuild.installTargetBeforeBuild.get()) {
@@ -385,6 +391,9 @@ class CargoPlugin : Plugin<Project> {
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
                 cargoPackage.outputDirectory(profile, cargoBuildVariant.rustTarget).asFile
             }
+        )
+        cargoBuildVariant.dynamicLibrarySearchPaths.addAll(
+            cargoBuildVariant.buildTaskProvider.flatMap { it.buildScriptOutputDirectories }
         )
         val projectLayout = layout
         findDynamicLibrariesTask.configure {
@@ -505,6 +514,9 @@ class CargoPlugin : Plugin<Project> {
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
                 cargoPackage.outputDirectory(profile, cargoBuildVariant.rustTarget).asFile
             }
+        )
+        cargoBuildVariant.dynamicLibrarySearchPaths.addAll(
+            cargoBuildVariant.buildTaskProvider.flatMap { it.buildScriptOutputDirectories }
         )
         val projectLayout = layout
         findDynamicLibrariesTask.configure {
