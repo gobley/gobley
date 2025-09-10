@@ -23,21 +23,23 @@ on:
 
 jobs:
   prepare-matrix:
+    name: Prepare matrix
     runs-on: ubuntu-latest
     outputs:
       platforms: ${{ steps.prepare-matrix.outputs.platforms }}
     steps:
-      - id: prepare-matrix
+      - name: Prepare matrix
+        id: prepare-matrix
         shell: pwsh
         run: |
           $eventName = "${{ github.event_name }}"
           if ($eventName -eq "schedule") {
             $platforms = @("windows", "macos", "linux");
           } else {
-            $os = @();
-            if ("${{ github.event.inputs['run-windows-tests'] || 'false' }}" -eq "true") { $os += "windows"; }
-            if ("${{ github.event.inputs['run-macos-tests'] || 'false' }}" -eq "true") { $os += "macos"; }
-            if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $os += "linux"; }
+            $platforms = @();
+            if ("${{ github.event.inputs['run-windows-tests'] || 'false' }}" -eq "true") { $platforms += "windows"; }
+            if ("${{ github.event.inputs['run-macos-tests'] || 'false' }}" -eq "true") { $platforms += "macos"; }
+            if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $platforms += "linux"; }
           }
           $platformsJson = $platforms | ConvertTo-Json -Compress;
           "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
@@ -45,7 +47,7 @@ jobs:
     name: Build and run unit tests
     timeout-minutes: 240
     needs: prepare-matrix
-    if: ${{ needs.prepare-matrix.outputs.platforms != '[]' }}
+    if: ${{ (needs.prepare-matrix.outputs.platforms || '[]') != '[]' }}
     strategy:
       fail-fast: false
       matrix:
