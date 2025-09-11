@@ -5,20 +5,20 @@
  */
 
 #ifdef __cplusplus
-#include <cstdint>
-#define EXTERN extern "C"
+    #include <cstdint>
+    #define EXTERN extern "C"
 #else
-#include <stdint.h>
-#define EXTERN extern
+    #include <stdint.h>
+    #define EXTERN extern
 #endif
 
-#ifdef WIN32
-#define EXPORT __declspec(dllexport)
+#ifdef _WIN32
+    #define EXPORT __declspec(dllexport)
 #else
-#define EXPORT __attribute__((visibility("default")))
+    #define EXPORT __attribute__((visibility("default")))
 #endif
 
-EXTERN int32_t EXPORT my_pow(int32_t lhs, int32_t rhs) {
+EXTERN EXPORT int32_t my_pow(int32_t lhs, int32_t rhs) {
     if (rhs < 0) return 0;
     if (rhs == 0) return 1;
     int32_t result = my_pow(lhs, rhs / 2);
