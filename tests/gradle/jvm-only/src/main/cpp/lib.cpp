@@ -15,7 +15,7 @@
 #ifdef WIN32
 #define EXPORT __declspec(dllexport)
 #else
-#define EXPORT __attribute__((visibility("public")))
+#define EXPORT __attribute__((visibility("default")))
 #endif
 
 EXTERN int32_t EXPORT my_pow(int32_t lhs, int32_t rhs) {
