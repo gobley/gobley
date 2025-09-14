@@ -13,7 +13,7 @@ root, you can simply apply the `dev.gobley.cargo` the plugin.
 ```kotlin
 plugins {
     kotlin("multiplatform")
-    id("dev.gobley.cargo") version "0.3.4"
+    id("dev.gobley.cargo") version "0.3.5"
 }
 ```
 

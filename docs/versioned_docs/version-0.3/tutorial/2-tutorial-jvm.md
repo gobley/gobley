@@ -118,8 +118,8 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    plugins {
        kotlin("jvm") version "<kotlin version>"
-       id("dev.gobley.cargo") version "0.3.4"
-       id("dev.gobley.uniffi") version "0.3.4"
+       id("dev.gobley.cargo") version "0.3.5"
+       id("dev.gobley.uniffi") version "0.3.5"
        kotlin("plugin.atomicfu") version "<kotlin version>"
    }
 

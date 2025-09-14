@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.4...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.5...HEAD)
+
+## [0.3.5](https://github.com/gobley/gobley/releases/tag/v0.3.5) - 2025-09-16
+
+### Fixes
+
+- Made `FindDynamicLibrariesTask` find dynamic libraries from Cargo build script `OUT_DIR` by default ([#213](https://github.com/gobley/gobley/pull/213)).
+- Ensured Gobley works on a Rosetta-emulated x64 JVM on Apple Silicon macOS ([#217](https://github.com/gobley/gobley/pull/217)).
 
 ## [0.3.4](https://github.com/gobley/gobley/releases/tag/v0.3.4) - 2025-08-22
 
