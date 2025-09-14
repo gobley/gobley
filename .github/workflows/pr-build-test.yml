@@ -15,6 +15,11 @@ on:
         required: true
         default: true
         type: boolean
+      run-macos-intel-tests:
+        description: "Run macOS (Intel) tests"
+        required: true
+        default: true
+        type: boolean
       run-linux-tests:
         description: "Run Linux tests"
         required: true
@@ -35,17 +40,19 @@ jobs:
         run: |
           $eventName = "${{ github.event_name }}";
           if ($eventName -eq "schedule") {
-            $platforms = @("windows", "macos", "linux");
+            $platforms = @("windows", "macos", "macos-intel", "linux");
           } else {
             $platforms = @();
             if ("${{ github.event.inputs['run-windows-tests'] || 'false' }}" -eq "true") { $platforms += "windows"; }
             if ("${{ github.event.inputs['run-macos-tests'] || 'false' }}" -eq "true") { $platforms += "macos"; }
+            if ("${{ github.event.inputs['run-macos-intel-tests'] || 'false' }}" -eq "true") { $platforms += "macos-intel"; }
             if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $platforms += "linux"; }
           }
-          $platformsJson = $platforms | ConvertTo-Json -Compress;
+          $platformsJson = $platforms | ConvertTo-Json -Compress -AsArray;
           $runnersJson = @{
             windows = "windows-latest";
             macos = "macos-latest";
+            "macos-intel" = "macos-13";
             linux = "ubuntu-latest";
           } | ConvertTo-Json -Compress;
           "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
