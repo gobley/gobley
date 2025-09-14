@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop";
 $PSNativeCommandUseErrorActionPreference = $true;
 
+./.github/workflows/pr-build-test/environment.ps1;
+
 try {
     ./gradlew build `
         "-Pgobley.projects.uniffiTests=false" `

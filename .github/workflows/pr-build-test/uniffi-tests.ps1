@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop";
 $PSNativeCommandUseErrorActionPreference = $true;
 
+./.github/workflows/pr-build-test/environment.ps1;
+
 $configurations = @(
     @{ GenerateImmutableRecords = $false; OmitChecksums = $false; Futures = $false },
     @{ GenerateImmutableRecords = $true; OmitChecksums = $false; Futures = $false },
@@ -17,7 +19,8 @@ try {
         $generateImmutableRecords = $configuration.GenerateImmutableRecords;
         $omitChecksums = $configuration.OmitChecksums;
         $futures = $configuration.Futures;
-        $additionalArguments = if ($futures) { @("--max-workers=1") } else { @() };
+        $additionalArguments = @();
+        if ($futures) { $additionalArguments += "--max-workers=1"; }
         ./gradlew build `
             $additionalArguments `
             "-Pgobley.projects.gradleTests=false" `
