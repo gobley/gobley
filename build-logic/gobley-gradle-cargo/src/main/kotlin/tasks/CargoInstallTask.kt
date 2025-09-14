@@ -43,6 +43,7 @@ abstract class CargoInstallTask : CargoTask() {
         @OptIn(InternalGobleyGradleApi::class)
         cargo("install") {
             arguments("--root", installDirectory)
+            arguments("--target", GobleyHost.current.rustTarget.rustTriple)
             if (quiet.get()) {
                 arguments("--quiet")
             }
