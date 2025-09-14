@@ -34,6 +34,12 @@ kotlin {
     }
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     reports {

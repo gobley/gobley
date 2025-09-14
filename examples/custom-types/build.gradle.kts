@@ -89,3 +89,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 }
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}

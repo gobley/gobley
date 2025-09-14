@@ -1,7 +1,7 @@
 import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.appleMobile
-import gobley.gradle.rust.dsl.useRustUpLinker
 import gobley.gradle.rust.dsl.rustVersion
+import gobley.gradle.rust.dsl.useRustUpLinker
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -100,5 +100,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
