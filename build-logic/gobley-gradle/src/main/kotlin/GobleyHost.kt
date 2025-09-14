@@ -108,8 +108,8 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
 
         val isCurrent: Boolean
             get() = when (this) {
-                X64 -> defaultArchitecture.isAmd64
-                Arm64 -> defaultArchitecture.isArm64
+                X64 -> defaultArchitectureIsAmd64
+                Arm64 -> defaultArchitectureIsArm64
             }
 
         val konanName: String
@@ -119,9 +119,14 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
             }
 
         companion object {
-            private val defaultArchitecture = DefaultNativePlatform.getCurrentArchitecture()
+            private val defaultArchitecture = System.getProperty("os.arch")
+            private val defaultArchitectureIsAmd64 =
+                arrayOf("amd64", "x86_64").contains(defaultArchitecture)
+            private val defaultArchitectureIsArm64 =
+                arrayOf("aarch64").contains(defaultArchitecture)
+
             val current: Arch = entries.firstOrNull { it.isCurrent }
-                ?: throw IllegalStateException("Unsupported os: ${defaultArchitecture.displayName}")
+                ?: throw IllegalStateException("Unsupported os: $defaultArchitecture")
         }
     }
 
