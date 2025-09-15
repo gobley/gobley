@@ -12,6 +12,7 @@ import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWasmTarget
 import gobley.gradle.rust.targets.RustWindowsTarget
+import org.gradle.nativeplatform.platform.internal.Architectures
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 import java.io.File
 import java.io.Serializable
@@ -121,9 +122,9 @@ data class GobleyHost(val platform: Platform, val arch: Arch) : Serializable {
         companion object {
             private val defaultArchitecture = System.getProperty("os.arch")
             private val defaultArchitectureIsAmd64 =
-                arrayOf("amd64", "x86_64").contains(defaultArchitecture)
+                Architectures.X86_64.isAlias(defaultArchitecture)
             private val defaultArchitectureIsArm64 =
-                arrayOf("aarch64").contains(defaultArchitecture)
+                Architectures.AARCH64.isAlias(defaultArchitecture)
 
             val current: Arch = entries.firstOrNull { it.isCurrent }
                 ?: throw IllegalStateException("Unsupported os: $defaultArchitecture")
