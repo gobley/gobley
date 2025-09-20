@@ -80,7 +80,8 @@ enum class RustAndroidTarget(
         ndkRoot: File? = null,
     ): Map<String, Any> {
         val actualNdkRoot = tryRetrieveNdkRoot(sdkRoot, ndkVersion, ndkRoot)!!
-        val toolchainBinaryDir = ndkToolchainDir(sdkRoot, ndkVersion, ndkRoot)!!.resolve("bin")
+        val toolchainDir = ndkToolchainDir(sdkRoot, ndkVersion, ndkRoot)!!
+        val toolchainBinaryDir = toolchainDir.resolve("bin")
         val currentPlatform = GobleyHost.current.platform
         val clang =
             currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang"))
@@ -88,18 +89,20 @@ enum class RustAndroidTarget(
             currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("${ndkLlvmTriple}$apiLevel-clang++"))
         val ar = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("llvm-ar"))
         val ranlib = currentPlatform.chooseExeExtension(toolchainBinaryDir.resolve("llvm-ranlib"))
+        val sysroot = toolchainDir.resolve("sysroot")
+        val sysrootExtraInclude = sysroot.resolve("usr/include/$ndkLibraryTriple")
+        val underscoreRustTriple = rustTriple.replace('-', '_').uppercase()
         return mapOf(
             "ANDROID_HOME" to sdkRoot,
             "ANDROID_NDK_HOME" to actualNdkRoot,
             "ANDROID_NDK_ROOT" to actualNdkRoot,
-            "CARGO_TARGET_${
-                rustTriple.replace('-', '_').uppercase()
-            }_LINKER" to clang,
+            "CARGO_TARGET_${underscoreRustTriple}_LINKER" to clang,
             "CC_$rustTriple" to clang,
             "CLANG_PATH" to clang,
             "CXX_$rustTriple" to clangCpp,
             "AR_$rustTriple" to ar,
             "RANLIB_$rustTriple" to ranlib,
+            "BINDGEN_EXTRA_CLANG_ARGS_$rustTriple" to "--sysroot=$sysroot -I$sysrootExtraInclude",
         )
     }
 
