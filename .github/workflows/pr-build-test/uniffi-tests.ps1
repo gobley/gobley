@@ -25,19 +25,29 @@ try {
             $extTypes = "extTypes" -eq $testGroup;
             $futures = "futures" -eq $testGroup;
             if ($futures) { $additionalArguments += "--max-workers=1"; }
-            ./gradlew build `
-                $additionalArguments `
-                "-Pgobley.projects.gradleTests=false" `
-                "-Pgobley.projects.examples=false" `
-                "-Pgobley.projects.uniffiTests=$basicTests" `
-                "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
-                "-Pgobley.projects.uniffiTests.futures=$futures" `
-                "-Pgobley.projects.uniffiTests.generateImmutableRecords=$generateImmutableRecords" `
-                "-Pgobley.projects.uniffiTests.omitChecksums=$omitChecksums";
+            try {
+                ./gradlew build `
+                    $additionalArguments `
+                    "-Pgobley.projects.gradleTests=false" `
+                    "-Pgobley.projects.examples=false" `
+                    "-Pgobley.projects.uniffiTests=$basicTests" `
+                    "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
+                    "-Pgobley.projects.uniffiTests.futures=$futures" `
+                    "-Pgobley.projects.uniffiTests.generateImmutableRecords=$generateImmutableRecords" `
+                    "-Pgobley.projects.uniffiTests.omitChecksums=$omitChecksums";
+            } finally {
+                ./.github/workflows/pr-build-test/copy-test-result.ps1;
+                ./gradlew --stop;
+                ./gradlew clean `
+                    "-Pgobley.projects.gradleTests=false" `
+                    "-Pgobley.projects.examples=false" `
+                    "-Pgobley.projects.uniffiTests=$basicTests" `
+                    "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
+                    "-Pgobley.projects.uniffiTests.futures=$futures";
+            }
         }
     }
 } finally {
-    ./.github/workflows/pr-build-test/copy-test-result.ps1;
     ./gradlew --stop;
     ./gradlew clean `
         "-Pgobley.projects.gradleTests=false" `
