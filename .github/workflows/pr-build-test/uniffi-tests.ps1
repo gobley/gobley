@@ -36,7 +36,9 @@ try {
                     "-Pgobley.projects.uniffiTests.generateImmutableRecords=$generateImmutableRecords" `
                     "-Pgobley.projects.uniffiTests.omitChecksums=$omitChecksums";
             } finally {
-                ./.github/workflows/pr-build-test/copy-test-result.ps1;
+                # Allow overwriting the test result to use the last one.
+                # If the test fails, this will copy the result of the failing tests.
+                ./.github/workflows/pr-build-test/copy-test-result.ps1 -Force;
                 ./gradlew --stop;
                 ./gradlew clean `
                     "-Pgobley.projects.gradleTests=false" `

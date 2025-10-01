@@ -1,3 +1,5 @@
+param ([switch]$Force);
+
 $ErrorActionPreference = "Stop";
 $PSNativeCommandUseErrorActionPreference = $true;
 
@@ -16,5 +18,5 @@ foreach ($testResultDirectory in $testResultDirectories) {
         New-Item -Type Directory $destination | Out-Null;
     }
     Write-Host "$testResultDirectory -> $destination"
-    Move-Item $testResultDirectory $destination;
+    Move-Item $testResultDirectory $destination -Force:$Force;
 }
