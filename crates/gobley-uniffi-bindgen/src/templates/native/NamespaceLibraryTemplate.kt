@@ -62,37 +62,22 @@ internal val {{ ffi_struct.name()|ffi_struct_name }}UniffiByValue.{{ field.name(
 {%- endmatch %}
 {%- endfor %}
 
-internal interface UniffiLib {
-    companion object {
-        internal val INSTANCE: UniffiLib by lazy {
-            {% if self.initialization_fns(ci).is_empty() -%}
-            UniffiLibInstance()
-            {%- else -%}
-            UniffiLibInstance().also { lib ->
-            {%- for init_fn in self.initialization_fns(ci) %}
-                {{ init_fn }}
-            {%- endfor %}
-            }
-            {%- endif %}
-        }
-        {% if ci.contains_object_types() %}
-        // The Cleaner for the whole library
-        internal val CLEANER: UniffiCleaner by lazy {
-            UniffiCleaner.create()
-        }
-        {%- endif %}
+internal object UniffiLib {
+    init {
+        {%- for init_fn in self.initialization_fns(ci) %}
+            {{ init_fn }}
+        {%- endfor %}
     }
+
+    {%- if ci.contains_object_types() %}
+    // The Cleaner for the whole library
+    internal val CLEANER: UniffiCleaner by lazy {
+        UniffiCleaner.create()
+    }
+    {%- endif %}
 
     {% for func in ci.iter_ffi_function_definitions() -%}
     fun {{ func.name() }}(
-        {%- call kt::arg_list_ffi_decl(func, 8) %}
-    ): {% match func.return_type() %}{% when Some(return_type) %}{{ return_type.borrow()|ffi_type_name_by_value(ci) }}{% when None %}Unit{% endmatch %}
-    {% endfor %}
-}
-
-internal class UniffiLibInstance: UniffiLib {
-    {% for func in ci.iter_ffi_function_definitions() -%}
-    override fun {{ func.name() }}(
         {%- call kt::arg_list_ffi_decl(func, 8) %}
     ): {% match func.return_type() -%}
     {%- when Some(return_type) -%}
@@ -109,5 +94,5 @@ internal class UniffiLibInstance: UniffiLib {
 }
 
 {{ visibility() }}fun uniffiEnsureInitialized() {
-    UniffiLib.INSTANCE
+    UniffiLib
 }

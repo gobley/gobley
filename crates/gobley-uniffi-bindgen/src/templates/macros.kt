@@ -29,7 +29,7 @@
                         {%- else -%}
                         uniffiRustCall
                         {%- endmatch %} { uniffiRustCallStatus ->
-{{ " "|repeat(indent) }}    UniffiLib.INSTANCE.{{ func.ffi_func().name() }}(
+{{ " "|repeat(indent) }}    UniffiLib.{{ func.ffi_func().name() }}(
                                 {%- if func.takes_self() %}
 {{ " "|repeat(indent) }}        it,
                                 {%- endif -%}
@@ -113,13 +113,13 @@
                         uniffiRustCallAsync(
                             {%- if callable.takes_self() %}
 {{ " "|repeat(indent) }}    callWithPointer { thisPtr ->
-{{ " "|repeat(indent) }}        UniffiLib.INSTANCE.{{ callable.ffi_func().name() }}(
+{{ " "|repeat(indent) }}        UniffiLib.{{ callable.ffi_func().name() }}(
 {{ " "|repeat(indent) }}            thisPtr,
                                     {%- call arg_list_lowered(callable, indent + 12) %}
 {{ " "|repeat(indent) }}        )
 {{ " "|repeat(indent) }}    },
                             {%- else %}
-{{ " "|repeat(indent) }}    UniffiLib.INSTANCE.{{ callable.ffi_func().name() }}(
+{{ " "|repeat(indent) }}    UniffiLib.{{ callable.ffi_func().name() }}(
                                 {%- call arg_list_lowered(callable, indent + 8) %}
 {{ " "|repeat(indent) }}    ),
                             {%- endif %}

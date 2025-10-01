@@ -7,7 +7,7 @@
 internal object RustBufferHelper {
     internal fun allocValue(size: ULong = 0UL): RustBufferByValue = uniffiRustCall { status ->
         // Note: need to convert the size to a `Long` value to make this work with JVM.
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_alloc().name() }}(size.toLong(), status)
+        UniffiLib.{{ ci.ffi_rustbuffer_alloc().name() }}(size.toLong(), status)
     }.also {
         if(it.data == null) {
             throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
@@ -15,6 +15,6 @@ internal object RustBufferHelper {
     }
 
     internal fun free(buf: RustBufferByValue) = uniffiRustCall { status ->
-        UniffiLib.INSTANCE.{{ ci.ffi_rustbuffer_free().name() }}(buf, status)
+        UniffiLib.{{ ci.ffi_rustbuffer_free().name() }}(buf, status)
     }
 }

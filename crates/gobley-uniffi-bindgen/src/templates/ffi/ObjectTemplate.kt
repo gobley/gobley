@@ -120,7 +120,7 @@
         override fun destroy() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.{{ obj.ffi_object_free().name() }}(ptr, status)
+                    UniffiLib.{{ obj.ffi_object_free().name() }}(ptr, status)
                 }
             }
         }
@@ -128,7 +128,7 @@
 
     {{ visibility() }}fun uniffiClonePointer(): Pointer {
         return uniffiRustCall { status ->
-            UniffiLib.INSTANCE.{{ obj.ffi_object_clone().name() }}(pointer!!, status)
+            UniffiLib.{{ obj.ffi_object_clone().name() }}(pointer!!, status)
         }!!
     }
 
