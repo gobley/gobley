@@ -13,6 +13,7 @@ try {
             ./gradlew ":examples:${project}:build" `
                 "-Pgobley.projects.gradleTests=false" `
                 "-Pgobley.projects.uniffiTests=false" `
+                "-Pgobley.projects.uniffiTests.extTypes=false" `
                 "-Pgobley.projects.uniffiTests.futures=false";
         } finally {
             ./.github/workflows/pr-build-test/copy-test-result.ps1;
@@ -20,6 +21,7 @@ try {
             ./gradlew ":examples:${project}:clean" `
                 "-Pgobley.projects.gradleTests=false" `
                 "-Pgobley.projects.uniffiTests=false" `
+                "-Pgobley.projects.uniffiTests.extTypes=false" `
                 "-Pgobley.projects.uniffiTests.futures=false";
         }
     }
@@ -29,6 +31,7 @@ try {
     ./gradlew clean `
         "-Pgobley.projects.gradleTests=false" `
         "-Pgobley.projects.uniffiTests=false" `
+        "-Pgobley.projects.uniffiTests.extTypes=false" `
         "-Pgobley.projects.uniffiTests.futures=false";
     ./.github/workflows/pr-build-test/change-file-owner.ps1;
 }
