@@ -4,31 +4,37 @@ $PSNativeCommandUseErrorActionPreference = $true;
 ./.github/workflows/pr-build-test/environment.ps1;
 
 $configurations = @(
-    @{ GenerateImmutableRecords = $false; OmitChecksums = $false; Futures = $false },
-    @{ GenerateImmutableRecords = $true; OmitChecksums = $false; Futures = $false },
-    @{ GenerateImmutableRecords = $false; OmitChecksums = $true; Futures = $false },
-    @{ GenerateImmutableRecords = $true; OmitChecksums = $true; Futures = $false },
-    @{ GenerateImmutableRecords = $false; OmitChecksums = $false; Futures = $true },
-    @{ GenerateImmutableRecords = $true; OmitChecksums = $false; Futures = $true },
-    @{ GenerateImmutableRecords = $false; OmitChecksums = $true; Futures = $true },
-    @{ GenerateImmutableRecords = $true; OmitChecksums = $true; Futures = $true }
+    @{ GenerateImmutableRecords = $false; OmitChecksums = $false; },
+    @{ GenerateImmutableRecords = $true; OmitChecksums = $false; },
+    @{ GenerateImmutableRecords = $false; OmitChecksums = $true; },
+    @{ GenerateImmutableRecords = $true; OmitChecksums = $true; }
+);
+$testGroups = @(
+    $null,
+    "extTypes",
+    "futures"
 );
 
 try {
     foreach ($configuration in $configurations) {
         $generateImmutableRecords = $configuration.GenerateImmutableRecords;
         $omitChecksums = $configuration.OmitChecksums;
-        $futures = $configuration.Futures;
         $additionalArguments = @();
-        if ($futures) { $additionalArguments += "--max-workers=1"; }
-        ./gradlew build `
-            $additionalArguments `
-            "-Pgobley.projects.gradleTests=false" `
-            "-Pgobley.projects.examples=false" `
-            "-Pgobley.projects.uniffiTests=$(-not $futures)" `
-            "-Pgobley.projects.uniffiTests.futures=$futures" `
-            "-Pgobley.projects.uniffiTests.generateImmutableRecords=$generateImmutableRecords" `
-            "-Pgobley.projects.uniffiTests.omitChecksums=$omitChecksums";
+        foreach ($testGroup in $testGroups) {
+            $basicTests = $null -eq $testGroup;
+            $extTypes = "extTypes" -eq $testGroup;
+            $futures = "futures" -eq $testGroup;
+            if ($futures) { $additionalArguments += "--max-workers=1"; }
+            ./gradlew build `
+                $additionalArguments `
+                "-Pgobley.projects.gradleTests=false" `
+                "-Pgobley.projects.examples=false" `
+                "-Pgobley.projects.uniffiTests=$basicTests" `
+                "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
+                "-Pgobley.projects.uniffiTests.futures=$futures" `
+                "-Pgobley.projects.uniffiTests.generateImmutableRecords=$generateImmutableRecords" `
+                "-Pgobley.projects.uniffiTests.omitChecksums=$omitChecksums";
+        }
     }
 } finally {
     ./.github/workflows/pr-build-test/copy-test-result.ps1;
