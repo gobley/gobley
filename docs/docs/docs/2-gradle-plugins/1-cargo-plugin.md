@@ -315,7 +315,7 @@ kotlin {
                 runtimeOnly(files("foo-jvm-0.1.0-darwin-aarch64.jar"))
                 // You can add multiple invocations of runtimeOnly(...)
                 runtimeOnly(files("foo-jvm-0.1.0-win32-x86-64.jar"))
-                runtimeOnly("net.java.dev.jna:jna:5.17.0") // required to run if you're using UniFFI
+                runtimeOnly("net.java.dev.jna:jna:5.18.1") // required to run if you're using UniFFI
             }
         }
     }
@@ -349,7 +349,7 @@ kotlin {
                     // The archive classifier, which defaults to `rustTarget.jnaResourcePrefix`.
                     classifier("darwin-aarch64")
                 })
-                runtimeOnly("net.java.dev.jna:jna:5.17.0") // required to run if you're using UniFFI
+                runtimeOnly("net.java.dev.jna:jna:5.18.1") // required to run if you're using UniFFI
             }
         }
     }

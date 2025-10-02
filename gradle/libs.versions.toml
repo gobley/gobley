@@ -19,7 +19,7 @@ androidx-annotation = "1.8.2"
 androidx-test-core = "1.6.1"
 androidx-test-runner = "1.6.2"
 
-jna = "5.17.0"
+jna = "5.18.1"
 junit = "4.13.2"
 ktor = "3.0.3"
 tomlkt = "0.3.7"

@@ -724,7 +724,7 @@ kotlin {
     sourceSets {
         androidMain {
             dependencies {
-                implementation("net.java.dev.jna:jna:5.17.0@aar")
+                implementation("net.java.dev.jna:jna:5.18.1@aar")
             }
         }
     }
@@ -732,7 +732,7 @@ kotlin {
 
 // Pure Android
 dependencies {
-    implementation("net.java.dev.jna:jna:5.17.0@aar")
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
 }
 ```
 
