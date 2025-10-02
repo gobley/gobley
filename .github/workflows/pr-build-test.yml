@@ -71,6 +71,9 @@ jobs:
           - gradle-plugin-tests
           - gradle-tests
           - uniffi-tests
+          - uniffi-tests-gir
+          - uniffi-tests-oc
+          - uniffi-tests-gir-oc
         platform: ${{ fromJSON(needs.prepare-matrix.outputs.platforms) }}
     runs-on: ${{ fromJSON(needs.prepare-matrix.outputs.runners)[matrix.platform] }}
     steps:

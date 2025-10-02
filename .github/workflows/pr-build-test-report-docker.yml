@@ -21,6 +21,9 @@ jobs:
           - gradle-plugin-tests
           - gradle-tests
           - uniffi-tests
+          - uniffi-tests-gir
+          - uniffi-tests-oc
+          - uniffi-tests-gir-oc
     steps:
       - name: Download test results
         uses: actions/download-artifact@v4
