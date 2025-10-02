@@ -102,7 +102,8 @@ enum class RustAndroidTarget(
             "CXX_$rustTriple" to clangCpp,
             "AR_$rustTriple" to ar,
             "RANLIB_$rustTriple" to ranlib,
-            "BINDGEN_EXTRA_CLANG_ARGS_$rustTriple" to "--sysroot=$sysroot -I$sysrootExtraInclude",
+            "BINDGEN_EXTRA_CLANG_ARGS_$rustTriple" to "--sysroot=$sysroot -I$sysrootExtraInclude"
+                .replace('\\', '/'),
         )
     }
 
