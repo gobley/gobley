@@ -27,6 +27,7 @@ try {
         "-Pgobley.projects.uniffiTests.extTypes=false" `
         "-Pgobley.projects.uniffiTests.futures=false";
 } finally {
+    ./.github/workflows/pr-build-test/copy-test-result.ps1;
     ./gradlew --stop;
     ./gradlew clean `
         $arguments `
