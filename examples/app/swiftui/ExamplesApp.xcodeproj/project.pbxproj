@@ -167,7 +167,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7555FFA5242A565B00829871 /* Build configuration list for PBXNativeTarget "ExamplesApp (iOS)" */;
 			buildPhases = (
-				7555FFB5242A651A00829871 /* ShellScript */,
+				7555FFB5242A651A00829871 /* Build Kotlin Multiplatform */,
 				7555FF77242A565900829871 /* Sources */,
 				7555FF78242A565900829871 /* Frameworks */,
 				7555FF79242A565900829871 /* Resources */,
@@ -188,7 +188,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 88D2820A2D7D9C860078AAFC /* Build configuration list for PBXNativeTarget "ExamplesApp (watchOS)" */;
 			buildPhases = (
-				88D2821F2D7D9E530078AAFC /* ShellScript */,
+				88D2821F2D7D9E530078AAFC /* Build Kotlin Multiplatform */,
 				88D281F52D7D9C850078AAFC /* Sources */,
 				88D281F62D7D9C850078AAFC /* Frameworks */,
 				88D281F72D7D9C850078AAFC /* Resources */,
@@ -208,7 +208,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 88D2824D2D7DA3C90078AAFC /* Build configuration list for PBXNativeTarget "ExamplesApp (tvOS)" */;
 			buildPhases = (
-				88D282502D7DA3FE0078AAFC /* ShellScript */,
+				88D282502D7DA3FE0078AAFC /* Build Kotlin Multiplatform */,
 				88D2823C2D7DA3C70078AAFC /* Sources */,
 				88D2823D2D7DA3C70078AAFC /* Frameworks */,
 				88D2823E2D7DA3C70078AAFC /* Resources */,
@@ -228,7 +228,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 88F9E46E2B7C95B90055D7F0 /* Build configuration list for PBXNativeTarget "ExamplesApp (macOS)" */;
 			buildPhases = (
-				88F9E4742B7C97510055D7F0 /* ShellScript */,
+				88F9E4742B7C97510055D7F0 /* Build Kotlin Multiplatform */,
 				88F9E45E2B7C95B80055D7F0 /* Sources */,
 				88F9E45F2B7C95B80055D7F0 /* Frameworks */,
 				88F9E4602B7C95B80055D7F0 /* Resources */,
@@ -320,7 +320,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		7555FFB5242A651A00829871 /* ShellScript */ = {
+		7555FFB5242A651A00829871 /* Build Kotlin Multiplatform */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -329,15 +329,16 @@
 			);
 			inputPaths = (
 			);
+			name = "Build Kotlin Multiplatform";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\n./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\nif [ \"$GOBLEY_XCODE_CONFIGURE_OWN_GRADLE_PROJECT\" = \"true\" ]; then\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode \\\n    \"-Pgobley.projects.gradleTests=false\" \\\n    \"-Pgobley.projects.uniffiTests=false\" \\\n    \"-Pgobley.projects.uniffiTests.extTypes=false\" \\\n    \"-Pgobley.projects.uniffiTests.futures=false\" \\\n    \"-Pgobley.projects.examples.app=$GRADLE_PROJECT_CONFIGURE_OWN_APP\" \\\n    \"-Pgobley.projects.examples.audioCppApp=$GRADLE_PROJECT_CONFIGURE_OWN_AUDIO_CPP_APP\" \\\n    \"-Pgobley.projects.examples.customTypes=false\" \\\n    \"-Pgobley.projects.examples.tokioBlake3App=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BLAKE3_APP\" \\\n    \"-Pgobley.projects.examples.tokioBoringApp=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BORING_APP\"\nelse\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
-		88D2821F2D7D9E530078AAFC /* ShellScript */ = {
+		88D2821F2D7D9E530078AAFC /* Build Kotlin Multiplatform */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -346,15 +347,16 @@
 			);
 			inputPaths = (
 			);
+			name = "Build Kotlin Multiplatform";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\n./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\nif [ \"$GOBLEY_XCODE_CONFIGURE_OWN_GRADLE_PROJECT\" = \"true\" ]; then\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode \\\n    \"-Pgobley.projects.gradleTests=false\" \\\n    \"-Pgobley.projects.uniffiTests=false\" \\\n    \"-Pgobley.projects.uniffiTests.extTypes=false\" \\\n    \"-Pgobley.projects.uniffiTests.futures=false\" \\\n    \"-Pgobley.projects.examples.app=$GRADLE_PROJECT_CONFIGURE_OWN_APP\" \\\n    \"-Pgobley.projects.examples.audioCppApp=$GRADLE_PROJECT_CONFIGURE_OWN_AUDIO_CPP_APP\" \\\n    \"-Pgobley.projects.examples.customTypes=false\" \\\n    \"-Pgobley.projects.examples.tokioBlake3App=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BLAKE3_APP\" \\\n    \"-Pgobley.projects.examples.tokioBoringApp=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BORING_APP\"\nelse\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
-		88D282502D7DA3FE0078AAFC /* ShellScript */ = {
+		88D282502D7DA3FE0078AAFC /* Build Kotlin Multiplatform */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -363,15 +365,16 @@
 			);
 			inputPaths = (
 			);
+			name = "Build Kotlin Multiplatform";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\n./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\nif [ \"$GOBLEY_XCODE_CONFIGURE_OWN_GRADLE_PROJECT\" = \"true\" ]; then\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode \\\n    \"-Pgobley.projects.gradleTests=false\" \\\n    \"-Pgobley.projects.uniffiTests=false\" \\\n    \"-Pgobley.projects.uniffiTests.extTypes=false\" \\\n    \"-Pgobley.projects.uniffiTests.futures=false\" \\\n    \"-Pgobley.projects.examples.app=$GRADLE_PROJECT_CONFIGURE_OWN_APP\" \\\n    \"-Pgobley.projects.examples.audioCppApp=$GRADLE_PROJECT_CONFIGURE_OWN_AUDIO_CPP_APP\" \\\n    \"-Pgobley.projects.examples.customTypes=false\" \\\n    \"-Pgobley.projects.examples.tokioBlake3App=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BLAKE3_APP\" \\\n    \"-Pgobley.projects.examples.tokioBoringApp=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BORING_APP\"\nelse\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
-		88F9E4742B7C97510055D7F0 /* ShellScript */ = {
+		88F9E4742B7C97510055D7F0 /* Build Kotlin Multiplatform */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -380,13 +383,14 @@
 			);
 			inputPaths = (
 			);
+			name = "Build Kotlin Multiplatform";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\n./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\nif [ \"$GOBLEY_XCODE_CONFIGURE_OWN_GRADLE_PROJECT\" = \"true\" ]; then\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode \\\n    \"-Pgobley.projects.gradleTests=false\" \\\n    \"-Pgobley.projects.uniffiTests=false\" \\\n    \"-Pgobley.projects.uniffiTests.extTypes=false\" \\\n    \"-Pgobley.projects.uniffiTests.futures=false\" \\\n    \"-Pgobley.projects.examples.app=$GRADLE_PROJECT_CONFIGURE_OWN_APP\" \\\n    \"-Pgobley.projects.examples.audioCppApp=$GRADLE_PROJECT_CONFIGURE_OWN_AUDIO_CPP_APP\" \\\n    \"-Pgobley.projects.examples.customTypes=false\" \\\n    \"-Pgobley.projects.examples.tokioBlake3App=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BLAKE3_APP\" \\\n    \"-Pgobley.projects.examples.tokioBoringApp=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BORING_APP\"\nelse\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

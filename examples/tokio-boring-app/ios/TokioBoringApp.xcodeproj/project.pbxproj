@@ -93,7 +93,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7555FFA5242A565B00829871 /* Build configuration list for PBXNativeTarget "TokioBoringApp" */;
 			buildPhases = (
-				7555FFB5242A651A00829871 /* ShellScript */,
+				7555FFB5242A651A00829871 /* Build Kotlin Multiplatform */,
 				7555FF77242A565900829871 /* Sources */,
 				7555FF78242A565900829871 /* Frameworks */,
 				7555FF79242A565900829871 /* Resources */,
@@ -152,7 +152,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		7555FFB5242A651A00829871 /* ShellScript */ = {
+		7555FFB5242A651A00829871 /* Build Kotlin Multiplatform */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -161,13 +161,14 @@
 			);
 			inputPaths = (
 			);
+			name = "Build Kotlin Multiplatform";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\n./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$GRADLE_ROOT_PROJECT_DIR\"\nif [ \"$GOBLEY_XCODE_CONFIGURE_OWN_GRADLE_PROJECT\" = \"true\" ]; then\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode \\\n    \"-Pgobley.projects.gradleTests=false\" \\\n    \"-Pgobley.projects.uniffiTests=false\" \\\n    \"-Pgobley.projects.uniffiTests.extTypes=false\" \\\n    \"-Pgobley.projects.uniffiTests.futures=false\" \\\n    \"-Pgobley.projects.examples.app=$GRADLE_PROJECT_CONFIGURE_OWN_APP\" \\\n    \"-Pgobley.projects.examples.audioCppApp=$GRADLE_PROJECT_CONFIGURE_OWN_AUDIO_CPP_APP\" \\\n    \"-Pgobley.projects.examples.customTypes=false\" \\\n    \"-Pgobley.projects.examples.tokioBlake3App=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BLAKE3_APP\" \\\n    \"-Pgobley.projects.examples.tokioBoringApp=$GRADLE_PROJECT_CONFIGURE_OWN_TOKIO_BORING_APP\"\nelse\n  ./gradlew $GRADLE_PROJECT_NAME:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
