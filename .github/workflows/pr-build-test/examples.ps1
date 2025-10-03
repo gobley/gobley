@@ -36,3 +36,29 @@ try {
         "-Pgobley.projects.uniffiTests.futures=false";
     ./.github/workflows/pr-build-test/change-file-owner.ps1;
 }
+
+# Build Xcode projects
+if ($IsMacOS) {
+    foreach ($testName in $TestNames) {
+        $xcodeSchemeNames = switch ($testName) {
+            "app" {
+                @(
+                    "ExamplesApp (iOS)",
+                    "ExamplesApp (macOS)",
+                    "ExamplesApp (tvOS)",
+                    "ExamplesApp (watchOS)"
+                )
+            }
+            "audioCppApp" { @("AudioCppApp") }
+            "tokioBlake3App" { @("TokioBlake3App") }
+            "tokioBoringApp" { @("TokioBoringApp") }
+            default { @() }
+        };
+        foreach ($xcodeSchemeName in $xcodeSchemeNames) {
+            xcodebuild `
+                -sdk iphonesimulator `
+                -workspace "examples/Examples.xcworkspace" `
+                -scheme $xcodeSchemeName;
+        }
+    }
+}
