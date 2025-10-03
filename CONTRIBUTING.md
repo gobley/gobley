@@ -51,17 +51,17 @@ for more details.
 For faster development, you can disable some unit tests and examples. Use the
 following Gradle properties to choose tests and examples to turn on and off.
 
-| Gradle property name                      | Projects                                                                |
-|-------------------------------------------|-------------------------------------------------------------------------|
-| `gobley.projects.gradleTests`             | `:tests:gradle`                                                         |
-| `gobley.projects.uniffiTests`             | `:tests:uniffi` (except for the below two) & `:examples:custom-types`   |
-| `gobley.projects.uniffiTests.extTypes`    | `:tests:uniffi:ext-types`                                               |
-| `gobley.projects.uniffiTests.futures`     | `:tests:uniffi:futures`                                                 |
-| `gobley.projects.examples.app`            | `:examples:app`, `:examples:arithmetic-procmacro`, `:examples:todolist` |
-| `gobley.projects.examples.audioCppApp`    | `:examples:audio-cpp-app`                                               |
-| `gobley.projects.examples.customTypes`    | `:examples:custom-types`                                                |
-| `gobley.projects.examples.tokioBlake3App` | `:examples:tokio-blake3-app`                                            |
-| `gobley.projects.examples.tokioBoringApp` | `:examples:tokio-boring-app`                                            |
+| Gradle property name                      | Projects                                                                 |
+|-------------------------------------------|--------------------------------------------------------------------------|
+| `gobley.projects.gradleTests`             | `:tests:gradle`                                                          |
+| `gobley.projects.uniffiTests`             | `:tests:uniffi` (except for the below two) & `:examples:custom-types`    |
+| `gobley.projects.uniffiTests.extTypes`    | `:tests:uniffi:ext-types`                                                |
+| `gobley.projects.uniffiTests.futures`     | `:tests:uniffi:futures`                                                  |
+| `gobley.projects.examples.app`            | `:examples:app`, `:examples:arithmetic-procmacro` & `:examples:todolist` |
+| `gobley.projects.examples.audioCppApp`    | `:examples:audio-cpp-app`                                                |
+| `gobley.projects.examples.customTypes`    | `:examples:custom-types`                                                 |
+| `gobley.projects.examples.tokioBlake3App` | `:examples:tokio-blake3-app`                                             |
+| `gobley.projects.examples.tokioBoringApp` | `:examples:tokio-boring-app`                                             |
 
 These following properties are already in `gradle.properties`. Simply replace
 `=true` to `=false` to turn them off.
