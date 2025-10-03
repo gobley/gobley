@@ -8,7 +8,11 @@ try {
         "-Pgobley.projects.uniffiTests=false" `
         "-Pgobley.projects.uniffiTests.extTypes=false" `
         "-Pgobley.projects.uniffiTests.futures=false" `
-        "-Pgobley.projects.examples=false";
+        "-Pgobley.projects.examples.app=false" `
+        "-Pgobley.projects.examples.audioCppApp=false" `
+        "-Pgobley.projects.examples.customTypes=false" `
+        "-Pgobley.projects.examples.tokioBlake3App=false" `
+        "-Pgobley.projects.examples.tokioBoringApp=false";
 } finally {
     ./.github/workflows/pr-build-test/copy-test-result.ps1;
     ./gradlew --stop;
@@ -16,6 +20,10 @@ try {
         "-Pgobley.projects.uniffiTests=false" `
         "-Pgobley.projects.uniffiTests.extTypes=false" `
         "-Pgobley.projects.uniffiTests.futures=false" `
-        "-Pgobley.projects.examples=false";
+        "-Pgobley.projects.examples.app=false" `
+        "-Pgobley.projects.examples.audioCppApp=false" `
+        "-Pgobley.projects.examples.customTypes=false" `
+        "-Pgobley.projects.examples.tokioBlake3App=false" `
+        "-Pgobley.projects.examples.tokioBoringApp=false";
     ./.github/workflows/pr-build-test/change-file-owner.ps1;
 }

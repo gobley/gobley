@@ -21,7 +21,11 @@ try {
             ./gradlew build `
                 $additionalArguments `
                 "-Pgobley.projects.gradleTests=false" `
-                "-Pgobley.projects.examples=false" `
+                "-Pgobley.projects.examples.app=false" `
+                "-Pgobley.projects.examples.audioCppApp=false" `
+                "-Pgobley.projects.examples.customTypes=false" `
+                "-Pgobley.projects.examples.tokioBlake3App=false" `
+                "-Pgobley.projects.examples.tokioBoringApp=false" `
                 "-Pgobley.projects.uniffiTests=$basicTests" `
                 "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
                 "-Pgobley.projects.uniffiTests.futures=$futures" `
@@ -34,7 +38,11 @@ try {
             ./gradlew --stop;
             ./gradlew clean `
                 "-Pgobley.projects.gradleTests=false" `
-                "-Pgobley.projects.examples=false" `
+                "-Pgobley.projects.examples.app=false" `
+                "-Pgobley.projects.examples.audioCppApp=false" `
+                "-Pgobley.projects.examples.customTypes=false" `
+                "-Pgobley.projects.examples.tokioBlake3App=false" `
+                "-Pgobley.projects.examples.tokioBoringApp=false" `
                 "-Pgobley.projects.uniffiTests=$basicTests" `
                 "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
                 "-Pgobley.projects.uniffiTests.futures=$futures";

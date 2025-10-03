@@ -23,7 +23,11 @@ jobs:
       matrix:
         test-name:
           - cargo-tests
-          - examples
+          - examples-app
+          - examples-audio-cpp-app
+          - examples-custom-types
+          - examples-tokio-blake3-app
+          - examples-tokio-boring-app
           - gradle-plugin-tests
           - gradle-tests
           - uniffi-tests
