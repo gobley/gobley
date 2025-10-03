@@ -2,15 +2,15 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:tokio-blake3-app/ios/TokioBlake3App.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:tokio-boring-app/ios/TokioBoringApp.xcodeproj">
+      location = "group:app/swiftui/ExamplesApp.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:audio-cpp-app/ios/AudioCppApp.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:app/swiftui/ExamplesApp.xcodeproj">
+      location = "group:tokio-blake3-app/ios/TokioBlake3App.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:tokio-boring-app/ios/TokioBoringApp.xcodeproj">
    </FileRef>
 </Workspace>
