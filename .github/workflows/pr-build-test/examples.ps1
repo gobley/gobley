@@ -42,25 +42,37 @@ try {
 if ($IsMacOS) {
     ${env:GOBLEY_XCODE_CONFIGURE_OWN_GRADLE_PROJECT} = "true";
     foreach ($testName in $TestNames) {
-        $xcodeSchemeNames = switch ($testName) {
+        $xcodeSchemes = switch ($testName) {
             "app" {
                 @(
-                    "ExamplesApp (iOS)",
-                    "ExamplesApp (macOS)",
-                    "ExamplesApp (tvOS)",
-                    "ExamplesApp (watchOS)"
+                    @{ Name = "ExamplesApp (iOS)"; Sdk = "iphonesimulator" },
+                    @{ Name = "ExamplesApp (macOS)"; Sdk = "macosx" },
+                    @{ Name = "ExamplesApp (tvOS)"; Sdk = "appletvsimulator" },
+                    @{ Name = "ExamplesApp (watchOS)"; Sdk = "watchsimulator" }
                 )
             }
-            "audioCppApp" { @("AudioCppApp") }
-            "tokioBlake3App" { @("TokioBlake3App") }
-            "tokioBoringApp" { @("TokioBoringApp") }
+            "audioCppApp" {
+                @(
+                    @{ Name = "AudioCppApp"; Sdk = "iphonesimulator" }
+                )
+            }
+            "tokioBlake3App" {
+                @(
+                    @{ Name = "TokioBlake3App"; Sdk = "iphonesimulator" }
+                )
+            }
+            "tokioBoringApp" {
+                @(
+                    @{ Name = "TokioBoringApp"; Sdk = "iphonesimulator" }
+                )
+            }
             default { @() }
         };
-        foreach ($xcodeSchemeName in $xcodeSchemeNames) {
+        foreach ($xcodeScheme in $xcodeSchemes) {
             xcodebuild `
-                -sdk iphonesimulator `
+                -sdk $xcodeScheme.Sdk `
                 -workspace "examples/Examples.xcworkspace" `
-                -scheme $xcodeSchemeName;
+                -scheme $xcodeScheme.Name;
         }
     }
 }
