@@ -74,12 +74,20 @@ if (ext.propertyIsTrue("gobley.projects.uniffiTests.futures")) {
     include(":tests:uniffi:futures")
 }
 
-if (ext.propertyIsTrue("gobley.projects.examples")) {
+if (ext.propertyIsTrue("gobley.projects.examples.app")) {
     include(":examples:app")
     include(":examples:arithmetic-procmacro")
-    include(":examples:audio-cpp-app")
-    include(":examples:custom-types")
     include(":examples:todolist")
+}
+if (ext.propertyIsTrue("gobley.projects.examples.audioCppApp")) {
+    include(":examples:audio-cpp-app")
+}
+if (ext.propertyIsTrue("gobley.projects.examples.customTypes")) {
+    include(":examples:custom-types")
+}
+if (ext.propertyIsTrue("gobley.projects.examples.tokioBlake3App")) {
     include(":examples:tokio-blake3-app")
+}
+if (ext.propertyIsTrue("gobley.projects.examples.tokioBoringApp")) {
     include(":examples:tokio-boring-app")
 }
