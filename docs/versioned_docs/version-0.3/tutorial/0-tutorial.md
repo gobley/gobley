@@ -123,8 +123,8 @@ Let's add a Cargo package to the Kotlin Multiplatform project.
    ```kotlin
    plugins {
        // Other plugins here
-       id("dev.gobley.cargo") version "0.3.5"
-       id("dev.gobley.uniffi") version "0.3.5"
+       id("dev.gobley.cargo") version "0.3.6"
+       id("dev.gobley.uniffi") version "0.3.6"
        kotlin("plugin.atomicfu") version libs.versions.kotlin
    }
    ```

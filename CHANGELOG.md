@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.5...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.6...HEAD)
+
+## [0.3.6](https://github.com/gobley/gobley/releases/tag/v0.3.6) - 2025-10-04
+
+### Fixes
+
+- Made the Cargo plugin put the Android NDK sysroot to `BINDGEN_EXTRA_CLANG_ARGS_<target>` when invoking Cargo builds ([#224](https://github.com/gobley/gobley/pull/224) & [#231](https://github.com/gobley/gobley/pull/231)).
+
+### Behavior Changes
+
+- Made the bindgen use the JNA direct mapping ([#227](https://github.com/gobley/gobley/pull/227)).
+- Removed `RustBufferByReference` from the UniFFI bindings ([#232](https://github.com/gobley/gobley/pull/232)).
+
+### Dependencies
+
+- Upgraded the default JNA version from 5.17.0 to 5.18.1 ([#229](https://github.com/gobley/gobley/pull/229)).
 
 ## [0.3.5](https://github.com/gobley/gobley/releases/tag/v0.3.5) - 2025-09-16
 
