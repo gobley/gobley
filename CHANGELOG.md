@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.6...HEAD)
+## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.7...HEAD)
+
+## [0.3.7](https://github.com/gobley/gobley/releases/tag/v0.3.7) - 2025-10-06
+
+### Fixes
+
+- Fixed the regression where the dynamic library dependency loading logic is missing ([#237](https://github.com/gobley/gobley/pull/237) & [#240](https://github.com/gobley/gobley/pull/240)).
 
 ## [0.3.6](https://github.com/gobley/gobley/releases/tag/v0.3.6) - 2025-10-04
 
