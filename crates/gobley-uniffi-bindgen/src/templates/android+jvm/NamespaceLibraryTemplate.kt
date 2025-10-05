@@ -124,10 +124,10 @@ internal object IntegrityCheckingUniffiLib : Library {
 // This is an implementation detail which will be called internally by the public API.
 internal object UniffiLib : Library {
     init {
-        IntegrityCheckingUniffiLib
         {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
         Native.register(object : Library {}::class.java, "{{ dynamic_library }}")
         {%- endfor %}
+        IntegrityCheckingUniffiLib
         Native.register(UniffiLib::class.java, findLibraryName("{{ ci.namespace() }}"))
         // No need to check the contract version and checksums, since 
         // we already did that with `IntegrityCheckingUniffiLib` above.
