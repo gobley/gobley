@@ -12,7 +12,7 @@ fn main() {
     gobley_fixture_build_common::generate_scaffolding_from_current_dir();
 
     // Build the dependency
-    let build_output_directory = PathBuf::from(env::var("OUT_DIR").unwrap()).join("the-dependency");
+    let target_dir = PathBuf::from(env::var("OUT_DIR").unwrap()).join("the-dependency");
     println!("cargo::rerun-if-changed=the-dependency/Cargo.toml");
     println!("cargo::rerun-if-changed=the-dependency/lib.rs");
     let command_output = Command::new(env::var("CARGO").unwrap())
@@ -24,7 +24,7 @@ fn main() {
         .arg("--target")
         .arg(env::var("TARGET").unwrap())
         .arg("--target-dir")
-        .arg(&build_output_directory)
+        .arg(&target_dir)
         .output()
         .expect("Failed to run cargo");
 
@@ -37,12 +37,10 @@ fn main() {
         )
     }
 
+    let build_output_directory = target_dir.join(env::var("TARGET").unwrap()).join("debug");
     let library_filename =
         get_library_filename("gobley_fixture_dynamic_library_dependencies_the_dependency");
-    let build_output = build_output_directory
-        .join(env::var("TARGET").unwrap())
-        .join("debug")
-        .join(&library_filename);
+    let build_output = build_output_directory.join(&library_filename);
 
     fs::copy(
         build_output,
@@ -51,7 +49,10 @@ fn main() {
     .unwrap();
 
     // Link the dependency
-    println!("cargo::rustc-link-search={}", env::var("OUT_DIR").unwrap());
+    println!(
+        "cargo::rustc-link-search={}",
+        build_output_directory.display()
+    );
 }
 
 fn get_library_filename(library_name: &str) -> String {
