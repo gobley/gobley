@@ -124,8 +124,10 @@ internal object IntegrityCheckingUniffiLib : Library {
 // This is an implementation detail which will be called internally by the public API.
 internal object UniffiLib : Library {
     init {
+        {%- if module_name == "jvm" %}
         // Ensure dynamic libraries are all unzipped in the same directory by JNA
         System.setProperty("jna.tmpdir", java.nio.file.Files.createTempDirectory("gobley-jna").toFile().absolutePath)
+        {%- endif %}
         {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
         Native.register(object : Library {}::class.java, "{{ dynamic_library }}")
         {%- endfor %}
