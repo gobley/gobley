@@ -46,6 +46,7 @@ if (ext.propertyIsTrue("gobley.projects.uniffiTests")) {
     include(":tests:uniffi:coverall-pure-kotlin-dep")
     include(":tests:uniffi:docstring")
     include(":tests:uniffi:docstring-proc-macro")
+    include(":tests:uniffi:dynamic-library-dependencies")
     include(":tests:uniffi:enum-types")
     include(":tests:uniffi:error-types")
     include(":tests:uniffi:keywords")

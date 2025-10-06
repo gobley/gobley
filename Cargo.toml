@@ -17,6 +17,8 @@ members = [
     "tests/uniffi/coverall-jvm",
     "tests/uniffi/docstring",
     "tests/uniffi/docstring-proc-macro",
+    "tests/uniffi/dynamic-library-dependencies",
+    "tests/uniffi/dynamic-library-dependencies/the-dependency",
     "tests/uniffi/enum-types",
     "tests/uniffi/error-types",
     "tests/uniffi/ext-types/custom-types",

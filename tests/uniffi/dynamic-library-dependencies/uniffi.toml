@@ -1,0 +1,1 @@
+dynamic_library_dependencies = ["gobley_fixture_dynamic_library_dependencies_the_dependency"]

@@ -932,6 +932,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gobley-fixture-dynamic-library-dependencies"
+version = "0.1.0"
+dependencies = [
+ "gobley-fixture-build-common",
+ "uniffi",
+]
+
+[[package]]
+name = "gobley-fixture-dynamic-library-dependencies-the-dependency"
+version = "0.1.0"
+
+[[package]]
 name = "gobley-fixture-enum-types"
 version = "0.1.0"
 dependencies = [

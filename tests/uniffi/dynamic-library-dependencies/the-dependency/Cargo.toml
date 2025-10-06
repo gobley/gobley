@@ -1,0 +1,10 @@
+[package]
+name = "gobley-fixture-dynamic-library-dependencies-the-dependency"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gobley_fixture_dynamic_library_dependencies_the_dependency"
+crate-type = ["cdylib"]
+path = "lib.rs"

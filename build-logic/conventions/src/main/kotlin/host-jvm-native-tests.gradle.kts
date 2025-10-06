@@ -13,13 +13,23 @@ plugins {
 apply<VersionCatalogPlugin>()
 val libs = extensions.getByName("libs") as LibrariesForLibs
 
+fun Project.propertyIsTrue(propertyName: String, default: Boolean = true): Boolean {
+    if (!hasProperty(propertyName)) return default
+    val propertyValue = findProperty(propertyName)?.toString()?.lowercase() ?: return default
+    return propertyValue == "true" || propertyValue == "1"
+}
+
 kotlin {
-    jvmToolchain(17)
-    jvm()
-    hostNativeTarget {
-        if (GobleyHost.Platform.Windows.isCurrent) {
-            compilations.getByName("test") {
-                useRustUpLinker()
+    if (propertyIsTrue("gobley.projects.jvmTests")) {
+        jvmToolchain(17)
+        jvm()
+    }
+    if (propertyIsTrue("gobley.projects.nativeTests")) {
+        hostNativeTarget {
+            if (GobleyHost.Platform.Windows.isCurrent) {
+                compilations.getByName("test") {
+                    useRustUpLinker()
+                }
             }
         }
     }
