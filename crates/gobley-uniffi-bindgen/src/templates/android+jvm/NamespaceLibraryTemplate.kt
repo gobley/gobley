@@ -123,14 +123,127 @@ internal object IntegrityCheckingUniffiLib : Library {
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 internal object UniffiLib : Library {
+    {%- let dynamic_library_dependencies = config.dynamic_library_dependencies(module_name) %}
+    {%- if !dynamic_library_dependencies.is_empty() %}
+    {%- if module_name == "jvm" %}
+    // Dynamic library dependency loading code.
+    //
+    // Load dynamic libraries that the main Rust library depends on. They may
+    // reside inside a .jar file, or already be installed in the file system.
+    // The reason for this custom handling is that JNA copies the extracted
+    // library to a temporary file with a random name, resulting in a dynamic
+    // link error on Windows. This logic ensures that the destination temporary
+    // file has the same base name as the original library file in the JAR file.
+    //
+    // First, try loading the library without searching the directories
+    // specified in CLASSPATH.
+    @Suppress("SameParameterValue")
+    private fun loadDynamicLibraryDependencies(vararg dependencies: String) {
+        val nilClasspathClassLoader = java.net.URLClassLoader(emptyArray(), Any::class.java.classLoader)
+        val dependenciesRequiringExtraction = mutableListOf<String>()
+        for (dependency in dependencies) {
+            try {
+                com.sun.jna.NativeLibrary.getInstance(dependency, nilClasspathClassLoader)
+            } catch (_: UnsatisfiedLinkError) {
+                dependenciesRequiringExtraction.add(dependency)
+            }
+        }
+        loadDynamicLibraryDependenciesByExtraction(dependenciesRequiringExtraction, nilClasspathClassLoader)
+    }
+
+    // Second, try extracting the library from a .jar file.
+    private fun loadDynamicLibraryDependenciesByExtraction(
+        dependencies: List<String>,
+        nilClasspathClassLoader: ClassLoader,
+    ) {
+        if (dependencies.isEmpty()) return
+        // The directory where the dynamic library dependencies in zipped JAR files will be extracted
+        val extractionDestination = java.nio.file.Files.createTempDirectory("gobley-jna").toFile()
+        val classLoader = UniffiLib::class.java.classLoader!!
+        val dependenciesRequiringJnaHandling = mutableListOf<String>()
+        for (dependency in dependencies) {
+            val libraryFile = findLibraryInClassPath(dependency, classLoader, extractionDestination)
+            if (libraryFile == null) {
+                dependenciesRequiringJnaHandling.add(dependency)
+                continue
+            }
+            try {
+                com.sun.jna.NativeLibrary.addSearchPath(
+                    dependency,
+                    libraryFile.parentFile.absolutePath,
+                )
+                com.sun.jna.NativeLibrary.getInstance(
+                    dependency,
+                    nilClasspathClassLoader,
+                )
+            } catch (_: UnsatisfiedLinkError) {
+                dependenciesRequiringJnaHandling.add(dependency)
+            }
+        }
+        // Lastly, if all the logic above fails, try loading the library using JNA.
+        for (dependency in dependenciesRequiringJnaHandling) {
+            com.sun.jna.NativeLibrary.getInstance(dependency)
+        }
+    }
+
+    private fun findLibraryInClassPath(
+        library: String,
+        classLoader: ClassLoader,
+        extractionDestination: java.io.File,
+    ): java.io.File? {
+        var libraryName = System.mapLibraryName(library)
+        if (com.sun.jna.Platform.isMac()) {
+            if (libraryName.endsWith(".jnilib")) {
+                libraryName = libraryName.removeSuffix(".jnilib") + ".dylib"
+            }
+        }
+        val resourcePath = "${com.sun.jna.Platform.RESOURCE_PREFIX}/$libraryName"
+        var url = classLoader.getResource(resourcePath)
+        if (com.sun.jna.Platform.isMac() && url == null) {
+            url = classLoader.getResource("darwin/$libraryName")
+        }
+        if (url == null) {
+            url = classLoader.getResource(libraryName)
+        }
+        if (url == null) {
+            return null
+        }
+        if (url.protocol.equals("file", ignoreCase = true)) {
+            val file = try {
+                java.io.File(url.toURI())
+            } catch (_: java.net.URISyntaxException) {
+                java.io.File(url.path)
+            }
+            return file.takeIf { it.exists() }
+        }
+        val destination = extractionDestination.resolve(resourcePath).apply {
+            parentFile?.mkdirs()
+            deleteOnExit()
+        }
+        url.openStream().use { inputStream ->
+            destination.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        return destination
+    }
+    {%- else %}
+    private fun loadDynamicLibraryDependencies(vararg dependencies: String) {
+        for (dependency in dependencies) {
+            com.sun.jna.NativeLibrary.getInstance(dependency)
+        }
+    }
+    {%- endif %}
+    {%- endif %}
+
     init {
-        {%- if module_name == "jvm" %}
-        // Ensure dynamic libraries are all unzipped in the same directory by JNA
-        System.setProperty("jna.tmpdir", java.nio.file.Files.createTempDirectory("gobley-jna").toFile().absolutePath)
+        {%- if !dynamic_library_dependencies.is_empty() %}
+        loadDynamicLibraryDependencies(
+            {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
+            "{{ dynamic_library }}",
+            {%- endfor %}
+        )
         {%- endif %}
-        {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
-        Native.register(object : Library {}::class.java, "{{ dynamic_library }}")
-        {%- endfor %}
         IntegrityCheckingUniffiLib
         Native.register(UniffiLib::class.java, findLibraryName("{{ ci.namespace() }}"))
         // No need to check the contract version and checksums, since 
