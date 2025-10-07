@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.7...HEAD)
 
-## [0.3.7](https://github.com/gobley/gobley/releases/tag/v0.3.7) - 2025-10-06
+## [0.3.7](https://github.com/gobley/gobley/releases/tag/v0.3.7) - 2025-10-08
 
 ### Fixes
 
