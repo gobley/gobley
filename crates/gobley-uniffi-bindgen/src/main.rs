@@ -53,6 +53,10 @@ struct Cli {
     #[clap(long = "format", default_value_t = false)]
     try_format_code: bool,
 
+    /// Override the `kotlin_multiplatform` field in the config and set it to `false`.
+    #[clap(long = "no-multiplatform")]
+    no_multiplatform: bool,
+
     /// Path to the UDL file, or cdylib if `library-mode` is specified.
     source: Utf8PathBuf,
 }
@@ -120,9 +124,12 @@ fn main() -> anyhow::Result<()> {
         crate_name,
         source,
         try_format_code,
+        no_multiplatform,
     } = Cli::parse();
 
-    let binding_generator = KotlinBindingGenerator;
+    let binding_generator = KotlinBindingGenerator {
+        multiplatform: no_multiplatform.then_some(false),
+    };
 
     if library_mode {
         if lib_file.is_some() {

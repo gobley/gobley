@@ -102,10 +102,10 @@ pub enum ConfigKotlinTarget {
 pub struct Config {
     pub(super) package_name: Option<String>,
     pub(super) cdylib_name: Option<String>,
-    #[serde(default)]
+    #[serde(default = "Config::default_kotlin_multiplatform")]
     pub(super) kotlin_multiplatform: bool,
     #[serde(default)]
-    kotlin_targets: Vec<ConfigKotlinTarget>,
+    pub(super) kotlin_targets: Vec<ConfigKotlinTarget>,
     generate_immutable_records: Option<bool>,
     #[serde(default)]
     omit_checksums: bool,
@@ -126,6 +126,12 @@ pub struct Config {
     android_dynamic_library_dependencies: Vec<String>,
     #[serde(default)]
     dynamic_library_dependencies: Vec<String>,
+}
+
+impl Config {
+    fn default_kotlin_multiplatform() -> bool {
+        true
+    }
 }
 
 // TODO: Make this public in 0.4.0
@@ -183,6 +189,21 @@ impl Config {
             .as_ref()
             .expect("cdylib name should have been set in update_component_configs")
             .clone()
+    }
+
+    /// Get kotlin_targets with defaults when kotlin_multiplatform is enabled
+    pub(crate) fn kotlin_targets(&self) -> Vec<ConfigKotlinTarget> {
+        if self.kotlin_targets.is_empty() && self.kotlin_multiplatform {
+            // Default to common KMP targets when multiplatform is enabled
+            vec![
+                ConfigKotlinTarget::Jvm,
+                ConfigKotlinTarget::Android,
+                ConfigKotlinTarget::Native,
+                ConfigKotlinTarget::Stub,
+            ]
+        } else {
+            self.kotlin_targets.clone()
+        }
     }
 
     /// Whether to generate immutable records (`val` instead of `var`)
@@ -287,7 +308,7 @@ pub fn generate_bindings(
         f: impl FnOnce() -> Result<String>,
     ) -> Result<Option<String>> {
         config
-            .kotlin_targets
+            .kotlin_targets()
             .contains(&target)
             .then(f)
             .map_or(Ok(None), |v| v.map(Some))

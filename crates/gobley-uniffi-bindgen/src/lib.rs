@@ -14,12 +14,38 @@ use uniffi_bindgen::{BindingGenerator, Component, ComponentInterface, Generation
 mod gen_kotlin_multiplatform;
 use gen_kotlin_multiplatform::{generate_bindings, Config};
 
-pub struct KotlinBindingGenerator;
+#[derive(Default)]
+pub struct KotlinBindingGenerator {
+    pub multiplatform: Option<bool>,
+}
+
+impl KotlinBindingGenerator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_multiplatform(mut self, enabled: bool) -> Self {
+        self.multiplatform = Some(enabled);
+        self
+    }
+}
+
 impl BindingGenerator for KotlinBindingGenerator {
     type Config = Config;
 
     fn new_config(&self, root_toml: &toml::value::Value) -> Result<Self::Config> {
-        Ok(root_toml.clone().try_into()?)
+        let Some(config) = root_toml.get("bindings").and_then(|b| b.get("kotlin")) else {
+            return Ok(Config::default());
+        };
+
+        let mut config: Config = config.clone().try_into()?;
+
+        // Override with CLI flags if provided
+        if let Some(multiplatform) = self.multiplatform {
+            config.kotlin_multiplatform = multiplatform;
+        }
+
+        Ok(config)
     }
 
     fn update_component_configs(

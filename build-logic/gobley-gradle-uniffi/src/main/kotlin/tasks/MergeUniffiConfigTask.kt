@@ -107,25 +107,23 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
 
     @TaskAction
     fun mergeConfig() {
-        val originalConfig = originalConfig.orNull?.asFile?.let(::Config) ?: Config()
-        val result = originalConfig.copy(
-            // Properties read by the Gradle plugins
-            crateName = crateName.orNull,
-            packageRoot = packageRoot.orNull,
-            // Properties read by the bindgen
-            packageName = originalConfig.packageName ?: packageName.orNull,
-            cdylibName = originalConfig.cdylibName ?: cdylibName.orNull,
-            kotlinMultiplatform = originalConfig.kotlinMultiplatform ?: kotlinMultiplatform.orNull,
+        val originalConfig = originalConfig.orNull?.asFile?.let(::Config)
+        val originalKotlinConfig = originalConfig?.kotlinConfig
+        val kotlinConfig = Config.KotlinConfig(
+            packageName = originalKotlinConfig?.packageName ?: packageName.orNull,
+            cdylibName = originalKotlinConfig?.cdylibName ?: cdylibName.orNull,
+            kotlinMultiplatform = originalKotlinConfig?.kotlinMultiplatform
+                ?: kotlinMultiplatform.orNull,
             kotlinTargets = mergeSet(
-                originalConfig.kotlinTargets,
+                originalKotlinConfig?.kotlinTargets,
                 kotlinTargets.orNull,
             ),
-            generateImmutableRecords = originalConfig.generateImmutableRecords
+            generateImmutableRecords = originalKotlinConfig?.generateImmutableRecords
                 ?: generateImmutableRecords.orNull,
-            omitChecksums = originalConfig.omitChecksums
+            omitChecksums = originalKotlinConfig?.omitChecksums
                 ?: omitChecksums.orNull,
             customTypes = mergeMap(
-                originalConfig.customTypes,
+                originalKotlinConfig?.customTypes,
                 customTypes.map {
                     it.mapValues { entry ->
                         Config.CustomType(
@@ -138,31 +136,43 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
                 }.orNull,
             ),
             externalPackages = mergeMap(
-                originalConfig.externalPackages,
+                originalKotlinConfig?.externalPackages,
                 externalPackageConfigs.orNull?.let(::retrieveExternalPackageNames),
             ),
-            kotlinTargetVersion = originalConfig.kotlinTargetVersion
+            kotlinTargetVersion = originalKotlinConfig?.kotlinTargetVersion
                 ?: kotlinVersion.orNull?.takeIf { it.isNotBlank() },
-            disableJavaCleaner = originalConfig.disableJavaCleaner
+            disableJavaCleaner = originalKotlinConfig?.disableJavaCleaner
                 ?: disableJavaCleaner.orNull,
-            generateSerializableTypes = originalConfig.generateSerializableTypes
+            generateSerializableTypes = originalKotlinConfig?.generateSerializableTypes
                 ?: useKotlinXSerialization.orNull,
-            usePascalCaseEnumClass = originalConfig.usePascalCaseEnumClass
+            usePascalCaseEnumClass = originalKotlinConfig?.usePascalCaseEnumClass
                 ?: usePascalCaseEnumClass.orNull,
             jvmDynamicLibraryDependencies = mergeSet(
-                originalConfig.jvmDynamicLibraryDependencies,
+                originalKotlinConfig?.jvmDynamicLibraryDependencies,
                 jvmDynamicLibraryDependencies.orNull,
             ),
             androidDynamicLibraryDependencies = mergeSet(
-                originalConfig.androidDynamicLibraryDependencies,
+                originalKotlinConfig?.androidDynamicLibraryDependencies,
                 androidDynamicLibraryDependencies.orNull,
             ),
             dynamicLibraryDependencies = mergeSet(
-                originalConfig.dynamicLibraryDependencies,
+                originalKotlinConfig?.dynamicLibraryDependencies,
                 dynamicLibraryDependencies.orNull,
-            )
+            ),
         )
-        outputConfig.get().asFile.writeText(toml.encodeToString(result), Charsets.UTF_8)
+        val result = (originalConfig ?: Config()).copy(
+            // Properties read by the Gradle plugins
+            crateName = crateName.orNull,
+            packageRoot = packageRoot.orNull,
+            // Properties read by the bindgen
+            bindings = Config.Bindings(
+                kotlinConfig = kotlinConfig,
+            ),
+        )
+        outputConfig.get().asFile.writeText(
+            toml.encodeToString(result),
+            Charsets.UTF_8,
+        )
     }
 
     private fun retrieveExternalPackageNames(
@@ -172,13 +182,14 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
         for (configFile in externalPackageConfigs) {
             val config = Config(configFile)
             val crateName = config.crateName ?: continue
+            val kotlinConfig = config.kotlinConfig ?: continue
             if (!result.contains(crateName)) {
-                if (config.packageName != null) {
-                    result[crateName] = config.packageName
+                if (kotlinConfig.packageName != null) {
+                    result[crateName] = kotlinConfig.packageName
                 }
             }
-            if (config.externalPackages != null) {
-                for ((externalCrateName, externalPackageName) in config.externalPackages) {
+            if (kotlinConfig.externalPackages != null) {
+                for ((externalCrateName, externalPackageName) in kotlinConfig.externalPackages) {
                     if (!result.contains(externalCrateName)) {
                         result[externalCrateName] = externalPackageName
                     }
