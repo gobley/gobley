@@ -242,6 +242,8 @@ internal object UniffiLib : Library {
             {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
             "{{ dynamic_library }}",
             {%- endfor %}
+            // Load the main library as well
+            findLibraryName("{{ ci.namespace() }}"),
         )
         {%- endif %}
         IntegrityCheckingUniffiLib
