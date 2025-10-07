@@ -15,5 +15,8 @@ uniffi = { workspace = true }
 [build-dependencies]
 gobley-fixture-build-common = { path = "../../build-common" }
 
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))'.build-dependencies]
+tempdir = "0.3"
+
 [features]
 static = []
