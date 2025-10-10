@@ -24,9 +24,12 @@ data class AppleSdk(val destination: Destination, val version: String) {
         WatchOSSimulator("watchsimulator"),
     }
 
+    @Suppress("EnumEntryName")
     enum class Arch(val actualName: String) {
         Arm64("arm64"),
         Arm64e("arm64e"),
+        Armv7k("armv7k"),
+        Arm64_32("arm64_32"),
         X86("i386"),
         X64("x86_64"),
     }
