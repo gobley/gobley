@@ -10,6 +10,7 @@ import gobley.gradle.rust.targets.RustAppleMobileTarget
 import gobley.gradle.rust.targets.RustPosixTarget
 import gobley.gradle.rust.targets.RustTarget
 
+@InternalGobleyGradleApi
 data class AppleSdk(val destination: Destination, val version: String) {
     enum class Destination(val actualName: String) {
         Ios("iphoneos"),
@@ -51,13 +52,17 @@ data class AppleSdk(val destination: Destination, val version: String) {
 }
 
 private val sdkNameRegex = Regex("([a-z]+)([0-9.]+)")
+
+@InternalGobleyGradleApi
 private fun tryGetAppleSdk(sdkName: String): AppleSdk? {
     val match = sdkNameRegex.matchEntire(sdkName) ?: return null
     val destinationName = match.groups[1]?.value ?: return null
-    val destination = AppleSdk.Destination.entries.firstOrNull { it.actualName == destinationName } ?: return null
+    val destination =
+        AppleSdk.Destination.entries.firstOrNull { it.actualName == destinationName } ?: return null
     return AppleSdk(destination, match.groups[2]?.value ?: return null)
 }
 
+@InternalGobleyGradleApi
 fun AppleSdk(sdkName: String): AppleSdk {
     return tryGetAppleSdk(sdkName) ?: throw IllegalArgumentException("Invalid SDK name: $sdkName")
 }

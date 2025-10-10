@@ -231,6 +231,7 @@ class CargoPlugin : Plugin<Project> {
         }
     }
 
+    @OptIn(InternalGobleyGradleApi::class)
     private fun readVariantsFromXcode() {
         val sdkName = System.getenv("SDK_NAME") ?: return
         val sdk = AppleSdk(sdkName)
@@ -238,7 +239,7 @@ class CargoPlugin : Plugin<Project> {
         val configuration = System.getenv("CONFIGURATION") ?: return
         val variant = Variant(configuration)
 
-        val archs = System.getenv("ARCHS")?.split(' ')?.map(AppleSdk.Companion::Arch) ?: return
+        val archs = System.getenv("ARCHS")?.split(' ')?.map(AppleSdk::Arch) ?: return
         cargoExtension.nativeTargetVariantOverride.putAll(
             archs.mapNotNull(sdk::rustTarget).associateWith { variant })
     }
