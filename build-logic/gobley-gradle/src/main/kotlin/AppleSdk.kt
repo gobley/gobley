@@ -45,11 +45,19 @@ data class AppleSdk(val destination: Destination, val version: String) {
             Arch.entries.first { it.actualName == actualName }
 
         private val rustTargetsByDestinationArch = mapOf<Pair<Destination, Arch>, RustTarget>(
+            (Destination.MacOS to Arch.Arm64) to RustPosixTarget.MacOSArm64,
+            (Destination.MacOS to Arch.X64) to RustPosixTarget.MacOSX64,
             (Destination.Ios to Arch.Arm64) to RustAppleMobileTarget.IosArm64,
             (Destination.IosSimulator to Arch.Arm64) to RustAppleMobileTarget.IosSimulatorArm64,
             (Destination.IosSimulator to Arch.X64) to RustAppleMobileTarget.IosX64,
-            (Destination.MacOS to Arch.Arm64) to RustPosixTarget.MacOSArm64,
-            (Destination.MacOS to Arch.X64) to RustPosixTarget.MacOSX64
+            (Destination.TvOS to Arch.Arm64) to RustAppleMobileTarget.TvOsArm64,
+            (Destination.TvOSSimulator to Arch.Arm64) to RustAppleMobileTarget.TvOsSimulatorArm64,
+            (Destination.TvOSSimulator to Arch.X64) to RustAppleMobileTarget.TvOsX64,
+            (Destination.WatchOS to Arch.Arm64) to RustAppleMobileTarget.WatchOsDeviceArm64,
+            (Destination.WatchOS to Arch.Arm64_32) to RustAppleMobileTarget.WatchOsArm64,
+            (Destination.WatchOS to Arch.Armv7k) to RustAppleMobileTarget.WatchOsArm32,
+            (Destination.WatchOSSimulator to Arch.Arm64) to RustAppleMobileTarget.WatchOsSimulatorArm64,
+            (Destination.WatchOSSimulator to Arch.X64) to RustAppleMobileTarget.WatchOsX64,
         )
     }
 }
