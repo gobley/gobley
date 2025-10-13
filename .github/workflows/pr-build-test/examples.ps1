@@ -45,24 +45,30 @@ if ($IsMacOS) {
         $xcodeSchemes = switch ($testName) {
             "app" {
                 @(
+                    @{ Name = "ExamplesApp (iOS)"; Sdk = "iphoneos" },
                     @{ Name = "ExamplesApp (iOS)"; Sdk = "iphonesimulator" },
                     @{ Name = "ExamplesApp (macOS)"; Sdk = "macosx" },
+                    @{ Name = "ExamplesApp (tvOS)"; Sdk = "appletvos" },
                     @{ Name = "ExamplesApp (tvOS)"; Sdk = "appletvsimulator" },
+                    @{ Name = "ExamplesApp (watchOS)"; Sdk = "watchos" },
                     @{ Name = "ExamplesApp (watchOS)"; Sdk = "watchsimulator" }
                 )
             }
             "audioCppApp" {
                 @(
+                    @{ Name = "AudioCppApp"; Sdk = "iphoneos" },
                     @{ Name = "AudioCppApp"; Sdk = "iphonesimulator" }
                 )
             }
             "tokioBlake3App" {
                 @(
+                    @{ Name = "TokioBlake3App"; Sdk = "iphoneos" },
                     @{ Name = "TokioBlake3App"; Sdk = "iphonesimulator" }
                 )
             }
             "tokioBoringApp" {
                 @(
+                    @{ Name = "TokioBoringApp"; Sdk = "iphoneos" },
                     @{ Name = "TokioBoringApp"; Sdk = "iphonesimulator" }
                 )
             }
@@ -72,7 +78,8 @@ if ($IsMacOS) {
             xcodebuild `
                 -sdk $xcodeScheme.Sdk `
                 -workspace "examples/Examples.xcworkspace" `
-                -scheme $xcodeScheme.Name;
+                -scheme $xcodeScheme.Name `
+                CODE_SIGNING_ALLOWED=NO;
         }
     }
 }
