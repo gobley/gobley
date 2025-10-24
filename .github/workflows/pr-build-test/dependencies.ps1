@@ -14,9 +14,24 @@ if ($IsWindows) {
 } elseif ($IsMacOS) {
     brew update;
     brew install mingw-w64;
-    # Workaround for #205
-    rustup install nightly;
-    rustup component add rust-src --toolchain nightly;
+
+    # Workaround for #205 and #206.
+    # Manually install nightly Rust for watchOS and tvOS.
+    # To fix the nightly toolchain to a specific version, remove the pre-installed one.
+    rustup uninstall nightly;
+    # Install 1.84.0-nightly (798fb83f7 2024-10-16).
+    $version = "nightly-2024-10-17";
+    $osArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture;
+    $rustTriplet = switch ($osArch) {
+        "X64" { "x86_64-apple-darwin" }
+        "Arm64" { "aarch64-apple-darwin" }
+        default { $null }
+    };
+    rustup install $version;
+    rustup component add rust-src --toolchain $version;
+    # Use the version-fixed nightly as the default nightly toolchain.
+    ln -s "$HOME/.rustup/toolchains/$version-$rustTriplet" "$HOME/.rustup/toolchains/nightly-$rustTriplet";
+    Remove-Variable version;
 } elseif ($IsLinux) {
     sudo apt-get update;
     sudo apt-get install -y mingw-w64;
