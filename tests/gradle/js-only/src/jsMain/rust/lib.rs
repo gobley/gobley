@@ -111,8 +111,30 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+pub fn check_module_exported_constants() {
+    A.with(|&a| assert_eq!(a, 1));
+    B.with(|b| assert_eq!(b, "hello"));
+    D.with(|&d| assert_eq!(d, 3));
+    E.with(|e| assert_eq!(*e, [4, 5]));
+}
+
+#[wasm_bindgen(inline_js = "
+    export const a = 1, [b, { c: d }, ...e] = ['hello', { c: 3 }, 4, 5];
+")]
+extern "C" {
+    #[wasm_bindgen(thread_local_v2, js_name = a)]
+    static A: i32;
+    #[wasm_bindgen(thread_local_v2, js_name = b)]
+    static B: String;
+    #[wasm_bindgen(thread_local_v2, js_name = d)]
+    static D: i32;
+    #[wasm_bindgen(thread_local_v2, js_name = e)]
+    static E: Vec<i32>;
+}
+
+#[wasm_bindgen]
 pub struct Foo {
-    contents: u32,
+    contents: i32,
 }
 
 #[wasm_bindgen]
@@ -123,7 +145,15 @@ impl Foo {
         Foo { contents: 0 }
     }
 
-    pub fn get_contents(&self) -> u32 {
+    pub fn increment(&mut self) {
+        self.contents += 1;
+    }
+
+    pub fn decrement(&mut self) {
+        self.contents -= 1;
+    }
+
+    pub fn get_contents(&self) -> i32 {
         self.contents
     }
 }

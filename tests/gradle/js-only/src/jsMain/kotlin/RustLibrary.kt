@@ -85,4 +85,25 @@ object RustLibrary {
             RustWebAssemblyImports.Import_gradle_function_imports.tblIdx_kotlin_side_function_2,
         )
     }
+
+    fun addUsingWasmBindgen(lhs: Int, rhs: Int): Int {
+        return instance.exports.my_wb_add(lhs, rhs)
+    }
+
+    fun callOutsideFunctionsUsingWasmBindgen() {
+        return instance.exports.call_outside_functions()
+    }
+
+    fun addUsingWasmBindgenJsDelegated(lhs: Int, rhs: Int): Int {
+        return instance.exports.add_using_js_delegated(lhs, rhs)
+    }
+
+    fun checkWasmBindgenCanImportVariables() {
+        return instance.exports.check_module_exported_constants()
+    }
+
+    fun createFoo(): dynamic {
+        val foo = wasmBindgenRequireStem().Foo
+        return js("""new foo()""")
+    }
 }
