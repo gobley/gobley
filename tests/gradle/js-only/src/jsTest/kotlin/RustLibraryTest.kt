@@ -41,4 +41,46 @@ class RustLibraryTest {
                 (RustLibrary.theKotlinFunctionCalledAsFunctionPointer1(15, 23.0f)
                         * RustLibrary.theKotlinFunctionCalledAsFunctionPointer2(9))
     }
+
+    @Test
+    fun addUsingWasmBindgenTest() {
+        RustLibrary.addUsingWasmBindgen(3, 5) shouldBe 8
+        RustLibrary.addUsingWasmBindgen(2, 7) shouldBe 9
+    }
+
+    @Test
+    fun callOutsideFunctionsUsingWasmBindgenTest() {
+        RustLibrary.callOutsideFunctionsUsingWasmBindgen()
+    }
+
+    @Test
+    fun addUsingWasmBindgenJsDelegatedTest() {
+        RustLibrary.addUsingWasmBindgenJsDelegated(3, 5) shouldBe 8
+        RustLibrary.addUsingWasmBindgenJsDelegated(2, 7) shouldBe 9
+    }
+
+    @Test
+    fun checkWasmBindgenCanImportVariablesTest() {
+        RustLibrary.checkWasmBindgenCanImportVariables()
+    }
+
+    @Test
+    fun classUsingWasmBindgenTest() {
+        val foo = RustLibrary.createFoo()
+        try {
+            (foo.get_contents(foo) as Int) shouldBe 0
+            foo.increment(foo)
+            (foo.get_contents(foo) as Int) shouldBe 1
+            foo.increment(foo)
+            (foo.get_contents(foo) as Int) shouldBe 2
+            foo.decrement(foo)
+            (foo.get_contents(foo) as Int) shouldBe 1
+            foo.decrement(foo)
+            (foo.get_contents(foo) as Int) shouldBe 0
+            foo.decrement(foo)
+            (foo.get_contents(foo) as Int) shouldBe -1
+        } finally {
+            foo.free()
+        }
+    }
 }
