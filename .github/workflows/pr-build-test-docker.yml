@@ -44,6 +44,8 @@ jobs:
           docker build -t $BUILD_IMAGE -f ./.github/workflows/dependency-image.Dockerfile .
         env:
           BUILD_IMAGE: ${{ needs.build-image.outputs.build-image }}
+      - name: Show space left before running the test
+        run: df -h
       - name: Run tests in container
         run: |
           docker run --rm \
@@ -52,6 +54,9 @@ jobs:
             -e GOBLEY_PR_BUILD_TEST_USER="$(id -u):$(id -g)" \
             ${{ needs.build-image.outputs.build-image }} \
             /usr/bin/pwsh -c ./.github/workflows/pr-build-test/${{ matrix.test-name }}.ps1
+      - name: Show space left after running the test
+        if: always()
+        run: df -h
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: ${{ matrix.test-name != 'cargo-tests' && (success() || failure()) }}
