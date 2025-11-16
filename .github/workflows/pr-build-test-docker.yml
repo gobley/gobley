@@ -16,7 +16,8 @@ jobs:
   build-and-test:
     name: Build and run tests in Docker
     timeout-minutes: 120
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: pull-251-linux-large
     needs: build-image
     strategy:
       fail-fast: false
