@@ -1,6 +1,10 @@
 name: Build and run tests
 
 on:
+  push:
+    branches: [ "main*" ]
+  pull_request:
+    branches: [ "main*" ]
   schedule:
     - cron: "0 20 * * 3"
   workflow_dispatch:
@@ -39,21 +43,28 @@ jobs:
         shell: pwsh
         run: |
           $eventName = "${{ github.event_name }}";
-          if ($eventName -eq "schedule") {
-            $platforms = @("windows", "macos", "macos-intel", "linux");
-          } else {
-            $platforms = @();
-            if ("${{ github.event.inputs['run-windows-tests'] || 'false' }}" -eq "true") { $platforms += "windows"; }
-            if ("${{ github.event.inputs['run-macos-tests'] || 'false' }}" -eq "true") { $platforms += "macos"; }
-            if ("${{ github.event.inputs['run-macos-intel-tests'] || 'false' }}" -eq "true") { $platforms += "macos-intel"; }
-            if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $platforms += "linux"; }
+          switch ($eventName) {
+            "schedule" {
+              $platforms = @("windows", "macos", "macos-intel", "linux");
+            }
+            "workflow_dispatch" {
+              $platforms = @();
+              if ("${{ github.event.inputs['run-windows-tests'] || 'false' }}" -eq "true") { $platforms += "windows"; }
+              if ("${{ github.event.inputs['run-macos-tests'] || 'false' }}" -eq "true") { $platforms += "macos"; }
+              if ("${{ github.event.inputs['run-macos-intel-tests'] || 'false' }}" -eq "true") { $platforms += "macos-intel"; }
+              if ("${{ github.event.inputs['run-linux-tests'] || 'false' }}" -eq "true") { $platforms += "linux"; }
+            }
+            default {
+              $platforms = @("windows", "macos");
+            }
           }
           $platformsJson = $platforms | ConvertTo-Json -Compress -AsArray;
           $runnersJson = @{
             windows = "windows-latest";
             macos = "macos-latest";
             "macos-intel" = "macos-15-intel";
-            linux = "ubuntu-latest";
+            # linux = "ubuntu-latest";
+            linux = "pull-251-linux-large";
           } | ConvertTo-Json -Compress;
           "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
           "runners=$runnersJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
