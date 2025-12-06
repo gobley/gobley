@@ -63,8 +63,7 @@ jobs:
             windows = "windows-latest";
             macos = "macos-latest";
             "macos-intel" = "macos-15-intel";
-            # linux = "ubuntu-latest";
-            linux = "pull-251-linux-large";
+            linux = "ubuntu-latest-x64-large-4";
           } | ConvertTo-Json -Compress;
           "platforms=$platformsJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
           "runners=$runnersJson" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append;
