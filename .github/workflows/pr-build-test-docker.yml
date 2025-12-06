@@ -3,6 +3,7 @@ name: Build and run tests in Docker
 on:
   schedule:
     - cron: "0 20 * * 3"
+  workflow_dispatch: {}
 
 jobs:
   build-image:
