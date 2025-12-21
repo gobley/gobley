@@ -13,7 +13,7 @@ import coverall.EmptyStruct
 import coverall.FalliblePatch
 import coverall.Getters
 import coverall.InternalException
-import coverall.NoPointer
+import coverall.NoHandle
 import coverall.Node
 import coverall.NodeTrait
 import coverall.OtherError
@@ -465,12 +465,11 @@ class CoverallTest {
             traits[1].name() shouldBe "node-2"
             traits[1].strongCount() shouldBe 2UL
 
-            // Note: this doesn't increase the Rust strong count, since we wrap the Rust impl with a
-            // Swift impl before passing it to `setParent()`
+            // Note: this increases the Rust strong count, since setParent stores a reference
             traits[0].setParent(traits[1])
             ancestorNames(traits[0]) shouldBe listOf("node-2")
             ancestorNames(traits[1]).isEmpty() shouldBe true
-            traits[1].strongCount() shouldBe 2UL
+            traits[1].strongCount() shouldBe 3UL
             traits[0].getParent()!!.name() shouldBe "node-2"
 
             val ktNode = KotlinNode()
@@ -581,11 +580,11 @@ class CoverallTest {
         runGCWithDelay()
     }
 
-    class FakePatch(private val color: Color) : Patch(NoPointer) {
+    class FakePatch(private val color: Color) : Patch(NoHandle) {
         override fun getColor(): Color = color
     }
 
-    class FakeCoveralls(private val name: String) : Coveralls(NoPointer) {
+    class FakeCoveralls(private val name: String) : Coveralls(NoHandle) {
         private val repairs = mutableListOf<Repair>()
 
         override fun addPatch(patch: Patch) {

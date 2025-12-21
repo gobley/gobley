@@ -5,8 +5,7 @@
  */
 
 use anyhow::{bail, Result};
-use uniffi_bindgen::backend::Literal;
-use uniffi_bindgen::interface::{ComponentInterface, Radix, Type};
+use uniffi_bindgen::interface::{ComponentInterface, DefaultValue, Literal, Radix, Type};
 
 use super::{CodeType, Config};
 
@@ -51,12 +50,12 @@ fn render_literal(literal: &Literal, _ci: &ComponentInterface) -> Result<String>
         ),
         Literal::Float(string, type_) => typed_number(type_, string.clone()),
 
-        _ => bail!("Invalid literal: {literal:?}"),
+        _ => bail!("Invalid literal {literal:?}"),
     }
 }
 
 macro_rules! impl_code_type_for_primitive {
-    ($T:ident, $class_name:literal) => {
+    ($T:ident, $class_name:literal, $def:literal) => {
         #[derive(Debug)]
         pub struct $T;
 
@@ -69,28 +68,26 @@ macro_rules! impl_code_type_for_primitive {
                 $class_name.into()
             }
 
-            fn literal(
-                &self,
-                literal: &Literal,
-                ci: &ComponentInterface,
-                _config: &Config,
-            ) -> Result<String> {
-                render_literal(&literal, ci)
+            fn default(&self, default: &DefaultValue, ci: &ComponentInterface, _config: &Config) -> Result<String> {
+                match default {
+                    DefaultValue::Default => Ok($def.into()),
+                    DefaultValue::Literal(literal) => render_literal(&literal, ci),
+                }
             }
         }
     };
 }
 
-impl_code_type_for_primitive!(BooleanCodeType, "Boolean");
-impl_code_type_for_primitive!(StringCodeType, "String");
-impl_code_type_for_primitive!(BytesCodeType, "ByteArray");
-impl_code_type_for_primitive!(Int8CodeType, "Byte");
-impl_code_type_for_primitive!(Int16CodeType, "Short");
-impl_code_type_for_primitive!(Int32CodeType, "Int");
-impl_code_type_for_primitive!(Int64CodeType, "Long");
-impl_code_type_for_primitive!(UInt8CodeType, "UByte");
-impl_code_type_for_primitive!(UInt16CodeType, "UShort");
-impl_code_type_for_primitive!(UInt32CodeType, "UInt");
-impl_code_type_for_primitive!(UInt64CodeType, "ULong");
-impl_code_type_for_primitive!(Float32CodeType, "Float");
-impl_code_type_for_primitive!(Float64CodeType, "Double");
+impl_code_type_for_primitive!(BooleanCodeType, "Boolean", "false");
+impl_code_type_for_primitive!(StringCodeType, "String", "\"\"");
+impl_code_type_for_primitive!(BytesCodeType, "ByteArray", "byteArrayOf()");
+impl_code_type_for_primitive!(Int8CodeType, "Byte", "0.toByte()");
+impl_code_type_for_primitive!(Int16CodeType, "Short", "0");
+impl_code_type_for_primitive!(Int32CodeType, "Int", "0");
+impl_code_type_for_primitive!(Int64CodeType, "Long", "0L");
+impl_code_type_for_primitive!(UInt8CodeType, "UByte", "0U");
+impl_code_type_for_primitive!(UInt16CodeType, "UShort", "0U");
+impl_code_type_for_primitive!(UInt32CodeType, "UInt", "0U");
+impl_code_type_for_primitive!(UInt64CodeType, "ULong", "0UL");
+impl_code_type_for_primitive!(Float32CodeType, "Float", "0.0f");
+impl_code_type_for_primitive!(Float64CodeType, "Double", "0.0");

@@ -14,7 +14,7 @@ internal object {{ trait_impl }} {
             val makeCall = {% if meth.is_async() %}suspend {% endif %}{ ->
                 uniffiObj.{{ meth.name()|fn_name() }}(
                     {%- for arg in meth.arguments() %}
-                    {%- if arg|as_ffi_type|ref|need_non_null_assertion %}
+                    {%- if arg|ffi_type|ref|need_non_null_assertion %}
                     {{ arg|lift_fn }}({{ arg.name()|var_name }}!!),
                     {%- else %}
                     {{ arg|lift_fn }}({{ arg.name()|var_name }}),
@@ -71,7 +71,7 @@ internal object {{ trait_impl }} {
                 )
             }
 
-            uniffiOutReturn.uniffiSetValue(
+            uniffiOutDroppedCallback.uniffiSetValue(
                 {%- match meth.throws_type() %}
                 {%- when None %}
                 uniffiTraitInterfaceCallAsync(
@@ -97,11 +97,18 @@ internal object {{ trait_impl }} {
         }
     }
 
+    internal object uniffiClone: {{ "CallbackInterfaceClone"|ffi_callback_name }} {
+        override fun callback(handle: Long): Long {
+            return {{ ffi_converter_name }}.handleMap.clone(handle)
+        }
+    }
+
     internal val vtable = {{ vtable|ffi_type_name(ci) }}(
+        uniffiFree,
+        uniffiClone,
         {%- for (ffi_callback, meth) in vtable_methods.iter() %}
         {{ meth.name()|var_name() }},
         {%- endfor %}
-        uniffiFree,
     )
 
     internal fun register(lib: UniffiLib) {

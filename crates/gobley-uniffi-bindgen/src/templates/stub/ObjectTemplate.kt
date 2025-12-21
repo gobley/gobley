@@ -13,7 +13,7 @@
 {% else -%}
 {{ visibility() }}actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 {%- for t in obj.trait_impls() -%}
-, {{ self::trait_interface_name(ci, t.trait_name)? }}
+, {{ self::trait_interface_name(ci, t.trait_ty)? }}
 {%- endfor %} {
 {%- endif %}
 
@@ -22,7 +22,7 @@
      * attempt to actually use an object constructed this way will fail as there is no
      * connected Rust object.
      */
-    {{ visibility() }}actual constructor(noPointer: NoPointer)
+    {{ visibility() }}actual constructor(noHandle: NoHandle)
 
     {%- match obj.primary_constructor() %}
     {%- when Some(cons) %}

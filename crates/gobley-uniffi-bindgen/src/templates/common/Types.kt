@@ -70,8 +70,11 @@
     }
 }
 
-/** Used to instantiate an interface without an actual pointer, for fakes in tests, mostly. */
-{{ visibility() }}object NoPointer
+/** Used to instantiate an interface without an actual handle, for fakes in tests, mostly. */
+{{ visibility() }}object NoHandle
+
+/** Marker object indicating that a handle is to be passed. */
+{{ visibility() }}object UniffiWithHandle
 
 {%- for type_ in ci.iter_local_types() %}
 {%- let type_name = type_|type_name(ci) %}

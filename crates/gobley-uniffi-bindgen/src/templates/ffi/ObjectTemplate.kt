@@ -27,13 +27,14 @@
 {% else -%}
 {{ visibility() }}{% call emit_actual %}open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 {%- for t in obj.trait_impls() -%}
-, {{ self::trait_interface_name(ci, t.trait_name)? }}
+, {{ self::trait_interface_name(ci, t.trait_ty)? }}
 {%- endfor %} {
 {%- endif %}
 
-    {{ visibility() }}constructor(pointer: Pointer) {
-        this.pointer = pointer
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(pointer))
+    @Suppress("UNUSED_PARAMETER")
+    {{ visibility() }}constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
     }
 
     /**
@@ -41,9 +42,10 @@
      * attempt to actually use an object constructed this way will fail as there is no
      * connected Rust object.
      */
-    {{ visibility() }}{% call emit_actual %}constructor(noPointer: NoPointer) {
-        this.pointer = null
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiPointerDestroyer(null))
+    @Suppress("UNUSED_PARAMETER")
+    {{ visibility() }}{% call emit_actual %}constructor(noHandle: NoHandle) {
+        this.handle = 0L
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(0L))
     }
 
     {%- match obj.primary_constructor() %}
@@ -53,13 +55,14 @@
     {%-     else %}
     {%- call kt::docstring(cons, 4) %}
     {{ visibility() }}{% call emit_actual %}constructor({% call kt::arg_list(cons, false) -%}) : this(
+        UniffiWithHandle,
         {% call kt::to_ffi_call(cons, 8) %}
     )
     {%-     endif %}
     {%- when None %}
     {%- endmatch %}
 
-    protected val pointer: Pointer?
+    protected val handle: Long
     protected val cleanable: UniffiCleaner.Cleanable
 
     private val wasDestroyed: kotlinx.atomicfu.AtomicBoolean = kotlinx.atomicfu.atomic(false)
@@ -91,7 +94,7 @@
         synchronized { this.destroy() }
     }
 
-    internal inline fun <R> callWithPointer(block: (ptr: Pointer) -> R): R {
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
         // Check and increment the call counter, to keep the object alive.
         // This needs a compare-and-set retry loop in case of concurrent updates.
         do {
@@ -103,9 +106,9 @@
                 throw IllegalStateException("${this::class::simpleName} call counter would overflow")
             }
         } while (! this.callCounter.compareAndSet(c, c + 1L))
-        // Now we can safely do the method call without the pointer being freed concurrently.
+        // Now we can safely do the method call without the handle being freed concurrently.
         try {
-            return block(this.uniffiClonePointer())
+            return block(this.uniffiCloneHandle())
         } finally {
             // This decrement always matches the increment we performed above.
             if (this.callCounter.decrementAndGet() == 0L) {
@@ -116,20 +119,24 @@
 
     // Use a static inner class instead of a closure so as not to accidentally
     // capture `this` as part of the cleanable's action.
-    private class UniffiPointerDestroyer(private val pointer: Pointer?) : Disposable {
+    private class UniffiCleanAction(private val handle: Long) : Disposable {
         override fun destroy() {
-            pointer?.let { ptr ->
-                uniffiRustCall { status ->
-                    UniffiLib.{{ obj.ffi_object_free().name() }}(ptr, status)
-                }
+            if (handle == 0L) {
+                return
+            }
+            uniffiRustCall { status ->
+                UniffiLib.{{ obj.ffi_object_free().name() }}(handle, status)
             }
         }
     }
 
-    {{ visibility() }}fun uniffiClonePointer(): Pointer {
+    {{ visibility() }}fun uniffiCloneHandle(): Long {
+        if (handle == 0L) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object")
+        }
         return uniffiRustCall { status ->
-            UniffiLib.{{ obj.ffi_object_clone().name() }}(pointer!!, status)
-        }!!
+            UniffiLib.{{ obj.ffi_object_clone().name() }}(handle, status)
+        }
     }
 
     {% for meth in obj.methods() -%}
@@ -190,34 +197,40 @@
 {%- endif -%}
 {%- endmacro %}
 
-{{ visibility() }}object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, Pointer> {
+{{ visibility() }}object {{ ffi_converter_name }}: FfiConverter<{%- call converter_type(obj) -%}, Long> {
     {%- if obj.has_callback_interface() %}
     internal val handleMap = UniffiHandleMap<{%- call converter_type(obj) -%}>()
     {%- endif %}
 
-    override fun lower(value: {% call converter_type(obj) %}): Pointer {
+    override fun lower(value: {% call converter_type(obj) %}): Long {
         {%- if obj.has_callback_interface() %}
-        return handleMap.insert(value).toPointer()
+        if (value is {{ impl_class_name }}) {
+            return value.uniffiCloneHandle()
+        }
+        return handleMap.insert(value)
         {%- else %}
-        return value.uniffiClonePointer()
+        return value.uniffiCloneHandle()
         {%- endif %}
     }
 
-    override fun lift(value: Pointer): {% call converter_type(obj) %} {
-        return {{ impl_class_name }}(value)
+    override fun lift(value: Long): {% call converter_type(obj) %} {
+        {%- if obj.has_callback_interface() %}
+        if ((value and 1L) == 0L) {
+            return {{ impl_class_name }}(UniffiWithHandle, value)
+        }
+        return handleMap.remove(value)
+        {%- else %}
+        return {{ impl_class_name }}(UniffiWithHandle, value)
+        {%- endif %}
     }
 
     override fun read(buf: ByteBuffer): {% call converter_type(obj) %} {
-        // The Rust code always writes pointers as 8 bytes, and will
-        // fail to compile if they don't fit.
-        return lift(buf.getLong().toPointer())
+        return lift(buf.getLong())
     }
 
     override fun allocationSize(value: {% call converter_type(obj) %}): ULong = 8UL
 
     override fun write(value: {% call converter_type(obj) %}, buf: ByteBuffer) {
-        // The Rust code always expects pointers written as 8 bytes,
-        // and will fail to compile if they don't fit.
-        buf.putLong(lower(value).toLong())
+        buf.putLong(lower(value))
     }
 }
