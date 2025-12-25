@@ -3,6 +3,15 @@ package {{ package_name }}
 
 {% endif -%}
 
+{%- for global_entity in global_entities() %}
+
+{{ global_entity.modifier }} val `{{ global_entity.name }}`: {{ global_entity.ty }} =
+{%- match global_entity.lang %}
+{%- when GlobalEntityLang::JavaScript %} js("""{{ global_entity.expr }}""")
+{%- when GlobalEntityLang::Kotlin %} {{ global_entity.expr }}
+{%- endmatch %}
+{%- endfor %}
+
 private const val BASE64 = "{{ base64 }}"
 
 private external interface Buffer {

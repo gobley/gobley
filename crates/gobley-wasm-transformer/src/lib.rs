@@ -5,7 +5,7 @@
  */
 
 pub mod import;
-pub mod stack;
+mod stack;
 
 use std::collections::BTreeSet;
 
@@ -22,18 +22,36 @@ use self::import::WasmFunctionImport;
 pub struct Transformer {
     module: Module,
     function_imports: Vec<WasmFunctionImport>,
+    global_entities: Vec<GlobalEntity>,
 }
 
+#[derive(Debug, Clone)]
+struct GlobalEntity {
+    pub modifier: String,
+    pub name: String,
+    pub expr: String,
+    pub ty: String,
+    pub lang: GlobalEntityLang,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum GlobalEntityLang {
+    JavaScript,
+    Kotlin,
+}
+
+// TODO: Make this private in the next version
 #[derive(Template)]
 #[template(syntax = "kt", escape = "none", path = "js.kt")]
 pub struct KotlinJsRenderer<'a> {
     package_name: Option<&'a str>,
     base64: &'a str,
     module: &'a Module,
+    global_entities: &'a [GlobalEntity],
 }
 
 impl<'a> KotlinJsRenderer<'a> {
-    fn import_modules(&self) -> Vec<String> {
+    fn import_modules(&self) -> Vec<&str> {
         let import_modules = self
             .module
             .imports
@@ -41,7 +59,7 @@ impl<'a> KotlinJsRenderer<'a> {
             .map(|i| &i.module)
             .collect::<BTreeSet<_>>();
 
-        import_modules.iter().map(|i| i.to_string()).collect()
+        import_modules.iter().map(|i| i.as_str()).collect()
     }
 
     fn imports_from_module<'b>(
@@ -175,6 +193,10 @@ impl<'a> KotlinJsRenderer<'a> {
             _ => "Any",
         }
     }
+
+    fn global_entities(&self) -> &[GlobalEntity] {
+        self.global_entities
+    }
 }
 
 impl Transformer {
@@ -182,6 +204,7 @@ impl Transformer {
         Ok(Self {
             module: Module::from_buffer(input)?,
             function_imports,
+            global_entities: vec![],
         })
     }
 
@@ -203,6 +226,7 @@ impl Transformer {
             package_name,
             base64: &wasm_base64,
             module: &module,
+            global_entities: &self.global_entities,
         };
         Ok(renderer.render()?)
     }
