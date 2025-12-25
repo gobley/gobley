@@ -65,6 +65,11 @@ impl<'a> KotlinJsRenderer<'a> {
             .imports
             .iter()
             .map(|i| &i.module)
+            .filter(|wasm_module_name| {
+                self.wasm_bindgen_js_modules
+                    .iter()
+                    .all(|js_module| **wasm_module_name != js_module.name)
+            })
             .collect::<BTreeSet<_>>();
 
         import_modules.iter().map(|i| i.as_str()).collect()

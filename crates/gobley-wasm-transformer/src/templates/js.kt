@@ -14,6 +14,43 @@ package {{ package_name }}
 {%- endmatch %}
 {%- endfor %}
 
+{%- if !wasm_bindgen_js_modules().is_empty() %}
+
+internal typealias WasmBindgenJsModuleFactory = ((String) -> dynamic, dynamic, dynamic) -> Unit
+
+private val wbgAdditionalFactoryById: MutableMap<String, WasmBindgenJsModuleFactory> = mutableMapOf()
+
+internal fun addWasmBindgenModuleFactory(id: String, factory: WasmBindgenJsModuleFactory) {
+    if (wbgAdditionalFactoryById.containsKey(id)) {
+        error("Cannot register wasm-bindgen JS module `$id` more than once")
+    }
+    wbgAdditionalFactoryById[id] = factory
+}
+
+private val wbgModuleCache: MutableMap<String, dynamic> = mutableMapOf()
+
+internal fun wasmBindgenRequire(id: String): dynamic {
+    if (wbgModuleCache.containsKey(id)) {
+        return wbgModuleCache[id].exports
+    }
+
+    val moduleFactory = wbgFactoryById[id]
+        ?: wbgAdditionalFactoryById[id]
+        ?: error("wasm-bindgen JS module `$id` doesn't exist")
+
+    val module = js("""({ exports: {} })""")
+    wbgModuleCache[id] = module
+
+    moduleFactory(::wasmBindgenRequire, module, module.exports)
+
+    return module.exports
+}
+
+internal fun wasmBindgenRequireStem(): dynamic {
+    return wasmBindgenRequire("{{ Transformer::WASM_BINDGEN_STEM_FILENAME }}")
+}
+{%- endif %}
+
 private const val BASE64: String = "{{ base64 }}"
 
 private external interface Buffer {
@@ -77,6 +114,10 @@ internal val module: WebAssembly.Module by lazy {
 }
 
 internal class RustWebAssemblyImports(
+    {%- for (idx, wasm_bindgen_js_module) in wasm_bindgen_js_modules().iter().enumerate() %}
+    @JsName("{{ wasm_bindgen_js_module.name }}")
+    val wbgModule{{ idx }}: dynamic = wasmBindgenRequire("{{ wasm_bindgen_js_module.name }}"),
+    {%- endfor %}
     {%- for import_module in import_modules() %}
     @JsName("{{ import_module }}")
     val `{{ import_module }}`: `Import_{{ import_module }}`,
