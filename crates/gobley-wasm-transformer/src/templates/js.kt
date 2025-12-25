@@ -1,4 +1,6 @@
-{%- if let Some(package_name) = package_name -%}
+@file:Suppress("ClassName", "Unused", "RemoveRedundantBackticks", "PropertyName")
+
+{% if let Some(package_name) = package_name -%}
 package {{ package_name }}
 
 {% endif -%}
@@ -77,14 +79,14 @@ internal val module: WebAssembly.Module by lazy {
 internal class RustWebAssemblyImports(
     {%- for import_module in import_modules() %}
     @JsName("{{ import_module }}")
-    val {{ import_module }}: Import_{{ import_module }},
+    val `{{ import_module }}`: `Import_{{ import_module }}`,
     {%- endfor %}
 ) {
     {%- for import_module in import_modules() %}
-    class Import_{{ import_module }}(
+    class `Import_{{ import_module }}`(
         {%- for import in imports_from_module(import_module) %}
         @JsName("{{ import.name }}")
-        val {{ import.name }}: {{ import_to_kt_signature(import) }},
+        val `{{ import.name }}`: {{ import_to_kt_signature(import) }},
         {%- endfor %}
     ) {
         companion object {
