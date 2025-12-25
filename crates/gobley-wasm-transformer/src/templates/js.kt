@@ -12,7 +12,7 @@ package {{ package_name }}
 {%- endmatch %}
 {%- endfor %}
 
-private const val BASE64 = "{{ base64 }}"
+private const val BASE64: String = "{{ base64 }}"
 
 private external interface Buffer {
     companion object {
@@ -58,12 +58,12 @@ internal external interface RustWebAssemblyExports {
 
 private fun atob(s: String): String = js("atob(s)")
 
-private fun isBufferUnavailable() = js("typeof Buffer === \"undefined\"")
+private fun isBufferUnavailable(): Boolean = js("typeof Buffer === \"undefined\"")
 
 private fun moduleFromBuffer(buffer: Any): WebAssembly.Module = js("new WebAssembly.Module(buffer)") as WebAssembly.Module
 
 private fun moduleFromBase64(string: String): WebAssembly.Module {
-    return moduleFromBuffer(if (isBufferUnavailable() as Boolean) {
+    return moduleFromBuffer(if (isBufferUnavailable()) {
         Uint8Array.from(atob(string)) { it[0].code.toByte() }
     } else {
         Buffer.from(string, "base64")
