@@ -6,6 +6,7 @@
 
 pub mod import;
 mod stack;
+mod wasm_bindgen;
 
 use std::collections::BTreeSet;
 
@@ -23,6 +24,7 @@ pub struct Transformer {
     module: Module,
     function_imports: Vec<WasmFunctionImport>,
     global_entities: Vec<GlobalEntity>,
+    wasm_bindgen_js_modules: Vec<WasmBindgenJsModules>,
 }
 
 #[derive(Debug, Clone)]
@@ -32,6 +34,11 @@ struct GlobalEntity {
     pub expr: String,
     pub ty: String,
     pub lang: GlobalEntityLang,
+}
+
+#[derive(Debug, Clone)]
+struct WasmBindgenJsModules {
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -48,6 +55,7 @@ pub struct KotlinJsRenderer<'a> {
     base64: &'a str,
     module: &'a Module,
     global_entities: &'a [GlobalEntity],
+    wasm_bindgen_js_modules: &'a [WasmBindgenJsModules],
 }
 
 impl<'a> KotlinJsRenderer<'a> {
@@ -197,6 +205,10 @@ impl<'a> KotlinJsRenderer<'a> {
     fn global_entities(&self) -> &[GlobalEntity] {
         self.global_entities
     }
+
+    fn wasm_bindgen_js_modules(&self) -> &[WasmBindgenJsModules] {
+        self.wasm_bindgen_js_modules
+    }
 }
 
 impl Transformer {
@@ -205,12 +217,16 @@ impl Transformer {
             module: Module::from_buffer(input)?,
             function_imports,
             global_entities: vec![],
+            wasm_bindgen_js_modules: vec![],
         })
     }
 
     fn transform(&mut self) -> anyhow::Result<()> {
         self.inject_stack_pointer_shim()?;
         self.inject_function_imports();
+        if self.needs_wasm_bindgen() {
+            self.transform_using_wasm_bindgen()?;
+        }
         Ok(())
     }
 
@@ -227,6 +243,7 @@ impl Transformer {
             base64: &wasm_base64,
             module: &module,
             global_entities: &self.global_entities,
+            wasm_bindgen_js_modules: &self.wasm_bindgen_js_modules,
         };
         Ok(renderer.render()?)
     }
