@@ -1,5 +1,6 @@
 import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.android
+import gobley.gradle.cargo.dsl.appleMobile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -29,6 +30,19 @@ if (GobleyHost.Platform.Windows.isCurrent) {
                 }
                 checkTaskProvider.configure {
                     additionalEnvironment.put("CMAKE_GENERATOR", "Ninja")
+                }
+            }
+        }
+    }
+}
+if (GobleyHost.Platform.MacOS.isCurrent) {
+    cargo {
+        builds.appleMobile {
+            if (rustTarget.cinteropName == "ios") {
+                variants {
+                    buildTaskProvider.configure {
+                        additionalEnvironment.put("IPHONEOS_DEPLOYMENT_TARGET", "16.0.0")
+                    }
                 }
             }
         }
