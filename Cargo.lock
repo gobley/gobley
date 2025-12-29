@@ -1283,6 +1283,9 @@ dependencies = [
 [[package]]
 name = "gobley-fixture-gradle-js-only"
 version = "0.1.0"
+dependencies = [
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "gobley-fixture-gradle-jvm-only"
