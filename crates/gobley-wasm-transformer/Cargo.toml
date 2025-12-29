@@ -18,6 +18,18 @@ askama = { workspace = true, default-features = false, features = [
     "alloc",
 ] }
 base64 = "0.22"
+bytes-str = "0.2"
 camino = { workspace = true }
 clap = { workspace = true, features = ["derive", "cargo", "std"] }
+globset = "=0.4.16"
+swc_atoms = "7"
+swc_common = "14"
+swc_ecma_ast = "15"
+swc_ecma_codegen = "17"
+swc_ecma_parser = { version = "24", default-features = false }
+swc_ecma_transforms_base = { version = "27", features = ["inline-helpers"] }
+swc_ecma_transforms_compat = "31"
+swc_ecma_transforms_module = "30"
+swc_ecma_visit = "15"
 walrus = "0.23"
+wasm-bindgen-cli-support = "=0.2.104"
