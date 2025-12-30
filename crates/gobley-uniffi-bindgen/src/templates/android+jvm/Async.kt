@@ -8,7 +8,7 @@ internal object uniffiRustFutureContinuationCallbackCallback: UniffiRustFutureCo
 
 {%- if ci.has_async_callback_interface_definition() %}
 
-internal object uniffiForeignFutureFreeImpl: UniffiForeignFutureFree {
+internal object uniffiForeignFutureFreeImpl: UniffiForeignFutureDroppedCallback {
     override fun callback(handle: Long) {
         val job = uniffiForeignFutureHandleMap.remove(handle)
         if (!job.isCompleted) {

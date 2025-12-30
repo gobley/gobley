@@ -18,7 +18,7 @@ pub struct KotlinBindingGenerator;
 impl BindingGenerator for KotlinBindingGenerator {
     type Config = Config;
 
-    fn new_config(&self, root_toml: &toml::value::Value) -> Result<Self::Config> {
+    fn new_config(&self, root_toml: &toml::Value) -> Result<Self::Config> {
         Ok(root_toml.clone().try_into()?)
     }
 

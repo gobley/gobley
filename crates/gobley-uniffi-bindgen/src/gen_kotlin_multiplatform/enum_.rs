@@ -5,7 +5,7 @@
  */
 
 use anyhow::{bail, Result};
-use uniffi_bindgen::backend::Literal;
+use uniffi_bindgen::interface::{DefaultValue, Literal};
 use uniffi_bindgen::ComponentInterface;
 
 use super::{CodeType, Config};
@@ -30,21 +30,15 @@ impl CodeType for EnumCodeType {
         format!("Type{}", self.id)
     }
 
-    fn literal(
-        &self,
-        literal: &Literal,
-        ci: &ComponentInterface,
-        config: &Config,
-    ) -> Result<String> {
-        Ok(match literal {
-            Literal::Enum(v, _) => {
-                format!(
-                    "{}.{}",
-                    self.type_label(ci),
-                    super::KotlinCodeOracle.enum_variant_name(v, config)
-                )
-            }
-            _ => bail!("Invalid literal for Enum type: {literal:?}"),
-        })
+    fn default(&self, default: &DefaultValue, ci: &ComponentInterface, config: &Config) -> Result<String> {
+        if let DefaultValue::Literal(Literal::Enum(v, _)) = default {
+            Ok(format!(
+                "{}.{}",
+                self.type_label(ci),
+                super::KotlinCodeOracle.enum_variant_name(v, config)
+            ))
+        } else {
+            bail!("Invalid literal for enum type: {default:?}")
+        }
     }
 }
