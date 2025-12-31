@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     `kotlin-dsl`
     alias(libs.plugins.vanniktech.maven.publish)
+    alias(libs.plugins.kotlinx.binary.compatibility.validator)
     id("gobley-gradle-build")
 }
 
