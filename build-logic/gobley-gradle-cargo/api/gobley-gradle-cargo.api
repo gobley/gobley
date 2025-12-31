@@ -1,0 +1,532 @@
+public final class gobley/gradle/cargo/CargoPackage {
+	public fun <init> (Lorg/gradle/api/Project;Lorg/gradle/api/file/Directory;Ljava/io/File;)V
+	public final fun getDependencyTargetRoots ()Ljava/util/List;
+	public final fun getLibraryCrateName ()Ljava/lang/String;
+	public final fun getLibraryCrateTypes ()Ljava/util/Set;
+	public final fun getLockFile ()Lorg/gradle/api/file/RegularFile;
+	public final fun getManifestFile ()Lorg/gradle/api/file/RegularFile;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRoot ()Lorg/gradle/api/file/Directory;
+	public final fun getWorkspaceRoot ()Lorg/gradle/api/file/Directory;
+	public final fun outputDirectory (Lgobley/gradle/cargo/profiles/CargoProfile;Lgobley/gradle/rust/targets/RustTarget;)Lorg/gradle/api/file/Directory;
+	public static synthetic fun outputDirectory$default (Lgobley/gradle/cargo/CargoPackage;Lgobley/gradle/cargo/profiles/CargoProfile;Lgobley/gradle/rust/targets/RustTarget;ILjava/lang/Object;)Lorg/gradle/api/file/Directory;
+}
+
+public final class gobley/gradle/cargo/CargoPlugin : org/gradle/api/Plugin {
+	public static final field Companion Lgobley/gradle/cargo/CargoPlugin$Companion;
+	public fun <init> ()V
+	public synthetic fun apply (Ljava/lang/Object;)V
+	public fun apply (Lorg/gradle/api/Project;)V
+}
+
+public final class gobley/gradle/cargo/CargoPlugin$Companion {
+}
+
+public final class gobley/gradle/cargo/CargoTargetKind : java/lang/Enum {
+	public static final field Benchmark Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field Binary Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field BuildScript Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field Companion Lgobley/gradle/cargo/CargoTargetKind$Companion;
+	public static final field DynamicLibrary Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field Example Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field Library Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field ProceduralMacro Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field StaticLibrary Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field SystemDynamicLibrary Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field SystemStaticLibrary Lgobley/gradle/cargo/CargoTargetKind;
+	public static final field Test Lgobley/gradle/cargo/CargoTargetKind;
+	public final fun getCrateType ()Lgobley/gradle/rust/CrateType;
+	public final fun isNormalLibrary ()Z
+	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lgobley/gradle/cargo/CargoTargetKind;
+	public static fun values ()[Lgobley/gradle/cargo/CargoTargetKind;
+}
+
+public final class gobley/gradle/cargo/CargoTargetKind$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoAndroidBuild : gobley/gradle/cargo/dsl/DefaultCargoBuild, gobley/gradle/cargo/dsl/CargoMobileBuild, gobley/gradle/cargo/dsl/CargoNativeBuild, gobley/gradle/cargo/dsl/HasDynamicLibraries {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustAndroidTarget;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustMobileTarget;
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustNativeTarget;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoAndroidBuildVariant : gobley/gradle/cargo/dsl/DefaultCargoBuildVariant, gobley/gradle/cargo/dsl/CargoMobileBuildVariant, gobley/gradle/cargo/dsl/CargoNativeBuildVariant, gobley/gradle/cargo/dsl/HasDynamicLibraries {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/cargo/dsl/CargoAndroidBuild;Lgobley/gradle/Variant;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoMobileBuild;
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoNativeBuild;
+	public final fun getFindDynamicLibrariesTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoAppleMobileBuild : gobley/gradle/cargo/dsl/DefaultCargoBuild, gobley/gradle/cargo/dsl/CargoMobileBuild, gobley/gradle/cargo/dsl/CargoNativeBuild {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustAppleMobileTarget;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustMobileTarget;
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustNativeTarget;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoAppleMobileBuildVariant : gobley/gradle/cargo/dsl/DefaultCargoBuildVariant, gobley/gradle/cargo/dsl/CargoMobileBuildVariant, gobley/gradle/cargo/dsl/CargoNativeBuildVariant {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/cargo/dsl/CargoAppleMobileBuild;Lgobley/gradle/Variant;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoMobileBuild;
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoNativeBuild;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoBinaryCrateSource : java/io/Serializable {
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git : gobley/gradle/cargo/dsl/CargoBinaryCrateSource, java/io/Serializable {
+	public fun <init> (Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;)V
+	public synthetic fun <init> (Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;
+	public final fun copy (Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git;
+	public static synthetic fun copy$default (Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git;Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;ILjava/lang/Object;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCommit ()Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;
+	public final fun getRepository ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit : java/io/Serializable {
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Branch : gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit, java/io/Serializable {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Branch;
+	public static synthetic fun copy$default (Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Branch;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Branch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBranch ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Revision : gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit, java/io/Serializable {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Revision;
+	public static synthetic fun copy$default (Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Revision;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Revision;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRevision ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Tag : gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit, java/io/Serializable {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Tag;
+	public static synthetic fun copy$default (Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Tag;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit$Tag;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTag ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Path : gobley/gradle/cargo/dsl/CargoBinaryCrateSource, java/io/Serializable {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Path;
+	public static synthetic fun copy$default (Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Path;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Path;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPath ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBinaryCrateSource$Registry : gobley/gradle/cargo/dsl/CargoBinaryCrateSource, java/io/Serializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Registry;
+	public static synthetic fun copy$default (Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Registry;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Registry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getRegistry ()Ljava/lang/String;
+	public final fun getVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoBuild : gobley/gradle/cargo/dsl/HasFeatures, gobley/gradle/cargo/dsl/HasVariants, org/gradle/api/Named, org/jetbrains/kotlin/gradle/plugin/HasProject {
+	public abstract fun getCheckCommand ()Lorg/gradle/api/provider/Property;
+	public abstract fun getInstallTargetBeforeBuild ()Lorg/gradle/api/provider/Property;
+	public abstract fun getKotlinTargets ()Lorg/gradle/api/NamedDomainObjectCollection;
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoBuildCollection : org/gradle/api/NamedDomainObjectCollection {
+	public abstract fun findByRustTarget (Lgobley/gradle/rust/targets/RustTarget;)Lgobley/gradle/cargo/dsl/CargoBuild;
+	public abstract fun matching (Lgroovy/lang/Closure;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public abstract fun matching (Lorg/gradle/api/specs/Spec;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public abstract fun named (Ljava/lang/String;Ljava/lang/Class;)Lgobley/gradle/cargo/dsl/CargoBuildProvider;
+	public abstract fun named (Ljava/lang/String;Ljava/lang/Class;Lorg/gradle/api/Action;)Lgobley/gradle/cargo/dsl/CargoBuildProvider;
+	public abstract fun withType (Ljava/lang/Class;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+}
+
+public final class gobley/gradle/cargo/dsl/CargoBuildCollectionKt {
+	public static final fun android (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun appleMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureAndroid (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureAppleMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureDesktop (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureJvm (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureJvmLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureJvmMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureJvmMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureJvmPosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureJvmWindows (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureMobileAndroid (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureMobileAppleMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureNative (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureNativeAppleMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureNativeLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureNativeMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureNativeMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureNativePosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configurePosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureWasm (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun configureWindows (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktop (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopConfigureJvm (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopConfigureLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopConfigureMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopConfigureMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopConfigurePosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopConfigureWindows (Lgobley/gradle/cargo/dsl/CargoBuildCollection;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopJvm (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopPosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun desktopWindows (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun jvm (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun jvmLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun jvmMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun jvmMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun jvmPosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun jvmWindows (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun linux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun macos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun mingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun mobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun mobileAndroid (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun mobileAppleMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun native (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun nativeAppleMobile (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun nativeLinux (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun nativeMacos (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun nativeMingw (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun nativePosix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun posix (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun wasm (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public static final fun windows (Lgobley/gradle/cargo/dsl/CargoBuildCollection;)Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoBuildProvider : org/gradle/api/NamedDomainObjectProvider {
+	public abstract fun configure (Lorg/gradle/api/Action;)V
+	public abstract fun getName ()Ljava/lang/String;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoBuildVariant : gobley/gradle/cargo/dsl/CargoVariant, gobley/gradle/cargo/dsl/HasRustTarget {
+	public abstract fun getBuild ()Lgobley/gradle/cargo/dsl/CargoBuild;
+	public abstract fun getBuildTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public abstract fun getCheckTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoDesktopBuild : gobley/gradle/cargo/dsl/CargoBuild {
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustDesktopTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoDesktopBuildVariant : gobley/gradle/cargo/dsl/CargoBuildVariant {
+	public abstract fun getBuild ()Lgobley/gradle/cargo/dsl/CargoDesktopBuild;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoExtension : gobley/gradle/cargo/dsl/HasFeatures, gobley/gradle/cargo/dsl/HasJvmVariant, gobley/gradle/cargo/dsl/HasNativeVariant, gobley/gradle/cargo/dsl/HasVariants, gobley/gradle/cargo/dsl/HasWasmVariant, org/jetbrains/kotlin/gradle/plugin/HasProject {
+	public fun <init> (Lorg/gradle/api/Project;)V
+	public final fun getAndroidTargetsToBuild ()Lorg/gradle/api/provider/SetProperty;
+	public final fun getBuilds ()Lgobley/gradle/cargo/dsl/CargoBuildCollection;
+	public final fun getCargoPackage ()Lorg/gradle/api/provider/Provider;
+	public final fun getCheckCommand ()Lorg/gradle/api/provider/Property;
+	public final fun getDebug ()Lgobley/gradle/cargo/dsl/CargoExtensionVariant;
+	public synthetic fun getDebug ()Lgobley/gradle/cargo/dsl/CargoVariant;
+	public final fun getInstallTargetBeforeBuild ()Lorg/gradle/api/provider/Property;
+	public final fun getPackageDirectory ()Lorg/gradle/api/file/DirectoryProperty;
+	public final fun getProject ()Lorg/gradle/api/Project;
+	public final fun getPublishJvmArtifacts ()Lorg/gradle/api/provider/Property;
+	public final fun getRelease ()Lgobley/gradle/cargo/dsl/CargoExtensionVariant;
+	public synthetic fun getRelease ()Lgobley/gradle/cargo/dsl/CargoVariant;
+	public fun getVariants ()Ljava/lang/Iterable;
+	public final fun wasmTransformerFromGit (Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;)V
+	public static synthetic fun wasmTransformerFromGit$default (Lgobley/gradle/cargo/dsl/CargoExtension;Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;ILjava/lang/Object;)V
+	public final fun wasmTransformerFromGitBranch (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun wasmTransformerFromGitRevision (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun wasmTransformerFromGitTag (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun wasmTransformerFromPath (Lorg/gradle/api/file/Directory;)V
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoExtensionVariant : gobley/gradle/cargo/dsl/CargoVariant {
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoJvmBuild : gobley/gradle/cargo/dsl/CargoDesktopBuild, gobley/gradle/cargo/dsl/HasDynamicLibraries, gobley/gradle/cargo/dsl/HasJvmProperties {
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustJvmTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoJvmBuildVariant : gobley/gradle/cargo/dsl/CargoDesktopBuildVariant, gobley/gradle/cargo/dsl/HasDynamicLibraries, gobley/gradle/cargo/dsl/HasJvmProperties {
+	public abstract fun getBuild ()Lgobley/gradle/cargo/dsl/CargoJvmBuild;
+	public abstract fun getFindDynamicLibrariesTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public abstract fun getJarTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public abstract fun getLibraryFiles ()Lorg/gradle/api/provider/Provider;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoMobileBuild : gobley/gradle/cargo/dsl/CargoBuild {
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustMobileTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoMobileBuildVariant : gobley/gradle/cargo/dsl/CargoBuildVariant {
+	public abstract fun getBuild ()Lgobley/gradle/cargo/dsl/CargoMobileBuild;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoNativeBuild : gobley/gradle/cargo/dsl/CargoBuild, gobley/gradle/cargo/dsl/HasNativeVariant {
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustNativeTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoNativeBuildVariant : gobley/gradle/cargo/dsl/CargoBuildVariant {
+	public abstract fun getBuild ()Lgobley/gradle/cargo/dsl/CargoNativeBuild;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoPosixBuild : gobley/gradle/cargo/dsl/DefaultCargoBuild, gobley/gradle/cargo/dsl/CargoJvmBuild, gobley/gradle/cargo/dsl/CargoNativeBuild {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustPosixTarget;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustDesktopTarget;
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustJvmTarget;
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustNativeTarget;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoPosixBuildVariant : gobley/gradle/cargo/dsl/DefaultCargoBuildVariant, gobley/gradle/cargo/dsl/CargoJvmBuildVariant, gobley/gradle/cargo/dsl/CargoNativeBuildVariant {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/cargo/dsl/CargoPosixBuild;Lgobley/gradle/Variant;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoDesktopBuild;
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoJvmBuild;
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoNativeBuild;
+	public fun getFindDynamicLibrariesTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public fun getJarTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public fun getLibraryFiles ()Lorg/gradle/api/provider/Provider;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/CargoVariant : gobley/gradle/cargo/dsl/HasFeatures, gobley/gradle/cargo/dsl/HasProfile, org/jetbrains/kotlin/gradle/plugin/HasProject {
+	public abstract fun getVariant ()Lgobley/gradle/Variant;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoWasmBuild : gobley/gradle/cargo/dsl/DefaultCargoBuild, gobley/gradle/cargo/dsl/HasEmbeddableRustLibrary, gobley/gradle/cargo/dsl/HasWasmVariant {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustWasmTarget;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoWasmBuildVariant : gobley/gradle/cargo/dsl/DefaultCargoBuildVariant, gobley/gradle/cargo/dsl/HasEmbeddableRustLibrary {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/cargo/dsl/CargoWasmBuild;Lgobley/gradle/Variant;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public final fun getTransformWasmProvider ()Lorg/gradle/api/tasks/TaskProvider;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoWindowsBuild : gobley/gradle/cargo/dsl/DefaultCargoBuild, gobley/gradle/cargo/dsl/CargoJvmBuild {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustWindowsTarget;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustDesktopTarget;
+	public synthetic fun getRustTarget ()Lgobley/gradle/rust/targets/RustJvmTarget;
+}
+
+public abstract class gobley/gradle/cargo/dsl/CargoWindowsBuildVariant : gobley/gradle/cargo/dsl/DefaultCargoBuildVariant, gobley/gradle/cargo/dsl/CargoJvmBuildVariant {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/cargo/dsl/CargoWindowsBuild;Lgobley/gradle/Variant;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoDesktopBuild;
+	public synthetic fun getBuild ()Lgobley/gradle/cargo/dsl/CargoJvmBuild;
+	public fun getFindDynamicLibrariesTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public fun getJarTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public fun getLibraryFiles ()Lorg/gradle/api/provider/Provider;
+}
+
+public abstract class gobley/gradle/cargo/dsl/DefaultCargoBuild : gobley/gradle/cargo/dsl/CargoBuild {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustTarget;Lgobley/gradle/cargo/dsl/CargoExtension;Lkotlin/reflect/KClass;)V
+	public synthetic fun getDebug ()Lgobley/gradle/cargo/dsl/CargoVariant;
+	public final fun getDebug ()Lgobley/gradle/cargo/dsl/DefaultCargoBuildVariant;
+	public synthetic fun getKotlinTargets ()Lorg/gradle/api/NamedDomainObjectCollection;
+	public fun getKotlinTargets ()Lorg/gradle/api/NamedDomainObjectContainer;
+	public fun getName ()Ljava/lang/String;
+	public final fun getProject ()Lorg/gradle/api/Project;
+	public synthetic fun getRelease ()Lgobley/gradle/cargo/dsl/CargoVariant;
+	public final fun getRelease ()Lgobley/gradle/cargo/dsl/DefaultCargoBuildVariant;
+	public final fun getRustTarget ()Lgobley/gradle/rust/targets/RustTarget;
+	public final fun getVariants ()Ljava/lang/Iterable;
+}
+
+public abstract class gobley/gradle/cargo/dsl/DefaultCargoBuildVariant : gobley/gradle/cargo/dsl/CargoBuildVariant {
+	public fun <init> (Lorg/gradle/api/Project;Lgobley/gradle/cargo/dsl/CargoBuild;Lgobley/gradle/Variant;Lgobley/gradle/cargo/dsl/CargoExtension;)V
+	public fun getBuild ()Lgobley/gradle/cargo/dsl/CargoBuild;
+	public fun getBuildTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public fun getCheckTaskProvider ()Lorg/gradle/api/tasks/TaskProvider;
+	public final fun getProject ()Lorg/gradle/api/Project;
+	public fun getRustTarget ()Lgobley/gradle/rust/targets/RustTarget;
+	public final fun getVariant ()Lgobley/gradle/Variant;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasDynamicLibraries : gobley/gradle/cargo/dsl/HasEmbeddableRustLibrary {
+	public abstract fun getDynamicLibraries ()Lorg/gradle/api/provider/SetProperty;
+	public abstract fun getDynamicLibrarySearchPaths ()Lorg/gradle/api/provider/SetProperty;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasEmbeddableRustLibrary {
+	public abstract fun getEmbedRustLibrary ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasFeatures {
+	public abstract fun getFeatures ()Lorg/gradle/api/provider/SetProperty;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasJvmProperties : gobley/gradle/cargo/dsl/HasDynamicLibraries, gobley/gradle/cargo/dsl/HasJvmVariant {
+	public abstract fun getAndroidUnitTest ()Lorg/gradle/api/provider/Property;
+	public abstract fun getResourcePrefix ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasJvmVariant {
+	public abstract fun getJvmPublishingVariant ()Lorg/gradle/api/provider/Property;
+	public abstract fun getJvmVariant ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasNativeVariant {
+	public abstract fun getNativeVariant ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasProfile {
+	public abstract fun getProfile ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasRustTarget {
+	public abstract fun getRustTarget ()Lgobley/gradle/rust/targets/RustTarget;
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasVariants {
+	public fun debug (Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoVariant;
+	public abstract fun getDebug ()Lgobley/gradle/cargo/dsl/CargoVariant;
+	public abstract fun getRelease ()Lgobley/gradle/cargo/dsl/CargoVariant;
+	public abstract fun getVariants ()Ljava/lang/Iterable;
+	public fun release (Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoVariant;
+	public fun variant (Lgobley/gradle/Variant;)Lgobley/gradle/cargo/dsl/CargoVariant;
+	public fun variant (Lgobley/gradle/Variant;Lkotlin/jvm/functions/Function1;)Lgobley/gradle/cargo/dsl/CargoVariant;
+	public fun variants (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class gobley/gradle/cargo/dsl/HasWasmVariant {
+	public abstract fun getWasmVariant ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract interface class gobley/gradle/cargo/profiles/CargoProfile {
+	public static final field Companion Lgobley/gradle/cargo/profiles/CargoProfile$Companion;
+	public abstract fun getProfileName ()Ljava/lang/String;
+	public abstract fun getTargetChildDirectoryName ()Ljava/lang/String;
+}
+
+public final class gobley/gradle/cargo/profiles/CargoProfile$Companion {
+	public final fun getBench ()Lgobley/gradle/cargo/profiles/CargoProfile;
+	public final fun getDev ()Lgobley/gradle/cargo/profiles/CargoProfile;
+	public final fun getRelease ()Lgobley/gradle/cargo/profiles/CargoProfile;
+	public final fun getTest ()Lgobley/gradle/cargo/profiles/CargoProfile;
+}
+
+public final class gobley/gradle/cargo/profiles/CargoProfileKt {
+	public static final fun CargoProfile (Ljava/lang/String;)Lgobley/gradle/cargo/profiles/CargoProfile;
+}
+
+public abstract class gobley/gradle/cargo/tasks/CargoBuildTask : gobley/gradle/cargo/tasks/CargoPackageTask {
+	public fun <init> ()V
+	public final fun build ()V
+	public abstract fun getExtraArguments ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getFeatures ()Lorg/gradle/api/provider/SetProperty;
+	public final fun getLibraryFileByCrateType ()Lorg/gradle/api/provider/Provider;
+	public abstract fun getNativeStaticLibsDefFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getProfile ()Lorg/gradle/api/provider/Property;
+	public abstract fun getTarget ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/cargo/tasks/CargoCheckTask : gobley/gradle/cargo/tasks/CargoPackageTask {
+	public fun <init> ()V
+	public final fun check ()V
+	public abstract fun getCheckCommand ()Lorg/gradle/api/provider/Property;
+	public abstract fun getExtraArguments ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getFeatures ()Lorg/gradle/api/provider/SetProperty;
+	public abstract fun getProfile ()Lorg/gradle/api/provider/Property;
+	public abstract fun getTarget ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/cargo/tasks/CargoCleanTask : gobley/gradle/cargo/tasks/CargoPackageTask, gobley/gradle/tasks/GloballyLockedTask {
+	public fun <init> ()V
+	public final fun cleanPackage ()V
+}
+
+public abstract class gobley/gradle/cargo/tasks/CargoInstallTask : gobley/gradle/cargo/tasks/CargoTask {
+	public fun <init> ()V
+	protected final fun binaryCrateOutput (Ljava/lang/String;)Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getBinaryCrateSource ()Lorg/gradle/api/provider/Property;
+	public abstract fun getInstallDirectory ()Lorg/gradle/api/file/DirectoryProperty;
+	public final fun getQuiet ()Lorg/gradle/api/provider/Property;
+	public final fun installBinaries ()V
+}
+
+public abstract class gobley/gradle/cargo/tasks/CargoPackageTask : gobley/gradle/cargo/tasks/CargoTask {
+	public fun <init> ()V
+	public fun configureFromProperties (Lgobley/gradle/utils/CommandSpec;)V
+	public abstract fun getCargoPackage ()Lorg/gradle/api/provider/Property;
+	public final fun getDependencySourceFiles ()Lorg/gradle/api/provider/Provider;
+	public final fun getLockFile ()Lorg/gradle/api/provider/Provider;
+	public final fun getManifestFile ()Lorg/gradle/api/provider/Provider;
+	public final fun getRoot ()Lorg/gradle/api/provider/Provider;
+}
+
+public abstract class gobley/gradle/cargo/tasks/CargoTask : gobley/gradle/tasks/CommandTask {
+	public fun <init> ()V
+	public final fun cargo ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
+	public static synthetic fun cargo$default (Lgobley/gradle/cargo/tasks/CargoTask;[Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
+	public abstract fun getCargo ()Lorg/gradle/api/provider/Property;
+	public abstract fun getNightly ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/cargo/tasks/FindDynamicLibrariesTask : org/gradle/api/DefaultTask {
+	public fun <init> ()V
+	public final fun copyDynamicLibraries ()V
+	public abstract fun getLibraryNames ()Lorg/gradle/api/provider/SetProperty;
+	public final fun getLibraryPaths ()Lorg/gradle/api/provider/Provider;
+	public abstract fun getLibraryPathsCacheFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getProjectLayout ()Lorg/gradle/api/file/ProjectLayout;
+	public abstract fun getRustTarget ()Lorg/gradle/api/provider/Property;
+	public abstract fun getSearchPaths ()Lorg/gradle/api/provider/ListProperty;
+}
+
+public abstract class gobley/gradle/cargo/tasks/InstallWasmTransformerTask : gobley/gradle/cargo/tasks/CargoInstallTask {
+	public fun <init> ()V
+	public final fun getWasmTransformer ()Lorg/gradle/api/file/RegularFileProperty;
+}
+
+public abstract class gobley/gradle/cargo/tasks/RustUpTargetAddTask : gobley/gradle/cargo/tasks/RustUpTask, gobley/gradle/tasks/GloballyLockedTask {
+	public fun <init> ()V
+	public abstract fun getRustTarget ()Lorg/gradle/api/provider/Property;
+	public abstract fun getRustVersion ()Lorg/gradle/api/provider/Property;
+	public final fun installToolchain ()V
+}
+
+public abstract class gobley/gradle/cargo/tasks/RustUpTask : gobley/gradle/tasks/CommandTask {
+	public fun <init> ()V
+	public abstract fun getRustUp ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/cargo/tasks/TransformWasmTask : gobley/gradle/tasks/CommandTask {
+	public fun <init> ()V
+	public abstract fun getCrateName ()Lorg/gradle/api/provider/Property;
+	public abstract fun getFunctionImportsFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getInput ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getOutputDirectory ()Lorg/gradle/api/file/DirectoryProperty;
+	public abstract fun getWasmTransformer ()Lorg/gradle/api/file/RegularFileProperty;
+	public final fun transformWasm ()V
+}
+

@@ -1,0 +1,110 @@
+public final class gobley/gradle/uniffi/UniFfiPlugin : org/gradle/api/Plugin {
+	public fun <init> ()V
+	public synthetic fun apply (Ljava/lang/Object;)V
+	public fun apply (Lorg/gradle/api/Project;)V
+}
+
+public abstract class gobley/gradle/uniffi/dsl/BindingsGeneration {
+	public synthetic fun <init> (Lorg/gradle/api/Project;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun customType (Ljava/lang/String;Lorg/gradle/api/Action;)V
+	public static synthetic fun customType$default (Lgobley/gradle/uniffi/dsl/BindingsGeneration;Ljava/lang/String;Lorg/gradle/api/Action;ILjava/lang/Object;)V
+	public abstract fun getBuild ()Lorg/gradle/api/provider/Property;
+	public abstract fun getCdylibName ()Lorg/gradle/api/provider/Property;
+	public abstract fun getConfig ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getDisableJavaCleaner ()Lorg/gradle/api/provider/Property;
+	public abstract fun getGenerateImmutableRecords ()Lorg/gradle/api/provider/Property;
+	public abstract fun getNamespace ()Lorg/gradle/api/provider/Property;
+	public abstract fun getOmitChecksums ()Lorg/gradle/api/provider/Property;
+	public abstract fun getPackageName ()Lorg/gradle/api/provider/Property;
+	public abstract fun getUsePascalCaseEnumClass ()Lorg/gradle/api/provider/Property;
+	public abstract fun getVariant ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/uniffi/dsl/BindingsGenerationFromLibrary : gobley/gradle/uniffi/dsl/BindingsGeneration {
+}
+
+public abstract class gobley/gradle/uniffi/dsl/BindingsGenerationFromUdl : gobley/gradle/uniffi/dsl/BindingsGeneration {
+	public abstract fun getUdlFile ()Lorg/gradle/api/file/RegularFileProperty;
+}
+
+public abstract class gobley/gradle/uniffi/dsl/CustomType {
+	public fun <init> ()V
+	public abstract fun getImports ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getLift ()Lorg/gradle/api/provider/Property;
+	public abstract fun getLower ()Lorg/gradle/api/provider/Property;
+	public abstract fun getTypeName ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/uniffi/dsl/UniFfiExtension {
+	public fun <init> (Lorg/gradle/api/Project;)V
+	public final fun bindgenFromGit (Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;)V
+	public static synthetic fun bindgenFromGit$default (Lgobley/gradle/uniffi/dsl/UniFfiExtension;Ljava/lang/String;Lgobley/gradle/cargo/dsl/CargoBinaryCrateSource$Git$Commit;ILjava/lang/Object;)V
+	public final fun bindgenFromGitBranch (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun bindgenFromGitRevision (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun bindgenFromGitTag (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun bindgenFromPath (Lorg/gradle/api/file/Directory;)V
+	public final fun bindgenFromRegistry (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun bindgenFromRegistry$default (Lgobley/gradle/uniffi/dsl/UniFfiExtension;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun generateFromLibrary (Lorg/gradle/api/Action;)V
+	public static synthetic fun generateFromLibrary$default (Lgobley/gradle/uniffi/dsl/UniFfiExtension;Lorg/gradle/api/Action;ILjava/lang/Object;)V
+	public final fun generateFromUdl (Lorg/gradle/api/Action;)V
+	public static synthetic fun generateFromUdl$default (Lgobley/gradle/uniffi/dsl/UniFfiExtension;Lorg/gradle/api/Action;ILjava/lang/Object;)V
+	public final fun getAddDependencies ()Lorg/gradle/api/provider/Property;
+	public final fun getFormatCode ()Lorg/gradle/api/provider/Property;
+	public final fun getGenerateDuringSync ()Lorg/gradle/api/provider/Property;
+	public final fun getGenerateProguardRules ()Lorg/gradle/api/provider/Property;
+}
+
+public abstract class gobley/gradle/uniffi/tasks/BuildUniffiBindingsTask : gobley/gradle/cargo/tasks/CargoPackageTask {
+	public fun <init> ()V
+	public final fun buildBindings ()V
+	public abstract fun getBindgen ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getConfig ()Lorg/gradle/api/file/RegularFileProperty;
+	public final fun getCrateName ()Lorg/gradle/api/provider/Provider;
+	public abstract fun getExternalPackageConfigs ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getFormatCode ()Lorg/gradle/api/provider/Property;
+	public final fun getLibraryCrateName ()Lorg/gradle/api/provider/Provider;
+	public abstract fun getLibraryFile ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getLibraryMode ()Lorg/gradle/api/provider/Property;
+	public abstract fun getOutputDirectory ()Lorg/gradle/api/file/DirectoryProperty;
+	public abstract fun getSource ()Lorg/gradle/api/file/RegularFileProperty;
+}
+
+public abstract class gobley/gradle/uniffi/tasks/GenerateUniffiProguardRulesTask : gobley/gradle/tasks/AbstractFileGenerationTask {
+	public fun <init> ()V
+	protected fun getDesiredOutput ()Ljava/lang/String;
+}
+
+public abstract class gobley/gradle/uniffi/tasks/InstallUniffiBindgenTask : gobley/gradle/cargo/tasks/CargoInstallTask {
+	public fun <init> ()V
+	public final fun getBindgen ()Lorg/gradle/api/file/RegularFileProperty;
+}
+
+public abstract class gobley/gradle/uniffi/tasks/MergeUniffiConfigTask : org/gradle/api/DefaultTask {
+	public static final field Companion Lgobley/gradle/uniffi/tasks/MergeUniffiConfigTask$Companion;
+	public fun <init> ()V
+	public abstract fun getAndroidDynamicLibraryDependencies ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getCdylibName ()Lorg/gradle/api/provider/Property;
+	public abstract fun getCrateName ()Lorg/gradle/api/provider/Property;
+	public abstract fun getCustomTypes ()Lorg/gradle/api/provider/MapProperty;
+	public abstract fun getDisableJavaCleaner ()Lorg/gradle/api/provider/Property;
+	public abstract fun getDynamicLibraryDependencies ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getExternalPackageConfigs ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getGenerateImmutableRecords ()Lorg/gradle/api/provider/Property;
+	public abstract fun getJvmDynamicLibraryDependencies ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getKotlinMultiplatform ()Lorg/gradle/api/provider/Property;
+	public abstract fun getKotlinTargets ()Lorg/gradle/api/provider/ListProperty;
+	public abstract fun getKotlinVersion ()Lorg/gradle/api/provider/Property;
+	public abstract fun getOmitChecksums ()Lorg/gradle/api/provider/Property;
+	public abstract fun getOriginalConfig ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getOutputConfig ()Lorg/gradle/api/file/RegularFileProperty;
+	public abstract fun getPackageName ()Lorg/gradle/api/provider/Property;
+	public abstract fun getPackageRoot ()Lorg/gradle/api/provider/Property;
+	public abstract fun getUseKotlinXSerialization ()Lorg/gradle/api/provider/Property;
+	public abstract fun getUsePascalCaseEnumClass ()Lorg/gradle/api/provider/Property;
+	public final fun mergeConfig ()V
+}
+
+public final class gobley/gradle/uniffi/tasks/MergeUniffiConfigTask$Companion {
+}
+
