@@ -6,6 +6,7 @@
 
 package gobley.gradle.uniffi.dsl
 
+import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.rust.targets.RustTarget
 import org.gradle.api.Action
@@ -90,6 +91,14 @@ sealed class BindingsGeneration(internal val project: Project) {
      * When `true`, enum classes will use PascalCase instead of UPPER_SNAKE_CASE.
      */
     abstract val usePascalCaseEnumClass: Property<Boolean>
+
+    /**
+     * When `true`, the generated bindings will use JNA interface mapping instead of
+     * [direct mapping](https://github.com/java-native-access/jna/blob/master/www/DirectMapping.md).
+     */
+    // TODO: Remove InternalGobleyGradleApi in 0.4.0
+    @InternalGobleyGradleApi
+    abstract val enableJnaInterfaceMapping: Property<Boolean>
 }
 
 abstract class BindingsGenerationFromLibrary @Inject internal constructor(project: Project) :

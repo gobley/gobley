@@ -38,6 +38,7 @@ internal data class Config(
     @SerialName("jvm_dynamic_library_dependencies") val jvmDynamicLibraryDependencies: List<String>? = null,
     @SerialName("android_dynamic_library_dependencies") val androidDynamicLibraryDependencies: List<String>? = null,
     @SerialName("dynamic_library_dependencies") val dynamicLibraryDependencies: List<String>? = null,
+    @SerialName("__enable_jna_interface_mapping") val enableJnaInterfaceMapping: Boolean? = null
 ) {
     @Serializable
     internal data class CustomType(

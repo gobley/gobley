@@ -6,6 +6,7 @@
 
 package gobley.gradle.uniffi.tasks
 
+import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.uniffi.Config
 import gobley.gradle.uniffi.dsl.CustomType
 import kotlinx.serialization.encodeToString
@@ -102,12 +103,20 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
     @get:Optional
     abstract val dynamicLibraryDependencies: ListProperty<String>
 
+    @get:Input
+    @get:Optional
+    // TODO: Remove InternalGobleyGradleApi in 0.4.0
+    @InternalGobleyGradleApi
+    abstract val enableJnaInterfaceMapping: Property<Boolean>
+
     @get:OutputFile
     abstract val outputConfig: RegularFileProperty
 
     @TaskAction
     fun mergeConfig() {
         val originalConfig = originalConfig.orNull?.asFile?.let(::Config) ?: Config()
+
+        @OptIn(InternalGobleyGradleApi::class)
         val result = originalConfig.copy(
             // Properties read by the Gradle plugins
             crateName = crateName.orNull,
@@ -160,7 +169,9 @@ abstract class MergeUniffiConfigTask : DefaultTask() {
             dynamicLibraryDependencies = mergeSet(
                 originalConfig.dynamicLibraryDependencies,
                 dynamicLibraryDependencies.orNull,
-            )
+            ),
+            enableJnaInterfaceMapping = originalConfig.enableJnaInterfaceMapping
+                ?: enableJnaInterfaceMapping.orNull,
         )
         outputConfig.get().asFile.writeText(toml.encodeToString(result), Charsets.UTF_8)
     }

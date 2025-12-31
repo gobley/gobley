@@ -244,6 +244,8 @@ class UniFfiPlugin : Plugin<Project> {
             customTypes.set(bindingsGeneration.customTypes)
             disableJavaCleaner.set(bindingsGeneration.disableJavaCleaner)
             usePascalCaseEnumClass.set(bindingsGeneration.usePascalCaseEnumClass)
+            @OptIn(InternalGobleyGradleApi::class)
+            enableJnaInterfaceMapping.set(bindingsGeneration.enableJnaInterfaceMapping)
 
             @OptIn(InternalGobleyGradleApi::class)
             kotlinMultiplatform.set(kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM)

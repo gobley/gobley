@@ -126,6 +126,8 @@ pub struct Config {
     android_dynamic_library_dependencies: Vec<String>,
     #[serde(default)]
     dynamic_library_dependencies: Vec<String>,
+    #[serde(default, rename = "__enable_jna_interface_mapping")]
+    enable_jna_interface_mapping: Option<bool>,
 }
 
 // TODO: Make this public in 0.4.0
@@ -259,6 +261,10 @@ impl Config {
             // correct namespace.
             None => format!("uniffi.{}", namespace.unwrap_or(module_path)),
         }
+    }
+
+    pub fn enable_jna_interface_mapping(&self) -> bool {
+        self.enable_jna_interface_mapping.unwrap_or(false)
     }
 }
 
@@ -1347,9 +1353,7 @@ mod filters {
         ci: &ComponentInterface,
     ) -> Result<String, askama::Error> {
         let ffi_func = callable.ffi_rust_future_free(ci);
-        Ok(format!(
-            "{{ future -> UniffiLib.{ffi_func}(future) }}"
-        ))
+        Ok(format!("{{ future -> UniffiLib.{ffi_func}(future) }}"))
     }
 
     pub fn async_cancel(
@@ -1357,9 +1361,7 @@ mod filters {
         ci: &ComponentInterface,
     ) -> Result<String, askama::Error> {
         let ffi_func = callable.ffi_rust_future_cancel(ci);
-        Ok(format!(
-            "{{ future -> UniffiLib.{ffi_func}(future) }}"
-        ))
+        Ok(format!("{{ future -> UniffiLib.{ffi_func}(future) }}"))
     }
 
     /// Remove the "`" chars we put around function/variable names
