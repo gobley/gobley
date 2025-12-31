@@ -7,6 +7,10 @@ plugins {
     id("gobley-gradle-build")
 }
 
+apiValidation {
+    nonPublicMarkers += "gobley.gradle.InternalGobleyGradleApi"
+}
+
 gobleyGradleBuild {
     configureGobleyGradleProject(
         description = "A Gradle plugin for generating UniFFI Kotlin Multiplatform bindings for Rust libraries.",

@@ -13,6 +13,10 @@ plugins {
     id("gobley-gradle-build")
 }
 
+apiValidation {
+    nonPublicMarkers += "gobley.gradle.InternalGobleyGradleApi"
+}
+
 gobleyGradleBuild {
     configureGobleyGradleProject(
         description = "Common types used by Gobley Gradle plugins.",

@@ -1,19 +1,3 @@
-public final class gobley/gradle/AppleSdk {
-	public static final field Companion Lgobley/gradle/AppleSdk$Companion;
-	public fun <init> (Lgobley/gradle/AppleSdk$Destination;Ljava/lang/String;)V
-	public final fun component1 ()Lgobley/gradle/AppleSdk$Destination;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Lgobley/gradle/AppleSdk$Destination;Ljava/lang/String;)Lgobley/gradle/AppleSdk;
-	public static synthetic fun copy$default (Lgobley/gradle/AppleSdk;Lgobley/gradle/AppleSdk$Destination;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/AppleSdk;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDestination ()Lgobley/gradle/AppleSdk$Destination;
-	public final fun getSdkName ()Ljava/lang/String;
-	public final fun getVersion ()Ljava/lang/String;
-	public fun hashCode ()I
-	public final fun rustTarget (Lgobley/gradle/AppleSdk$Arch;)Lgobley/gradle/rust/targets/RustTarget;
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class gobley/gradle/AppleSdk$Arch : java/lang/Enum {
 	public static final field Arm64 Lgobley/gradle/AppleSdk$Arch;
 	public static final field Arm64_32 Lgobley/gradle/AppleSdk$Arch;
@@ -45,29 +29,6 @@ public final class gobley/gradle/AppleSdk$Destination : java/lang/Enum {
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lgobley/gradle/AppleSdk$Destination;
 	public static fun values ()[Lgobley/gradle/AppleSdk$Destination;
-}
-
-public final class gobley/gradle/AppleSdkKt {
-	public static final fun AppleSdk (Ljava/lang/String;)Lgobley/gradle/AppleSdk;
-}
-
-public final class gobley/gradle/BuildConfig {
-	public static final field INSTANCE Lgobley/gradle/BuildConfig;
-	public final fun getUNIFFI_BINDGEN_BIN ()Ljava/lang/String;
-	public final fun getUNIFFI_BINDGEN_CRATE ()Ljava/lang/String;
-	public final fun getUNIFFI_BINDGEN_VERSION ()Ljava/lang/String;
-	public final fun getWASM_TRANSFORMER_BIN ()Ljava/lang/String;
-	public final fun getWASM_TRANSFORMER_CRATE ()Ljava/lang/String;
-	public final fun getWASM_TRANSFORMER_VERSION ()Ljava/lang/String;
-}
-
-public final class gobley/gradle/DependencyVersions {
-	public static final field INSTANCE Lgobley/gradle/DependencyVersions;
-	public final fun getANDROIDX_ANNOTATION ()Ljava/lang/String;
-	public final fun getJNA ()Ljava/lang/String;
-	public final fun getKOTLINX_ATOMICFU ()Ljava/lang/String;
-	public final fun getKOTLINX_COROUTINES ()Ljava/lang/String;
-	public final fun getKOTLINX_DATETIME ()Ljava/lang/String;
 }
 
 public final class gobley/gradle/EmptyVariantValues : gobley/gradle/VariantValues {
@@ -139,20 +100,6 @@ public final class gobley/gradle/GobleyHost$Platform$Companion {
 public abstract interface annotation class gobley/gradle/InternalGobleyGradleApi : java/lang/annotation/Annotation {
 }
 
-public final class gobley/gradle/PluginIds {
-	public static final field INSTANCE Lgobley/gradle/PluginIds;
-	public final fun getANDROID_APPLICATION ()Ljava/lang/String;
-	public final fun getANDROID_LIBRARY ()Ljava/lang/String;
-	public final fun getGOBLEY_CARGO ()Ljava/lang/String;
-	public final fun getGOBLEY_RUST ()Ljava/lang/String;
-	public final fun getGOBLEY_UNIFFI ()Ljava/lang/String;
-	public final fun getKOTLIN_ANDROID ()Ljava/lang/String;
-	public final fun getKOTLIN_ATOMIC_FU ()Ljava/lang/String;
-	public final fun getKOTLIN_JVM ()Ljava/lang/String;
-	public final fun getKOTLIN_MULTIPLATFORM ()Ljava/lang/String;
-	public final fun getKOTLIN_SERIALIZATION ()Ljava/lang/String;
-}
-
 public final class gobley/gradle/Variant : java/lang/Enum {
 	public static final field Debug Lgobley/gradle/Variant;
 	public static final field Release Lgobley/gradle/Variant;
@@ -195,25 +142,6 @@ public abstract interface class gobley/gradle/VariantValuesConfiguration {
 	public abstract fun release (Ljava/lang/Object;)V
 }
 
-public abstract interface class gobley/gradle/android/GobleyAndroidExtensionDelegate {
-	public abstract fun addMainJniDir (Lorg/gradle/api/Project;Lgobley/gradle/Variant;Lorg/gradle/api/tasks/TaskProvider;Lorg/gradle/api/provider/Provider;)V
-	public abstract fun addMainSourceDir (Lgobley/gradle/Variant;Lorg/gradle/api/provider/Provider;)V
-	public abstract fun addProguardFiles (Lorg/gradle/api/Project;Lorg/gradle/api/file/RegularFile;Lorg/gradle/api/tasks/TaskProvider;)V
-	public abstract fun getAbiFilters ()Ljava/util/Set;
-	public abstract fun getAndroidMinSdk ()I
-	public abstract fun getAndroidNdkRoot ()Ljava/io/File;
-	public abstract fun getAndroidNdkVersion ()Ljava/lang/String;
-	public abstract fun getAndroidSdkRoot ()Ljava/io/File;
-}
-
-public final class gobley/gradle/android/GobleyAndroidExtensionDelegate$DefaultImpls {
-	public static synthetic fun addMainSourceDir$default (Lgobley/gradle/android/GobleyAndroidExtensionDelegate;Lgobley/gradle/Variant;Lorg/gradle/api/provider/Provider;ILjava/lang/Object;)V
-}
-
-public final class gobley/gradle/android/GobleyAndroidExtensionDelegateKt {
-	public static final fun GobleyAndroidExtensionDelegate (Lorg/gradle/api/Project;)Lgobley/gradle/android/GobleyAndroidExtensionDelegate;
-}
-
 public final class gobley/gradle/kotlin/GobleyKotlinAndroidExtensionDelegate : gobley/gradle/kotlin/GobleyKotlinExtensionDelegate {
 	public fun <init> (Lorg/gradle/api/Project;)V
 	public fun getAndroidTarget ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinTarget;
@@ -222,15 +150,6 @@ public final class gobley/gradle/kotlin/GobleyKotlinAndroidExtensionDelegate : g
 	public fun getPluginId ()Ljava/lang/String;
 	public fun getSourceSets ()Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;
 	public fun getTargets ()Lorg/gradle/api/DomainObjectCollection;
-}
-
-public abstract interface class gobley/gradle/kotlin/GobleyKotlinExtensionDelegate {
-	public abstract fun getAndroidTarget ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinTarget;
-	public abstract fun getImplementationVersion ()Ljava/lang/String;
-	public abstract fun getJvmTarget ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinTarget;
-	public abstract fun getPluginId ()Ljava/lang/String;
-	public abstract fun getSourceSets ()Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;
-	public abstract fun getTargets ()Lorg/gradle/api/DomainObjectCollection;
 }
 
 public final class gobley/gradle/kotlin/GobleyKotlinJvmExtensionDelegate : gobley/gradle/kotlin/GobleyKotlinExtensionDelegate {
@@ -251,25 +170,6 @@ public final class gobley/gradle/kotlin/GobleyKotlinMultiplatformExtensionDelega
 	public fun getPluginId ()Ljava/lang/String;
 	public fun getSourceSets ()Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;
 	public fun getTargets ()Lorg/gradle/api/DomainObjectCollection;
-}
-
-public abstract interface class gobley/gradle/kotlin/GobleyKotlinSourceSetCollection : org/gradle/api/NamedDomainObjectCollection {
-	public abstract fun androidMain (Lgobley/gradle/Variant;)Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun androidUnitTest (Lgobley/gradle/Variant;)Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getAndroidMain ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getAndroidUnitTest ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getCommonMain ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getJsMain ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getJvmMain ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getWasmJsMain ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public abstract fun getWasmWasiMain ()Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-}
-
-public final class gobley/gradle/kotlin/GobleyKotlinSourceSetCollection$DefaultImpls {
-	public static synthetic fun androidMain$default (Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;Lgobley/gradle/Variant;ILjava/lang/Object;)Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public static synthetic fun androidUnitTest$default (Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;Lgobley/gradle/Variant;ILjava/lang/Object;)Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public static fun getAndroidMain (Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;)Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
-	public static fun getAndroidUnitTest (Lgobley/gradle/kotlin/GobleyKotlinSourceSetCollection;)Lorg/jetbrains/kotlin/gradle/plugin/KotlinSourceSet;
 }
 
 public final class gobley/gradle/rust/CrateType : java/lang/Enum {
@@ -454,154 +354,5 @@ public abstract class gobley/gradle/tasks/AbstractFileGenerationTask : org/gradl
 	public final fun generateFile ()V
 	protected abstract fun getDesiredOutput ()Ljava/lang/String;
 	public abstract fun getOutputFile ()Lorg/gradle/api/file/RegularFileProperty;
-}
-
-public abstract class gobley/gradle/tasks/CommandTask : org/gradle/api/DefaultTask {
-	public fun <init> ()V
-	public final fun command (Ljava/io/File;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public final fun command (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public final fun command (Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun command$default (Lgobley/gradle/tasks/CommandTask;Ljava/io/File;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun command$default (Lgobley/gradle/tasks/CommandTask;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun command$default (Lgobley/gradle/tasks/CommandTask;Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-	public final fun commandWithFile (Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun commandWithFile$default (Lgobley/gradle/tasks/CommandTask;Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-	public final fun commandWithRegularFile (Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun commandWithRegularFile$default (Lgobley/gradle/tasks/CommandTask;Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-	public fun configureFromProperties (Lgobley/gradle/utils/CommandSpec;)V
-	public abstract fun getAdditionalEnvironment ()Lorg/gradle/api/provider/MapProperty;
-	public abstract fun getAdditionalEnvironmentPath ()Lorg/gradle/api/provider/ListProperty;
-	public abstract fun getProjectLayout ()Lorg/gradle/api/file/ProjectLayout;
-	public abstract fun getProviderFactory ()Lorg/gradle/api/provider/ProviderFactory;
-}
-
-public abstract interface class gobley/gradle/tasks/GloballyLockedTask : org/gradle/api/Task {
-	public abstract fun getJvmLocalLockHolder ()Lorg/gradle/api/provider/Property;
-	public abstract fun getRootProjectDirectory ()Lorg/gradle/api/file/DirectoryProperty;
-}
-
-public final class gobley/gradle/tasks/GloballyLockedTaskKt {
-	public static final fun globalLock (Lgobley/gradle/tasks/GloballyLockedTask;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
-	public static final fun useGlobalLock (Lorg/gradle/api/Project;)V
-}
-
-public abstract class gobley/gradle/tasks/JvmLocalLockHolder : org/gradle/api/services/BuildService {
-	public fun <init> ()V
-	public final fun getJvmLocalLockMap ()Ljava/util/concurrent/ConcurrentHashMap;
-}
-
-public abstract class gobley/gradle/utils/Command : org/gradle/api/provider/ValueSource {
-	public fun obtain ()Lgobley/gradle/utils/CommandResult;
-	public synthetic fun obtain ()Ljava/lang/Object;
-}
-
-public final class gobley/gradle/utils/CommandKt {
-	public static final fun command (Lorg/gradle/api/Project;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public static final fun command (Lorg/gradle/api/Project;Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun command$default (Lorg/gradle/api/Project;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun command$default (Lorg/gradle/api/Project;Lorg/gradle/api/provider/Provider;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
-}
-
-public abstract interface class gobley/gradle/utils/CommandParameters : org/gradle/api/provider/ValueSourceParameters {
-	public abstract fun getAdditionalEnvironment ()Lorg/gradle/api/provider/MapProperty;
-	public abstract fun getArguments ()Lorg/gradle/api/provider/ListProperty;
-	public abstract fun getCaptureStandardError ()Lorg/gradle/api/provider/Property;
-	public abstract fun getCaptureStandardOutput ()Lorg/gradle/api/provider/Property;
-	public abstract fun getCommand ()Lorg/gradle/api/provider/Property;
-	public abstract fun getSuppressXcodeIosToolchains ()Lorg/gradle/api/provider/Property;
-	public abstract fun getWorkingDirectory ()Lorg/gradle/api/file/DirectoryProperty;
-}
-
-public final class gobley/gradle/utils/CommandResult {
-	public fun <init> (Ljava/lang/String;Ljava/util/List;Lorg/gradle/api/file/Directory;Ljava/lang/String;Ljava/lang/String;I)V
-	public final fun assertNormalExitValue (Lorg/gradle/api/logging/Logger;ZZ)V
-	public static synthetic fun assertNormalExitValue$default (Lgobley/gradle/utils/CommandResult;Lorg/gradle/api/logging/Logger;ZZILjava/lang/Object;)V
-	public final fun assertNormalExitValueUsingLogger (Lorg/gradle/api/DefaultTask;ZZ)V
-	public static synthetic fun assertNormalExitValueUsingLogger$default (Lgobley/gradle/utils/CommandResult;Lorg/gradle/api/DefaultTask;ZZILjava/lang/Object;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/util/List;
-	public final fun component3 ()Lorg/gradle/api/file/Directory;
-	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Ljava/lang/String;
-	public final fun component6 ()I
-	public final fun copy (Ljava/lang/String;Ljava/util/List;Lorg/gradle/api/file/Directory;Ljava/lang/String;Ljava/lang/String;I)Lgobley/gradle/utils/CommandResult;
-	public static synthetic fun copy$default (Lgobley/gradle/utils/CommandResult;Ljava/lang/String;Ljava/util/List;Lorg/gradle/api/file/Directory;Ljava/lang/String;Ljava/lang/String;IILjava/lang/Object;)Lgobley/gradle/utils/CommandResult;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getArguments ()Ljava/util/List;
-	public final fun getCommand ()Ljava/lang/String;
-	public final fun getStandardError ()Ljava/lang/String;
-	public final fun getStandardOutput ()Ljava/lang/String;
-	public final fun getStatusCode ()I
-	public final fun getWorkingDirectory ()Lorg/gradle/api/file/Directory;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class gobley/gradle/utils/CommandSpec {
-	public fun <init> (Lorg/gradle/api/file/ProjectLayout;Lorg/gradle/api/provider/ProviderFactory;Lgobley/gradle/utils/CommandParameters;)V
-	public final fun additionalEnvironment (Ljava/lang/String;Ljava/lang/Object;)V
-	public final fun additionalEnvironment (Ljava/lang/String;Lorg/gradle/api/provider/Provider;)V
-	public final fun additionalEnvironmentPath ([Ljava/lang/Object;)V
-	public final fun additionalEnvironmentPath ([Lorg/gradle/api/provider/Provider;)V
-	public final fun arguments ([Ljava/lang/Object;)V
-	public final fun captureStandardError ()V
-	public final fun captureStandardOutput ()V
-	public final fun suppressXcodeIosToolchains ()V
-	public final fun workingDirectory (Lorg/gradle/api/file/Directory;)V
-	public final fun workingDirectory (Lorg/gradle/api/provider/Provider;)V
-}
-
-public final class gobley/gradle/utils/DependencyUtils {
-	public static final field INSTANCE Lgobley/gradle/utils/DependencyUtils;
-	public final fun addAndroidUnitTestRuntimeRustLibraryJar (Lorg/gradle/api/Project;Lgobley/gradle/rust/targets/RustTarget;Lgobley/gradle/Variant;Lorg/gradle/api/provider/Provider;)V
-	public final fun addMergedUniffiConfigArtifact (Lorg/gradle/api/Project;Lorg/gradle/api/tasks/TaskProvider;)V
-	public final fun configureEachCommonDependencies (Lorg/gradle/api/artifacts/ConfigurationContainer;Lkotlin/jvm/functions/Function1;)V
-	public final fun createCargoConfigurations (Lorg/gradle/api/Project;)V
-	public final fun createUniFfiConfigurations (Lorg/gradle/api/Project;)V
-	public final fun getExternalPackageUniFfiConfigurations (Lorg/gradle/api/Project;)Lorg/gradle/api/provider/Provider;
-	public final fun resolveCargoDependencies (Lorg/gradle/api/Project;)V
-	public final fun resolveUniFfiDependencies (Lorg/gradle/api/Project;)V
-}
-
-public final class gobley/gradle/utils/GradleUtils {
-	public static final field INSTANCE Lgobley/gradle/utils/GradleUtils;
-	public final fun getComposePreviewVariant (Lorg/gradle/api/invocation/Gradle;)Lgobley/gradle/Variant;
-	public final fun invokedByKotlinJvmBuild (Lorg/gradle/api/invocation/Gradle;)Z
-	public final fun runTaskDuringSync (Lorg/gradle/api/Project;[Ljava/lang/Object;)V
-}
-
-public final class gobley/gradle/utils/PluginUtils {
-	public static final field INSTANCE Lgobley/gradle/utils/PluginUtils;
-	public final fun ensurePluginIsApplied (Lorg/gradle/api/Project;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun ensurePluginIsApplied (Lorg/gradle/api/Project;[Lgobley/gradle/utils/PluginUtils$PluginInfo;)V
-	public final fun withAndroidPlugin (Lorg/gradle/api/Project;Lkotlin/jvm/functions/Function1;)V
-	public final fun withKotlinPlugin (Lorg/gradle/api/Project;Lkotlin/jvm/functions/Function1;)V
-}
-
-public final class gobley/gradle/utils/PluginUtils$PluginInfo {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lgobley/gradle/utils/PluginUtils$PluginInfo;
-	public static synthetic fun copy$default (Lgobley/gradle/utils/PluginUtils$PluginInfo;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lgobley/gradle/utils/PluginUtils$PluginInfo;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getId ()Ljava/lang/String;
-	public final fun getPluginName ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class gobley/gradle/utils/RustVersionUtils {
-	public static final field INSTANCE Lgobley/gradle/utils/RustVersionUtils;
-	public final fun getRustVersion (Lorg/gradle/api/Project;Ljava/io/File;)Lio/github/z4kn4fein/semver/Version;
-}
-
-public final class gobley/gradle/utils/SemVerConstraintMap {
-	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/Object;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Ljava/lang/Object;[Lkotlin/Pair;)V
-	public final fun get (Lio/github/z4kn4fein/semver/Version;)Ljava/lang/Object;
-	public final fun get (Ljava/lang/String;)Ljava/lang/Object;
-	public final fun getDefault ()Ljava/lang/Object;
 }
 

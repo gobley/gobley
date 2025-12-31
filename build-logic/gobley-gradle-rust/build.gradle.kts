@@ -6,6 +6,10 @@ plugins {
     id("gobley-gradle-build")
 }
 
+apiValidation {
+    nonPublicMarkers += "gobley.gradle.InternalGobleyGradleApi"
+}
+
 gobleyGradleBuild {
     configureGobleyGradleProject(
         description = "A Gradle plugin for configuring Rust toolchain and linking Rust libraries to Kotlin projects.",

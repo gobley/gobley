@@ -252,7 +252,6 @@ public abstract interface class gobley/gradle/cargo/dsl/CargoDesktopBuildVariant
 
 public abstract class gobley/gradle/cargo/dsl/CargoExtension : gobley/gradle/cargo/dsl/HasFeatures, gobley/gradle/cargo/dsl/HasJvmVariant, gobley/gradle/cargo/dsl/HasNativeVariant, gobley/gradle/cargo/dsl/HasVariants, gobley/gradle/cargo/dsl/HasWasmVariant, org/jetbrains/kotlin/gradle/plugin/HasProject {
 	public fun <init> (Lorg/gradle/api/Project;)V
-	public final fun getAndroidTargetsToBuild ()Lorg/gradle/api/provider/SetProperty;
 	public final fun getBuilds ()Lgobley/gradle/cargo/dsl/CargoBuildCollection;
 	public final fun getCargoPackage ()Lorg/gradle/api/provider/Provider;
 	public final fun getCheckCommand ()Lorg/gradle/api/provider/Property;
@@ -486,8 +485,6 @@ public abstract class gobley/gradle/cargo/tasks/CargoPackageTask : gobley/gradle
 
 public abstract class gobley/gradle/cargo/tasks/CargoTask : gobley/gradle/tasks/CommandTask {
 	public fun <init> ()V
-	public final fun cargo ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/gradle/api/provider/Provider;
-	public static synthetic fun cargo$default (Lgobley/gradle/cargo/tasks/CargoTask;[Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/gradle/api/provider/Provider;
 	public abstract fun getCargo ()Lorg/gradle/api/provider/Property;
 	public abstract fun getNightly ()Lorg/gradle/api/provider/Property;
 }
