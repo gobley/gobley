@@ -1,6 +1,7 @@
 param (
     [switch]$GenerateImmutableRecords,
-    [switch]$OmitChecksums
+    [switch]$OmitChecksums,
+    [switch]$EnableJnaInterfaceMapping
 );
 
 $ErrorActionPreference = "Stop";
@@ -30,7 +31,8 @@ try {
                 "-Pgobley.projects.uniffiTests.extTypes=$extTypes" `
                 "-Pgobley.projects.uniffiTests.futures=$futures" `
                 "-Pgobley.projects.uniffiTests.generateImmutableRecords=$GenerateImmutableRecords" `
-                "-Pgobley.projects.uniffiTests.omitChecksums=$OmitChecksums";
+                "-Pgobley.projects.uniffiTests.omitChecksums=$OmitChecksums" `
+                "-Pgobley.projects.uniffiTests.enableJnaInterfaceMapping=$EnableJnaInterfaceMapping";
         } finally {
             # Allow overwriting the test result to use the last one.
             # If the test fails, this will copy the result of the failing tests.

@@ -33,6 +33,7 @@ jobs:
           - uniffi-tests-gir
           - uniffi-tests-oc
           - uniffi-tests-gir-oc
+          - uniffi-tests-im
     steps:
       - uses: actions/checkout@v4
       - name: Docker login to GitHub Container Registry

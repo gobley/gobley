@@ -88,6 +88,7 @@ jobs:
           - uniffi-tests-gir
           - uniffi-tests-oc
           - uniffi-tests-gir-oc
+          - uniffi-tests-im
         platform: ${{ fromJSON(needs.prepare-matrix.outputs.platforms) }}
     runs-on: ${{ fromJSON(needs.prepare-matrix.outputs.runners)[matrix.platform] }}
     steps:
