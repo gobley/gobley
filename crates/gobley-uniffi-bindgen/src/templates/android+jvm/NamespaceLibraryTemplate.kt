@@ -78,6 +78,118 @@ private inline fun <reified Lib : Library> loadIndirect(componentName: String): 
 }
 {%- endif %}
 
+{%- if !dynamic_library_dependencies.is_empty() %}
+{%- if module_name == "jvm" %}
+// Dynamic library dependency loading code.
+//
+// Load dynamic libraries that the main Rust library depends on. They may
+// reside inside a .jar file, or already be installed in the file system.
+// The reason for this custom handling is that JNA copies the extracted
+// library to a temporary file with a random name, resulting in a dynamic
+// link error on Windows. This logic ensures that the destination temporary
+// file has the same base name as the original library file in the JAR file.
+//
+// First, try loading the library without searching the directories
+// specified in CLASSPATH.
+@Suppress("SameParameterValue")
+private fun loadDynamicLibraryDependencies(vararg dependencies: String) {
+    val nilClasspathClassLoader = java.net.URLClassLoader(emptyArray(), Any::class.java.classLoader)
+    val dependenciesRequiringExtraction = mutableListOf<String>()
+    for (dependency in dependencies) {
+        try {
+            com.sun.jna.NativeLibrary.getInstance(dependency, nilClasspathClassLoader)
+        } catch (_: UnsatisfiedLinkError) {
+            dependenciesRequiringExtraction.add(dependency)
+        }
+    }
+    loadDynamicLibraryDependenciesByExtraction(dependenciesRequiringExtraction, nilClasspathClassLoader)
+{{ '}' }}
+
+// Second, try extracting the library from a .jar file.
+private fun loadDynamicLibraryDependenciesByExtraction(
+    dependencies: List<String>,
+    nilClasspathClassLoader: ClassLoader,
+) {
+    if (dependencies.isEmpty()) return
+    // The directory where the dynamic library dependencies in zipped JAR files will be extracted
+    val extractionDestination = java.nio.file.Files.createTempDirectory("gobley-jna").toFile()
+    val classLoader = UniffiLib::class.java.classLoader!!
+    val dependenciesRequiringJnaHandling = mutableListOf<String>()
+    for (dependency in dependencies) {
+        val libraryFile = findLibraryInClassPath(dependency, classLoader, extractionDestination)
+        if (libraryFile == null) {
+            dependenciesRequiringJnaHandling.add(dependency)
+            continue
+        }
+        try {
+            com.sun.jna.NativeLibrary.addSearchPath(
+                dependency,
+                libraryFile.parentFile.absolutePath,
+            )
+            com.sun.jna.NativeLibrary.getInstance(
+                dependency,
+                nilClasspathClassLoader,
+            )
+        } catch (_: UnsatisfiedLinkError) {
+            dependenciesRequiringJnaHandling.add(dependency)
+        }
+    }
+    // Lastly, if all the logic above fails, try loading the library using JNA.
+    for (dependency in dependenciesRequiringJnaHandling) {
+        com.sun.jna.NativeLibrary.getInstance(dependency)
+    }
+{{ '}' }}
+
+private fun findLibraryInClassPath(
+    library: String,
+    classLoader: ClassLoader,
+    extractionDestination: java.io.File,
+): java.io.File? {
+    var libraryName = System.mapLibraryName(library)
+    if (com.sun.jna.Platform.isMac()) {
+        if (libraryName.endsWith(".jnilib")) {
+            libraryName = libraryName.removeSuffix(".jnilib") + ".dylib"
+        }
+    }
+    val resourcePath = "${com.sun.jna.Platform.RESOURCE_PREFIX}/$libraryName"
+    var url = classLoader.getResource(resourcePath)
+    if (com.sun.jna.Platform.isMac() && url == null) {
+        url = classLoader.getResource("darwin/$libraryName")
+    }
+    if (url == null) {
+        url = classLoader.getResource(libraryName)
+    }
+    if (url == null) {
+        return null
+    }
+    if (url.protocol.equals("file", ignoreCase = true)) {
+        val file = try {
+            java.io.File(url.toURI())
+        } catch (_: java.net.URISyntaxException) {
+            java.io.File(url.path)
+        }
+        return file.takeIf { it.exists() }
+    }
+    val destination = extractionDestination.resolve(resourcePath).apply {
+        parentFile?.mkdirs()
+        deleteOnExit()
+    }
+    url.openStream().use { inputStream ->
+        destination.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+    }
+    return destination
+{{ '}' }}
+{%- else %}
+private fun loadDynamicLibraryDependencies(vararg dependencies: String) {
+    for (dependency in dependencies) {
+        com.sun.jna.NativeLibrary.getInstance(dependency)
+    }
+{{ '}' }}
+{%- endif %}
+{%- endif %}
+
 // For large crates we prevent `MethodTooLargeException` (see #2340)
 // N.B. the name of the extension is very misleading, since it is 
 // rather `InterfaceTooLargeException`, caused by too many methods 
@@ -155,8 +267,8 @@ internal object IntegrityCheckingUniffiLib : Library {
 // This is an implementation detail which will be called internally by the public API.
 {%- if config.enable_jna_interface_mapping() %}
 internal interface UniffiLib : Library {
-    companion object : UniffiLib by loadIndirect("{{ ci.namespace() }}") {
-        init {
+    companion object : UniffiLib by (
+        run {
             {%- if !dynamic_library_dependencies.is_empty() %}
             loadDynamicLibraryDependencies(
                 {%- for dynamic_library in config.dynamic_library_dependencies(module_name) %}
@@ -167,6 +279,10 @@ internal interface UniffiLib : Library {
             )
             {%- endif %}
             IntegrityCheckingUniffiLib
+            loadIndirect("{{ ci.namespace() }}")
+        }
+    ) {
+        init {
             // No need to check the contract version and checksums, since 
             // we already did that with `IntegrityCheckingUniffiLib` above.
             {%- for init_fn in self.initialization_fns(ci) %}
@@ -200,118 +316,6 @@ internal object UniffiLib : Library {
 {{ " "|repeat(lib_private_fun_indent) }}internal val CLEANER: UniffiCleaner by lazy {
 {{ " "|repeat(lib_private_fun_indent) }}    UniffiCleaner.create()
 {{ " "|repeat(lib_private_fun_indent) }}{{ '}' }}
-                                        {%- endif %}
-
-                                        {%- if !dynamic_library_dependencies.is_empty() %}
-                                        {%- if module_name == "jvm" %}
-{{ " "|repeat(lib_private_fun_indent) }}// Dynamic library dependency loading code.
-{{ " "|repeat(lib_private_fun_indent) }}//
-{{ " "|repeat(lib_private_fun_indent) }}// Load dynamic libraries that the main Rust library depends on. They may
-{{ " "|repeat(lib_private_fun_indent) }}// reside inside a .jar file, or already be installed in the file system.
-{{ " "|repeat(lib_private_fun_indent) }}// The reason for this custom handling is that JNA copies the extracted
-{{ " "|repeat(lib_private_fun_indent) }}// library to a temporary file with a random name, resulting in a dynamic
-{{ " "|repeat(lib_private_fun_indent) }}// link error on Windows. This logic ensures that the destination temporary
-{{ " "|repeat(lib_private_fun_indent) }}// file has the same base name as the original library file in the JAR file.
-{{ " "|repeat(lib_private_fun_indent) }}//
-{{ " "|repeat(lib_private_fun_indent) }}// First, try loading the library without searching the directories
-{{ " "|repeat(lib_private_fun_indent) }}// specified in CLASSPATH.
-{{ " "|repeat(lib_private_fun_indent) }}@Suppress("SameParameterValue")
-{{ " "|repeat(lib_private_fun_indent) }}private fun loadDynamicLibraryDependencies(vararg dependencies: String) {
-{{ " "|repeat(lib_private_fun_indent) }}    val nilClasspathClassLoader = java.net.URLClassLoader(emptyArray(), Any::class.java.classLoader)
-{{ " "|repeat(lib_private_fun_indent) }}    val dependenciesRequiringExtraction = mutableListOf<String>()
-{{ " "|repeat(lib_private_fun_indent) }}    for (dependency in dependencies) {
-{{ " "|repeat(lib_private_fun_indent) }}        try {
-{{ " "|repeat(lib_private_fun_indent) }}            com.sun.jna.NativeLibrary.getInstance(dependency, nilClasspathClassLoader)
-{{ " "|repeat(lib_private_fun_indent) }}        } catch (_: UnsatisfiedLinkError) {
-{{ " "|repeat(lib_private_fun_indent) }}            dependenciesRequiringExtraction.add(dependency)
-{{ " "|repeat(lib_private_fun_indent) }}        }
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    loadDynamicLibraryDependenciesByExtraction(dependenciesRequiringExtraction, nilClasspathClassLoader)
-{{ " "|repeat(lib_private_fun_indent) }}{{ '}' }}
-
-{{ " "|repeat(lib_private_fun_indent) }}// Second, try extracting the library from a .jar file.
-{{ " "|repeat(lib_private_fun_indent) }}private fun loadDynamicLibraryDependenciesByExtraction(
-{{ " "|repeat(lib_private_fun_indent) }}    dependencies: List<String>,
-{{ " "|repeat(lib_private_fun_indent) }}    nilClasspathClassLoader: ClassLoader,
-{{ " "|repeat(lib_private_fun_indent) }}) {
-{{ " "|repeat(lib_private_fun_indent) }}    if (dependencies.isEmpty()) return
-{{ " "|repeat(lib_private_fun_indent) }}    // The directory where the dynamic library dependencies in zipped JAR files will be extracted
-{{ " "|repeat(lib_private_fun_indent) }}    val extractionDestination = java.nio.file.Files.createTempDirectory("gobley-jna").toFile()
-{{ " "|repeat(lib_private_fun_indent) }}    val classLoader = UniffiLib::class.java.classLoader!!
-{{ " "|repeat(lib_private_fun_indent) }}    val dependenciesRequiringJnaHandling = mutableListOf<String>()
-{{ " "|repeat(lib_private_fun_indent) }}    for (dependency in dependencies) {
-{{ " "|repeat(lib_private_fun_indent) }}        val libraryFile = findLibraryInClassPath(dependency, classLoader, extractionDestination)
-{{ " "|repeat(lib_private_fun_indent) }}        if (libraryFile == null) {
-{{ " "|repeat(lib_private_fun_indent) }}            dependenciesRequiringJnaHandling.add(dependency)
-{{ " "|repeat(lib_private_fun_indent) }}            continue
-{{ " "|repeat(lib_private_fun_indent) }}        }
-{{ " "|repeat(lib_private_fun_indent) }}        try {
-{{ " "|repeat(lib_private_fun_indent) }}            com.sun.jna.NativeLibrary.addSearchPath(
-{{ " "|repeat(lib_private_fun_indent) }}                dependency,
-{{ " "|repeat(lib_private_fun_indent) }}                libraryFile.parentFile.absolutePath,
-{{ " "|repeat(lib_private_fun_indent) }}            )
-{{ " "|repeat(lib_private_fun_indent) }}            com.sun.jna.NativeLibrary.getInstance(
-{{ " "|repeat(lib_private_fun_indent) }}                dependency,
-{{ " "|repeat(lib_private_fun_indent) }}                nilClasspathClassLoader,
-{{ " "|repeat(lib_private_fun_indent) }}            )
-{{ " "|repeat(lib_private_fun_indent) }}        } catch (_: UnsatisfiedLinkError) {
-{{ " "|repeat(lib_private_fun_indent) }}            dependenciesRequiringJnaHandling.add(dependency)
-{{ " "|repeat(lib_private_fun_indent) }}        }
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    // Lastly, if all the logic above fails, try loading the library using JNA.
-{{ " "|repeat(lib_private_fun_indent) }}    for (dependency in dependenciesRequiringJnaHandling) {
-{{ " "|repeat(lib_private_fun_indent) }}        com.sun.jna.NativeLibrary.getInstance(dependency)
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}{{ '}' }}
-
-{{ " "|repeat(lib_private_fun_indent) }}private fun findLibraryInClassPath(
-{{ " "|repeat(lib_private_fun_indent) }}    library: String,
-{{ " "|repeat(lib_private_fun_indent) }}    classLoader: ClassLoader,
-{{ " "|repeat(lib_private_fun_indent) }}    extractionDestination: java.io.File,
-{{ " "|repeat(lib_private_fun_indent) }}): java.io.File? {
-{{ " "|repeat(lib_private_fun_indent) }}    var libraryName = System.mapLibraryName(library)
-{{ " "|repeat(lib_private_fun_indent) }}    if (com.sun.jna.Platform.isMac()) {
-{{ " "|repeat(lib_private_fun_indent) }}        if (libraryName.endsWith(".jnilib")) {
-{{ " "|repeat(lib_private_fun_indent) }}            libraryName = libraryName.removeSuffix(".jnilib") + ".dylib"
-{{ " "|repeat(lib_private_fun_indent) }}        }
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    val resourcePath = "${com.sun.jna.Platform.RESOURCE_PREFIX}/$libraryName"
-{{ " "|repeat(lib_private_fun_indent) }}    var url = classLoader.getResource(resourcePath)
-{{ " "|repeat(lib_private_fun_indent) }}    if (com.sun.jna.Platform.isMac() && url == null) {
-{{ " "|repeat(lib_private_fun_indent) }}        url = classLoader.getResource("darwin/$libraryName")
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    if (url == null) {
-{{ " "|repeat(lib_private_fun_indent) }}        url = classLoader.getResource(libraryName)
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    if (url == null) {
-{{ " "|repeat(lib_private_fun_indent) }}        return null
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    if (url.protocol.equals("file", ignoreCase = true)) {
-{{ " "|repeat(lib_private_fun_indent) }}        val file = try {
-{{ " "|repeat(lib_private_fun_indent) }}            java.io.File(url.toURI())
-{{ " "|repeat(lib_private_fun_indent) }}        } catch (_: java.net.URISyntaxException) {
-{{ " "|repeat(lib_private_fun_indent) }}            java.io.File(url.path)
-{{ " "|repeat(lib_private_fun_indent) }}        }
-{{ " "|repeat(lib_private_fun_indent) }}        return file.takeIf { it.exists() }
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    val destination = extractionDestination.resolve(resourcePath).apply {
-{{ " "|repeat(lib_private_fun_indent) }}        parentFile?.mkdirs()
-{{ " "|repeat(lib_private_fun_indent) }}        deleteOnExit()
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    url.openStream().use { inputStream ->
-{{ " "|repeat(lib_private_fun_indent) }}        destination.outputStream().use { outputStream ->
-{{ " "|repeat(lib_private_fun_indent) }}            inputStream.copyTo(outputStream)
-{{ " "|repeat(lib_private_fun_indent) }}        }
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}    return destination
-{{ " "|repeat(lib_private_fun_indent) }}{{ '}' }}
-                                        {%- else %}
-{{ " "|repeat(lib_private_fun_indent) }}private fun loadDynamicLibraryDependencies(vararg dependencies: String) {
-{{ " "|repeat(lib_private_fun_indent) }}    for (dependency in dependencies) {
-{{ " "|repeat(lib_private_fun_indent) }}        com.sun.jna.NativeLibrary.getInstance(dependency)
-{{ " "|repeat(lib_private_fun_indent) }}    }
-{{ " "|repeat(lib_private_fun_indent) }}{{ '}' }}
-                                        {%- endif %}
                                         {%- endif %}
 
     {%- if config.enable_jna_interface_mapping() %}
