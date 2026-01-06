@@ -33,9 +33,10 @@ async function retrieveStargazersCount(repository: string): Promise<number> {
           return stargazersCount;
         }
       }
-    } catch {
-      // Try with a longer interval, but with a 8-second limit.
-      nextRetryInterval = Math.min(nextRetryInterval * 2, 8000);
-    }
+    } catch {}
+    // Wait before re-calling the API.
+    await new Promise((resolve) => setTimeout(resolve, nextRetryInterval));
+    // Try with a longer interval, but with a 32-second limit.
+    nextRetryInterval = Math.min(nextRetryInterval * 2, 32000);
   }
 }
