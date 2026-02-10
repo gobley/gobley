@@ -102,7 +102,14 @@ sealed class BindingsGeneration(internal val project: Project) {
 }
 
 abstract class BindingsGenerationFromLibrary @Inject internal constructor(project: Project) :
-    BindingsGeneration(project)
+    BindingsGeneration(project) {
+    /**
+     * When `true`, generate bindings for all namespaces/crates found in the library,
+     * not just the main crate. This is useful for libraries that re-export types from
+     * multiple crates (like matrix-rust-sdk).
+     */
+    abstract val generateAllNamespaces: Property<Boolean>
+}
 
 abstract class BindingsGenerationFromUdl @Inject internal constructor(project: Project) :
     BindingsGeneration(project) {
