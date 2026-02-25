@@ -7,13 +7,21 @@
 package gobley.gradle.android
 
 import gobley.gradle.InternalGobleyGradleApi
-import gobley.gradle.Variant
+import gobley.gradle.tasks.InjectJniLibsTask
 import org.gradle.api.Project
-import org.gradle.api.file.Directory
+import org.gradle.api.Task
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
+
+typealias OnVariantAction = (
+    agpVariantName: String,
+    cargoVariantName: String,
+    onMainTask: (TaskProvider<InjectJniLibsTask>) -> Unit,
+    onTestTask: ((TaskProvider<InjectJniLibsTask>) -> Unit)?
+) -> Unit
 
 @InternalGobleyGradleApi
 interface GobleyAndroidExtensionDelegate {
@@ -23,21 +31,30 @@ interface GobleyAndroidExtensionDelegate {
     val androidNdkVersion: String?
     val abiFilters: Set<String>
 
-    fun addMainSourceDir(
-        variant: Variant? = null,
-        sourceDirectory: Provider<Directory>,
+    /**
+     * Wires generated Kotlin source code into the Android build.
+     * Safely attaches the mapped directory to both the main application
+     * and its isolated test components (Unit/UI tests) without exposing AGP classes.
+     */
+    fun <T : Task> addGeneratedBindingsDirectory(
+        project: Project,
+        taskProvider: TaskProvider<T>,
+        directoryMapping: (T) -> DirectoryProperty
     )
 
-    fun addMainJniDir(
+    /**
+     * Provides a safe hook into Android's build variants (e.g., debug, release).
+     * Used primarily to map and inject compiled native Rust binaries (JNI libs)
+     * into the corresponding main and test APKs.
+     */
+    fun onVariants(
         project: Project,
-        variant: Variant,
-        jniTask: TaskProvider<*>,
-        jniDirectory: Provider<Directory>,
+        action: OnVariantAction,
     )
 
     fun addProguardFiles(
         project: Project,
-        proguardFile: RegularFile,
+        proguardFileProvider: Provider<RegularFile>,
         generationTask: TaskProvider<*>,
     )
 }
