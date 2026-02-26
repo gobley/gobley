@@ -45,20 +45,26 @@ kotlin {
     }
     jvmToolchain(17)
     jvm("desktop")
-    arrayOf(
-        mingwX64(),
-    ).forEach { nativeTarget ->
-        nativeTarget.compilations.getByName("test") {
-            useRustUpLinker()
+    if (GobleyHost.Platform.Windows.isCurrent) {
+        arrayOf(
+            mingwX64(),
+        ).forEach { nativeTarget ->
+            nativeTarget.compilations.getByName("test") {
+                useRustUpLinker()
+            }
         }
     }
+
 
     androidNativeArm64()
     androidNativeArm32()
     androidNativeX64()
     androidNativeX86()
-    linuxX64()
-    linuxArm64()
+    if (GobleyHost.Platform.Linux.isCurrent) {
+        linuxX64()
+        linuxArm64()
+    }
+
     if (GobleyHost.Platform.MacOS.isCurrent) {
         iosArm64()
         iosSimulatorArm64()
