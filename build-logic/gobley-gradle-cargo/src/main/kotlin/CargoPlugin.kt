@@ -7,6 +7,7 @@
 package gobley.gradle.cargo
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.tools.r8.internal.te
 import gobley.gradle.AppleSdk
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
@@ -77,10 +78,10 @@ class CargoPlugin : Plugin<Project> {
     private lateinit var cargoExtension: CargoExtension
 
     @OptIn(InternalGobleyGradleApi::class)
-    private lateinit var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate
+    private var kotlinExtensionDelegate: GobleyKotlinExtensionDelegate? = null
 
     @OptIn(InternalGobleyGradleApi::class)
-    private lateinit var androidDelegate: GobleyAndroidExtensionDelegate
+    private var androidDelegate: GobleyAndroidExtensionDelegate? = null
 
     override fun apply(target: Project) {
         @OptIn(InternalGobleyGradleApi::class)
@@ -140,13 +141,13 @@ class CargoPlugin : Plugin<Project> {
     private fun Project.watchPluginChanges() {
         PluginUtils.withKotlinPlugin(this) { delegate ->
             kotlinExtensionDelegate = delegate
-            kotlinExtensionDelegate.targets.configureEach { planBuilds() }
+            delegate.targets.configureEach { planBuilds() }
         }
         PluginUtils.withAndroidPlugin(this) { delegate ->
             androidDelegate = delegate
-            val abiFilters = androidDelegate.abiFilters
+            val abiFilters = androidDelegate?.abiFilters
             cargoExtension.androidTargetsToBuild.convention(project.provider {
-                if (abiFilters.isNotEmpty()) {
+                if (!abiFilters.isNullOrEmpty()) {
                     abiFilters.map(::RustAndroidTarget)
                 } else {
                     RustAndroidTarget.values().toList()
@@ -166,6 +167,14 @@ class CargoPlugin : Plugin<Project> {
             PluginUtils.PluginInfo(
                 "Kotlin JVM",
                 PluginIds.KOTLIN_JVM,
+            ),
+            PluginUtils.PluginInfo(
+                "Android Application",
+                PluginIds.ANDROID_APPLICATION,
+            ),
+            PluginUtils.PluginInfo(
+                "Android Library",
+                PluginIds.ANDROID_LIBRARY,
             ),
         )
     }
@@ -209,15 +218,17 @@ class CargoPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.checkKotlinTargets() {
-        val hasWasmTargets =
-            kotlinExtensionDelegate.targets.any { it.androidKmpLibraryCompatiblePlatformType == KotlinPlatformType.wasm }
+        val hasWasmTargets = kotlinExtensionDelegate?.targets.orEmpty().any {
+            it.androidKmpLibraryCompatiblePlatformType == KotlinPlatformType.wasm
+        }
         if (hasWasmTargets) {
             project.logger.warn("WASM targets are added, but Gobley does not support WASM targets yet.")
         }
 
-        val hasAndroidJvmTargets =
-            kotlinExtensionDelegate.targets.any { it.androidKmpLibraryCompatiblePlatformType == KotlinPlatformType.androidJvm }
-        if (hasAndroidJvmTargets && !::androidDelegate.isInitialized) {
+        val hasAndroidJvmTargets = kotlinExtensionDelegate?.targets.orEmpty().any {
+            it.androidKmpLibraryCompatiblePlatformType == KotlinPlatformType.androidJvm
+        }
+        if (hasAndroidJvmTargets && androidDelegate == null) {
             throw GradleException("Android JVM targets are added, but Android Gradle Plugin is not found.")
         }
     }
@@ -258,19 +269,20 @@ class CargoPlugin : Plugin<Project> {
                 it is KotlinJvmTarget || it is KotlinWithJavaTarget<*, *>
             }
         }
-        val wasmBindgenInstallTask =
-            tasks.register<InstallWasmTransformerTask>("installWasmTransformer") {
-                group = TASK_GROUP
-                binaryCrateSource.set(cargoExtension.wasmTransformerSource)
-                installDirectory.set(layout.buildDirectory.dir("gobley-tools-install/wasm-transformer"))
-            }
+        val wasmBindgenInstallTask = tasks.register<InstallWasmTransformerTask>("installWasmTransformer") {
+            group = TASK_GROUP
+            binaryCrateSource.set(cargoExtension.wasmTransformerSource)
+            installDirectory.set(layout.buildDirectory.dir("gobley-tools-install/wasm-transformer"))
+        }
+
         for (cargoBuild in cargoExtension.builds) {
-            val rustUpTargetAddTask =
-                tasks.register<RustUpTargetAddTask>({ +cargoBuild.rustTarget }) {
-                    group = TASK_GROUP
-                    this.rustTarget.set(cargoBuild.rustTarget)
-                    this.rustVersion.set(cargoExtension.rustVersion)
-                }
+
+            val rustUpTargetAddTask = tasks.register<RustUpTargetAddTask>({ +cargoBuild.rustTarget }) {
+                group = TASK_GROUP
+                this.rustTarget.set(cargoBuild.rustTarget)
+                this.rustVersion.set(cargoExtension.rustVersion)
+            }
+
             for (cargoBuildVariant in cargoBuild.variants) {
                 val projectLayout = layout
                 cargoBuildVariant.buildTaskProvider.configure {
@@ -292,10 +304,10 @@ class CargoPlugin : Plugin<Project> {
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
                         @OptIn(InternalGobleyGradleApi::class)
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
-                            sdkRoot = androidDelegate.androidSdkRoot,
-                            apiLevel = androidDelegate.androidMinSdk,
-                            ndkVersion = androidDelegate.androidNdkVersion,
-                            ndkRoot = androidDelegate.androidNdkRoot,
+                            sdkRoot = androidDelegate!!.androidSdkRoot,
+                            apiLevel = androidDelegate!!.androidMinSdk,
+                            ndkVersion = androidDelegate!!.androidNdkVersion,
+                            ndkRoot = androidDelegate!!.androidNdkRoot,
                         )
                         additionalEnvironment.putAll(environmentVariables)
                     }
@@ -307,10 +319,10 @@ class CargoPlugin : Plugin<Project> {
                     if (cargoBuildVariant is CargoAndroidBuildVariant) {
                         @OptIn(InternalGobleyGradleApi::class)
                         val environmentVariables = cargoBuildVariant.rustTarget.ndkEnvVariables(
-                            sdkRoot = androidDelegate.androidSdkRoot,
-                            apiLevel = androidDelegate.androidMinSdk,
-                            ndkVersion = androidDelegate.androidNdkVersion,
-                            ndkRoot = androidDelegate.androidNdkRoot,
+                            sdkRoot = androidDelegate!!.androidSdkRoot,
+                            apiLevel = androidDelegate!!.androidMinSdk,
+                            ndkVersion = androidDelegate!!.androidNdkVersion,
+                            ndkRoot = androidDelegate!!.androidNdkRoot,
                         )
                         additionalEnvironment.putAll(environmentVariables)
                     }
@@ -347,10 +359,10 @@ class CargoPlugin : Plugin<Project> {
                             cargoBuild.dynamicLibrarySearchPaths.addAll(
                                 @OptIn(InternalGobleyGradleApi::class)
                                 cargoBuild.rustTarget.ndkLibraryDirectories(
-                                    sdkRoot = androidDelegate.androidSdkRoot,
-                                    apiLevel = androidDelegate.androidMinSdk,
-                                    ndkVersion = androidDelegate.androidNdkVersion,
-                                    ndkRoot = androidDelegate.androidNdkRoot,
+                                    sdkRoot = androidDelegate!!.androidSdkRoot,
+                                    apiLevel = androidDelegate!!.androidMinSdk,
+                                    ndkVersion = androidDelegate!!.androidNdkVersion,
+                                    ndkRoot = androidDelegate!!.androidNdkRoot,
                                 ),
                             )
                             Variant.values().forEach {
@@ -382,6 +394,14 @@ class CargoPlugin : Plugin<Project> {
         }
     }
 
+    /**
+     * Configures post-build tasks for JVM targets (and Android unit tests).
+     *
+     * Key responsibilities:
+     * - Copying dynamic libraries to a location where `java.library.path` or similar can find them.
+     * - Configuring the `processResources` task to include these libraries in the JAR/classpath.
+     * - Setting up Maven publishing for JVM artifacts.
+     */
     private fun Project.configureJvmPostBuildTasks(
         // kotlinTarget can be KotlinAndroidTarget when the JVM target is not present. This is for
         // Android local unit tests.
@@ -438,7 +458,7 @@ class CargoPlugin : Plugin<Project> {
         ) {
             val invokedByKotlinJvmBuild = GradleUtils.invokedByKotlinJvmBuild(gradle)
             if (invokedByKotlinJvmBuild) {
-                val expectedTaskName = when (kotlinExtensionDelegate.pluginId) {
+                val expectedTaskName = when (kotlinExtensionDelegate?.pluginId) {
                     PluginIds.KOTLIN_JVM -> "processResources"
                     else -> "${kotlinTarget.name}ProcessResources"
                 }
@@ -448,7 +468,7 @@ class CargoPlugin : Plugin<Project> {
                     }
                 }
             }
-            with(kotlinExtensionDelegate.sourceSets.jvmMain) {
+            with(kotlinExtensionDelegate!!.sourceSets.jvmMain) {
                 if (invokedByKotlinJvmBuild) {
                     resources.srcDir(resourceDirectory)
                 }
@@ -464,7 +484,7 @@ class CargoPlugin : Plugin<Project> {
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmPublishingVariant.get()
             && cargoExtension.publishJvmArtifacts.get()
-            && kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM
+            && kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_MULTIPLATFORM
         ) {
             plugins.withId("maven-publish") {
                 val publishing = extensions.getByType(PublishingExtension::class.java)
@@ -489,7 +509,7 @@ class CargoPlugin : Plugin<Project> {
                 cargoBuildVariant.variant,
                 jarTask,
             )
-            with(kotlinExtensionDelegate.sourceSets.androidUnitTest(cargoBuildVariant.variant)) {
+            with(kotlinExtensionDelegate!!.sourceSets.androidUnitTest(cargoBuildVariant.variant)) {
                 dependencies {
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
@@ -503,7 +523,7 @@ class CargoPlugin : Plugin<Project> {
             if (cargoBuildVariant.variant == Variant.Debug
                 && cargoBuildVariant.variant == GradleUtils.getComposePreviewVariant(gradle)
             ) {
-                with(kotlinExtensionDelegate.sourceSets.androidMain(Variant.Debug)) {
+                with(kotlinExtensionDelegate!!.sourceSets.androidMain(Variant.Debug)) {
                     dependencies {
                         runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                     }
@@ -512,6 +532,14 @@ class CargoPlugin : Plugin<Project> {
         }
     }
 
+    /**
+     * Configures post-build tasks for Android targets.
+     *
+     * Key responsibilities:
+     * - Copying `.so` files to the `jniLibs` folder of the Android build.
+     * - Ensuring that `Jar` tasks depend on the copy task to package the libs correctly.
+     * - Registering JNI directories with the Android extension.
+     */
     private fun Project.configureAndroidPostBuildTasks(cargoBuildVariant: CargoAndroidBuildVariant) {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
@@ -564,7 +592,7 @@ class CargoPlugin : Plugin<Project> {
         }
 
         @OptIn(InternalGobleyGradleApi::class)
-        androidDelegate.addMainJniDir(this, cargoBuildVariant.variant, copyTask, copyDestination)
+        androidDelegate!!.addMainJniDir(this, cargoBuildVariant.variant, copyTask, copyDestination)
 
         tasks.named("check") {
             dependsOn(checkTask)
@@ -622,7 +650,7 @@ class CargoPlugin : Plugin<Project> {
             return
 
         @OptIn(InternalGobleyGradleApi::class)
-        kotlinExtensionDelegate.sourceSets.run {
+        kotlinExtensionDelegate!!.sourceSets.run {
             jsMain.kotlin.srcDir(
                 cargoBuildVariant.transformWasmProvider.flatMap { it.outputDirectory }
             )

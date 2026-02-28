@@ -8,12 +8,9 @@ package gobley.gradle.android
 
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.BuildType
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryBuildType
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.internal.lint.LintModelWriterTask
-import com.android.build.gradle.internal.tasks.ExtractProguardFiles
-import com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask
+import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
@@ -24,41 +21,51 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import java.io.File
 
 @OptIn(InternalGobleyGradleApi::class)
-class GobleyAndroidBaseExtensionDelegate(private val androidExtension: BaseExtension) :
-    GobleyAndroidExtensionDelegate {
-    constructor(project: Project) : this(project.extensions.getByType<BaseExtension>())
+class GobleyAndroidBaseExtensionDelegate(
+    private val project: Project,
+    private val commonExtension: CommonExtension,
+    private val androidComponents: AndroidComponentsExtension<*, *, *>
+) : GobleyAndroidExtensionDelegate {
+
+    // Using the raw Java class reference bypasses Gradle's strict generic type matching
+    // which caused the "Extension does not exist" errors.
+    constructor(project: Project) : this(
+        project,
+        project.extensions.getByType(CommonExtension::class.java),
+        project.extensions.getByType(AndroidComponentsExtension::class.java)
+    )
 
     override val androidSdkRoot: File
-        get() = androidExtension.sdkDirectory
+        get() = androidComponents.sdkComponents.sdkDirectory.get().asFile
 
     // TODO: Read <uses-sdk> from AndroidManifest.xml
-    // androidExtension.sourceSets.getByName("main").manifest.srcFile
     override val androidMinSdk: Int
-        get() = androidExtension.defaultConfig.minSdk ?: 21
+        get() = commonExtension.defaultConfig.minSdk ?: 21
+
     override val androidNdkRoot: File?
-        get() = androidExtension.ndkPath?.let(::File)
+        get() = commonExtension.ndkPath?.let(::File)
+
     override val androidNdkVersion: String?
-        get() = androidExtension.ndkVersion.takeIf(String::isNotEmpty)
+        get() = commonExtension.ndkVersion.takeIf { !it.isNullOrEmpty() }
+
     override val abiFilters: Set<String>
-        get() = androidExtension.defaultConfig.ndk.abiFilters
+        get() = commonExtension.defaultConfig.ndk.abiFilters
 
     override fun addMainSourceDir(
         variant: Variant?,
         sourceDirectory: Provider<Directory>,
     ) {
-        androidExtension.sourceSets { sourceSets ->
-            val testSourceSet = if (variant != null) {
-                sourceSets.getByVariant(variant)
-            } else {
-                sourceSets.getByName("main")
-            }
-            testSourceSet.java.srcDir(sourceDirectory)
+        // Drop the { } block and access the property directly
+        val testSourceSet = if (variant != null) {
+            commonExtension.sourceSets.getByVariant(variant)
+        } else {
+            commonExtension.sourceSets.getByName("main")
         }
+        testSourceSet.java.srcDir(sourceDirectory)
     }
 
     override fun addMainJniDir(
@@ -76,10 +83,9 @@ class GobleyAndroidBaseExtensionDelegate(private val androidExtension: BaseExten
             }
         }
 
-        androidExtension.sourceSets { sourceSets ->
-            val mainSourceSet = sourceSets.getByVariant(variant)
-            mainSourceSet.jniLibs.srcDir(jniDirectory)
-        }
+        // Drop the { } block and access the property directly
+        val mainSourceSet = commonExtension.sourceSets.getByVariant(variant)
+        mainSourceSet.jniLibs.srcDir(jniDirectory)
     }
 
     override fun addProguardFiles(
@@ -87,7 +93,7 @@ class GobleyAndroidBaseExtensionDelegate(private val androidExtension: BaseExten
         proguardFile: RegularFile,
         generationTask: TaskProvider<*>,
     ) {
-        androidExtension.buildTypes.configureEach { buildType ->
+        commonExtension.buildTypes.configureEach { buildType ->
             addProguardFilesToBuildType(project, proguardFile, buildType, generationTask)
         }
     }
@@ -98,39 +104,16 @@ class GobleyAndroidBaseExtensionDelegate(private val androidExtension: BaseExten
         buildType: BuildType,
         generationTask: TaskProvider<*>,
     ) {
-        // For some reason, androidExtension.buildTypes.getByName returns a internal BuildType
-        // that implements both ApplicationBuildType and LibraryBuildType.
+        // Creates a FileCollection that inherently knows it depends on 'generationTask'
+        val generatedFileCollection = project.files(proguardFile).builtBy(generationTask)
 
+        // When AGP consumes these files for R8/ProGuard, Gradle automatically injects the dependency.
         if (buildType is ApplicationBuildType) {
-            buildType.proguardFile(proguardFile)
-        }
-
-        // extractProguardFiles
-        project.tasks.withType<ExtractProguardFiles> {
-            dependsOn(generationTask)
-        }
-        // lintVitalAnalyze<variant>
-        project.tasks.withType<AndroidLintAnalysisTask> {
-            if (name.lowercase().contains(buildType.name.lowercase())) {
-                dependsOn(generationTask)
-            }
+            buildType.proguardFiles(generatedFileCollection)
         }
 
         if (buildType is LibraryBuildType) {
-            buildType.consumerProguardFile(proguardFile)
-        }
-
-        // merge<variant>ConsumerProguardFiles
-        project.tasks.withType<MergeConsumerProguardFilesTask> {
-            if (name.lowercase().contains(buildType.name.lowercase())) {
-                dependsOn(generationTask)
-            }
-        }
-        // generate<variant>LintModel
-        project.tasks.withType<LintModelWriterTask> {
-            if (name.lowercase().contains(buildType.name.lowercase())) {
-                dependsOn(generationTask)
-            }
+            buildType.consumerProguardFiles(generatedFileCollection)
         }
     }
 }

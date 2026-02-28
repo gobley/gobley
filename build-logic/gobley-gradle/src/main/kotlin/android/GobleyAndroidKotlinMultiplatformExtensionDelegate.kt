@@ -6,12 +6,11 @@
 
 package gobley.gradle.android
 
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.android.build.gradle.internal.tasks.ExtractProguardFiles
 import com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask
-import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
@@ -28,29 +27,44 @@ import java.io.File
 @OptIn(InternalGobleyGradleApi::class)
 @Suppress("UnstableApiUsage")
 class GobleyAndroidKotlinMultiplatformExtensionDelegate(
+    private val project: Project,
     private val kotlinMultiplatformExtension: KotlinMultiplatformExtension,
 ) :
     GobleyAndroidExtensionDelegate {
-    constructor(project: Project) : this(project.extensions.getByType<KotlinMultiplatformExtension>())
+    constructor(project: Project) : this(project, project.extensions.getByType<KotlinMultiplatformExtension>())
 
-    private fun getAndroidTarget(): KotlinMultiplatformAndroidTarget {
-        return kotlinMultiplatformExtension.targets.getByName("android") as KotlinMultiplatformAndroidTarget
+    private fun getAndroidTarget(): KotlinMultiplatformAndroidLibraryTarget {
+        return kotlinMultiplatformExtension.targets.getByName("android") as KotlinMultiplatformAndroidLibraryTarget
     }
 
     override val androidSdkRoot: File
-        get() = File("/Users/paxbun/Library/Android/sdk")
+        get() = File(project.rootDir, "local.properties").let { file ->
+            val properties = java.util.Properties()
+            if (file.exists()) file.inputStream().use { properties.load(it) }
+            properties.getProperty("sdk.dir")?.let(::File)
+        } ?: File(System.getenv("ANDROID_HOME") ?: "")
+
     override val androidMinSdk: Int
         get() = getAndroidTarget().minSdk ?: 21
+
     override val androidNdkRoot: File?
-        get() = null
+        get() = File(project.rootDir, "local.properties").let { file ->
+            val properties = java.util.Properties()
+            if (file.exists()) file.inputStream().use { properties.load(it) }
+            properties.getProperty("ndk.dir")?.let(::File)
+        } ?: System.getenv("ANDROID_NDK_HOME")?.let(::File)
+
     override val androidNdkVersion: String?
         get() = null
+
     override val abiFilters: Set<String>
         get() = emptySet()
 
     override fun addMainSourceDir(variant: Variant?, sourceDirectory: Provider<Directory>) {
         getAndroidTarget().compilations.configureEach { compilation ->
-            println(compilation.allKotlinSourceSets.toList())
+            if (variant == null || compilation.name.equals(variant.name, ignoreCase = true)) {
+                compilation.defaultSourceSet.kotlin.srcDir(sourceDirectory)
+            }
         }
     }
 
@@ -60,15 +74,13 @@ class GobleyAndroidKotlinMultiplatformExtensionDelegate(
         jniTask: TaskProvider<*>,
         jniDirectory: Provider<Directory>
     ) {
-        getAndroidTarget().compilations.configureEach { compilation ->
-            println(compilation.allKotlinSourceSets.toList())
-        }
-
-        project.tasks.withType<MergeNativeLibsTask> {
-            println("MergeNativeLibsTask: $name")
-        }
+        // Without BaseExtension, we hook into tasks directly to package the JNI libs.
+        // E.g. hooking MergeSourceSetFolders
         project.tasks.withType<MergeSourceSetFolders> {
-            println("MergeSourceSetFolders: $name")
+            if (name.contains("jni", ignoreCase = true) && name.contains(variant.name, ignoreCase = true)) {
+                inputs.dir(jniDirectory)
+                dependsOn(jniTask)
+            }
         }
     }
 
