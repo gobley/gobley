@@ -11,7 +11,6 @@ import gobley.gradle.PluginIds
 import gobley.gradle.android.GobleyAndroidBaseExtensionDelegate
 import gobley.gradle.android.GobleyAndroidExtensionDelegate
 import gobley.gradle.android.GobleyAndroidKotlinMultiplatformExtensionDelegate
-import gobley.gradle.kotlin.GobleyKotlinAndroidExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinJvmExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinMultiplatformExtensionDelegate
@@ -72,9 +71,9 @@ object PluginUtils {
         project.plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
             action(GobleyKotlinMultiplatformExtensionDelegate(project))
         }
-        project.plugins.withId(PluginIds.KOTLIN_ANDROID) {
-            action(GobleyKotlinAndroidExtensionDelegate(project))
-        }
+//        project.plugins.withId(PluginIds.KOTLIN_ANDROID) {
+//            action(GobleyKotlinAndroidExtensionDelegate(project))
+//        }
         project.plugins.withId(PluginIds.KOTLIN_JVM) {
             action(GobleyKotlinJvmExtensionDelegate(project))
         }

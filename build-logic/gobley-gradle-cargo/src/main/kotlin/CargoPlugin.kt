@@ -164,10 +164,6 @@ class CargoPlugin : Plugin<Project> {
                 PluginIds.KOTLIN_MULTIPLATFORM
             ),
             PluginUtils.PluginInfo(
-                "Kotlin Android",
-                PluginIds.KOTLIN_ANDROID,
-            ),
-            PluginUtils.PluginInfo(
                 "Kotlin JVM",
                 PluginIds.KOTLIN_JVM,
             ),

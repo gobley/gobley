@@ -24,82 +24,82 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
  * Kotlin-related configurations, abstracting away the differences between Android,
  * Multiplatform, and JVM-only Kotlin plugins.
  */
-@OptIn(InternalGobleyGradleApi::class)
-class GobleyKotlinAndroidExtensionDelegate(
-    project: Project
-) : GobleyKotlinExtensionDelegate {
-    /** The actual Kotlin Android extension provided by the 'kotlin-android' plugin. */
-    private val kotlinAndroidExtension: KotlinAndroidProjectExtension =
-        project.extensions.getByType()
+//@OptIn(InternalGobleyGradleApi::class)
+//class GobleyKotlinAndroidExtensionDelegate(
+//    project: Project
+//) : GobleyKotlinExtensionDelegate {
+//    /** The actual Kotlin Android extension provided by the 'kotlin-android' plugin. */
+//    private val kotlinAndroidExtension: KotlinAndroidProjectExtension =
+//        project.extensions.getByType()
+//
+//    override val pluginId = PluginIds.KOTLIN_ANDROID
+//
+//    /**
+//     * Android projects usually have a single target, but we store it in a collection
+//     * to match the interface requirements (similar to Multiplatform).
+//     */
+//    override val targets: DomainObjectCollection<KotlinTarget> =
+//        project.container(KotlinTarget::class.java)
+//
+//    override val sourceSets: GobleyKotlinSourceSetCollection
+//        get() = GobleyKotlinSourceSetCollection(kotlinAndroidExtension.sourceSets)
+//
+//    override val implementationVersion: String?
+//        get() = kotlinAndroidExtension.javaClass.`package`.implementationVersion
+//
+//    override val jvmTarget: KotlinTarget? = null
+//
+//    override val androidTarget: KotlinTarget?
+//        get() = targets.firstOrNull()
+//
+//    init {
+//        // We capture the target when it's configured in the Kotlin extension
+//        // and add it to our internal collection.
+//        kotlinAndroidExtension.target { targets.add(this) }
+//    }
+//}
 
-    override val pluginId = PluginIds.KOTLIN_ANDROID
-
-    /**
-     * Android projects usually have a single target, but we store it in a collection
-     * to match the interface requirements (similar to Multiplatform).
-     */
-    override val targets: DomainObjectCollection<KotlinTarget> =
-        project.container(KotlinTarget::class.java)
-
-    override val sourceSets: GobleyKotlinSourceSetCollection
-        get() = GobleyKotlinSourceSetCollection(kotlinAndroidExtension.sourceSets)
-
-    override val implementationVersion: String?
-        get() = kotlinAndroidExtension.javaClass.`package`.implementationVersion
-
-    override val jvmTarget: KotlinTarget? = null
-
-    override val androidTarget: KotlinTarget?
-        get() = targets.firstOrNull()
-
-    init {
-        // We capture the target when it's configured in the Kotlin extension
-        // and add it to our internal collection.
-        kotlinAndroidExtension.target { targets.add(this) }
-    }
-}
-
-/**
- * Creates a [GobleyKotlinSourceSetCollection] that wraps the standard Android source sets.
- *
- * This maps generic Gobley source set requests (like commonMain) to specific Android
- * source sets (like main, debug, release) based on the build variant.
- */
-@OptIn(InternalGobleyGradleApi::class)
-private fun GobleyKotlinSourceSetCollection(sourceSets: NamedDomainObjectCollection<KotlinSourceSet>): GobleyKotlinSourceSetCollection {
-    return object :
-        NamedDomainObjectCollection<KotlinSourceSet> by sourceSets,
-        GobleyKotlinSourceSetCollection {
-        
-        /** In Android-only projects, 'commonMain' is mapped to 'androidMain'. */
-        override val commonMain: KotlinSourceSet get() = androidMain
-
-        override fun androidMain(variant: Variant?): KotlinSourceSet {
-            // Map the Gobley Variant to the standard Android source set names.
-            return sourceSets.getByName(
-                when (variant) {
-                    Variant.Debug -> "debug"
-                    Variant.Release -> "release"
-                    null -> "main"
-                }
-            )
-        }
-
-        override fun androidUnitTest(variant: Variant?): KotlinSourceSet {
-            // Map the Gobley Variant to the standard Android unit test source set names.
-            return sourceSets.getByName(
-                when (variant) {
-                    Variant.Debug -> "testDebug"
-                    Variant.Release -> "testRelease"
-                    null -> "test"
-                }
-            )
-        }
-
-        // JVM and JS are not supported in a Kotlin Android project context through this delegate.
-        override val jvmMain: KotlinSourceSet get() = error("not supported")
-        override val jsMain: KotlinSourceSet get() = error("not supported")
-        override val wasmJsMain: KotlinSourceSet get() = error("not supported")
-        override val wasmWasiMain: KotlinSourceSet get() = error("not supported")
-    }
-}
+///**
+// * Creates a [GobleyKotlinSourceSetCollection] that wraps the standard Android source sets.
+// *
+// * This maps generic Gobley source set requests (like commonMain) to specific Android
+// * source sets (like main, debug, release) based on the build variant.
+// */
+//@OptIn(InternalGobleyGradleApi::class)
+//private fun GobleyKotlinSourceSetCollection(sourceSets: NamedDomainObjectCollection<KotlinSourceSet>): GobleyKotlinSourceSetCollection {
+//    return object :
+//        NamedDomainObjectCollection<KotlinSourceSet> by sourceSets,
+//        GobleyKotlinSourceSetCollection {
+//
+//        /** In Android-only projects, 'commonMain' is mapped to 'androidMain'. */
+//        override val commonMain: KotlinSourceSet get() = androidMain
+//
+//        override fun androidMain(variant: Variant?): KotlinSourceSet {
+//            // Map the Gobley Variant to the standard Android source set names.
+//            return sourceSets.getByName(
+//                when (variant) {
+//                    Variant.Debug -> "debug"
+//                    Variant.Release -> "release"
+//                    null -> "main"
+//                }
+//            )
+//        }
+//
+//        override fun androidUnitTest(variant: Variant?): KotlinSourceSet {
+//            // Map the Gobley Variant to the standard Android unit test source set names.
+//            return sourceSets.getByName(
+//                when (variant) {
+//                    Variant.Debug -> "testDebug"
+//                    Variant.Release -> "testRelease"
+//                    null -> "test"
+//                }
+//            )
+//        }
+//
+//        // JVM and JS are not supported in a Kotlin Android project context through this delegate.
+//        override val jvmMain: KotlinSourceSet get() = error("not supported")
+//        override val jsMain: KotlinSourceSet get() = error("not supported")
+//        override val wasmJsMain: KotlinSourceSet get() = error("not supported")
+//        override val wasmWasiMain: KotlinSourceSet get() = error("not supported")
+//    }
+//}
