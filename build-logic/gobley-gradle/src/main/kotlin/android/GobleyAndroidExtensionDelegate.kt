@@ -28,12 +28,12 @@ interface GobleyAndroidExtensionDelegate {
         sourceDirectory: Provider<Directory>,
     )
 
-    fun addMainJniDir(
-        project: Project,
-        variant: Variant,
-        jniTask: TaskProvider<*>,
-        jniDirectory: Provider<Directory>,
-    )
+//    fun addMainJniDir(
+//        project: Project,
+//        variant: Variant,
+//        jniTask: TaskProvider<*>,
+//        jniDirectory: Provider<Directory>,
+//    )
 
     fun addProguardFiles(
         project: Project,

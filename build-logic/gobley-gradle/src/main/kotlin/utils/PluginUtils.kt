@@ -8,7 +8,7 @@ package gobley.gradle.utils
 
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.PluginIds
-import gobley.gradle.android.GobleyAndroidBaseExtensionDelegate
+import gobley.gradle.android.GobleyAndroidCommonExtensionDelegate
 import gobley.gradle.android.GobleyAndroidExtensionDelegate
 import gobley.gradle.android.GobleyAndroidKotlinMultiplatformExtensionDelegate
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
@@ -81,10 +81,10 @@ object PluginUtils {
 
     fun withAndroidPlugin(project: Project, action: (GobleyAndroidExtensionDelegate) -> Unit) {
         project.plugins.withId(PluginIds.ANDROID_APPLICATION) {
-            action(GobleyAndroidBaseExtensionDelegate(project))
+            action(GobleyAndroidCommonExtensionDelegate(project))
         }
         project.plugins.withId(PluginIds.ANDROID_LIBRARY) {
-            action(GobleyAndroidBaseExtensionDelegate(project))
+            action(GobleyAndroidCommonExtensionDelegate(project))
         }
         project.plugins.withId(PluginIds.ANDROID_KOTLIN_MULTIPLATFORM_LIBRARY) {
             action(GobleyAndroidKotlinMultiplatformExtensionDelegate(project))

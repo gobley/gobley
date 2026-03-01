@@ -7,7 +7,6 @@
 package gobley.gradle.cargo
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.android.tools.r8.internal.te
 import gobley.gradle.AppleSdk
 import gobley.gradle.GobleyHost
 import gobley.gradle.InternalGobleyGradleApi
@@ -42,7 +41,6 @@ import gobley.gradle.tasks.useGlobalLock
 import gobley.gradle.utils.DependencyUtils
 import gobley.gradle.utils.GradleUtils
 import gobley.gradle.utils.PluginUtils
-import gobley.gradle.variant
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -55,7 +53,6 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
@@ -69,6 +66,18 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import kotlin.reflect.full.superclasses
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.HasAndroidTest
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+import javax.inject.Inject
 
 class CargoPlugin : Plugin<Project> {
     companion object {
@@ -146,13 +155,89 @@ class CargoPlugin : Plugin<Project> {
         PluginUtils.withAndroidPlugin(this) { delegate ->
             androidDelegate = delegate
             val abiFilters = androidDelegate?.abiFilters
-            cargoExtension.androidTargetsToBuild.convention(project.provider {
-                if (!abiFilters.isNullOrEmpty()) {
-                    abiFilters.map(::RustAndroidTarget)
-                } else {
-                    RustAndroidTarget.values().toList()
+            val targets = if (!abiFilters.isNullOrEmpty()) {
+                abiFilters.map(::RustAndroidTarget)
+            } else {
+                RustAndroidTarget.entries
+            }
+
+            cargoExtension.androidTargetsToBuild.convention(project.provider { targets })
+
+            targets.forEach { rustTarget ->
+                cargoExtension.createOrGetBuild(rustTarget)
+            }
+
+            cargoExtension.builds.configureEach {
+                val currentCargoBuild = this
+                val currentRustTarget = currentCargoBuild.rustTarget
+
+                if (currentRustTarget is RustAndroidTarget) {
+                    // Manually cast to Android Build so Gradle can't ignore us
+                    val androidBuild = currentCargoBuild as CargoAndroidBuild
+
+                    androidBuild.dynamicLibrarySearchPaths.addAll(
+                        @OptIn(InternalGobleyGradleApi::class)
+                        currentRustTarget.ndkLibraryDirectories(
+                            sdkRoot = androidDelegate!!.androidSdkRoot,
+                            apiLevel = androidDelegate!!.androidMinSdk,
+                            ndkVersion = androidDelegate!!.androidNdkVersion,
+                            ndkRoot = androidDelegate!!.androidNdkRoot,
+                        ),
+                    )
+                    Variant.entries.forEach { variant ->
+                        configureAndroidPostBuildTasks(androidBuild.variant(variant))
+                    }
                 }
-            })
+            }
+
+            val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+            androidComponents.onVariants { agpVariant ->
+                cargoExtension.builds.configureEach {
+                    val currentCargoBuild = this
+                    val currentRustTarget = currentCargoBuild.rustTarget
+
+                    if (currentRustTarget is RustAndroidTarget) {
+                        val androidBuild = currentCargoBuild as CargoAndroidBuild
+                        val cargoBuildVariant = androidBuild.variant(Variant(agpVariant.name))
+                        val isTargetEnabled = cargoExtension.androidTargetsToBuild.map { it.contains(currentRustTarget) }
+                        val embedRustLibrary = cargoBuildVariant.embedRustLibrary
+
+                        val syncMain = project.tasks.register<CopyCargoJniTask>(
+                            "copyCargoJniMain${currentRustTarget.friendlyName}${agpVariant.name.replaceFirstChar { it.uppercase() }}"
+                        ) {
+                            group = TASK_GROUP
+                            onlyIf { isTargetEnabled.get() && embedRustLibrary.get() }
+
+                            rustLibs.from(cargoBuildVariant.buildTaskProvider.flatMap { task ->
+                                task.libraryFileByCrateType.map { libFile -> libFile[CrateType.SystemDynamicLibrary]!! }
+                            })
+                            otherLibs.from(cargoBuildVariant.findDynamicLibrariesTaskProvider.flatMap { it.libraryPaths })
+                            abiName.set(currentRustTarget.androidAbiName)
+                        }
+
+                        agpVariant.sources.jniLibs?.addGeneratedSourceDirectory(syncMain) { task -> task.outputDir }
+
+                        if (agpVariant is HasAndroidTest) {
+                            agpVariant.androidTest?.let { androidTest ->
+                                val syncTest = project.tasks.register<CopyCargoJniTask>(
+                                    "copyCargoJniTest${currentRustTarget.friendlyName}${agpVariant.name.replaceFirstChar { it.uppercase() }}"
+                                ) {
+                                    group = TASK_GROUP
+                                    onlyIf { isTargetEnabled.get() && embedRustLibrary.get() }
+
+                                    rustLibs.from(cargoBuildVariant.buildTaskProvider.flatMap { task ->
+                                        task.libraryFileByCrateType.map { libFile -> libFile[CrateType.SystemDynamicLibrary]!! }
+                                    })
+                                    otherLibs.from(cargoBuildVariant.findDynamicLibrariesTaskProvider.flatMap { it.libraryPaths })
+                                    abiName.set(currentRustTarget.androidAbiName)
+                                }
+
+                                androidTest.sources.jniLibs?.addGeneratedSourceDirectory(syncTest) { task -> task.outputDir }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -201,7 +286,7 @@ class CargoPlugin : Plugin<Project> {
 
             KotlinPlatformType.androidJvm -> {
                 // listOf(GobleyHost.current.rustTarget) is for Android local unit tests.
-                listOf(GobleyHost.current.rustTarget) + RustAndroidTarget.values()
+                listOf(GobleyHost.current.rustTarget) + RustAndroidTarget.entries.toTypedArray()
             }
 
             KotlinPlatformType.native -> {
@@ -209,7 +294,7 @@ class CargoPlugin : Plugin<Project> {
             }
 
             KotlinPlatformType.js -> {
-                RustWasmTarget.values().toList()
+                RustWasmTarget.entries
             }
 
             else -> listOf()
@@ -354,21 +439,8 @@ class CargoPlugin : Plugin<Project> {
                                     )
                                 }
                             }
-                        } else {
-                            cargoBuild as CargoAndroidBuild
-                            cargoBuild.dynamicLibrarySearchPaths.addAll(
-                                @OptIn(InternalGobleyGradleApi::class)
-                                cargoBuild.rustTarget.ndkLibraryDirectories(
-                                    sdkRoot = androidDelegate!!.androidSdkRoot,
-                                    apiLevel = androidDelegate!!.androidMinSdk,
-                                    ndkVersion = androidDelegate!!.androidNdkVersion,
-                                    ndkRoot = androidDelegate!!.androidNdkRoot,
-                                ),
-                            )
-                            Variant.values().forEach {
-                                configureAndroidPostBuildTasks(cargoBuild.variant(it))
-                            }
                         }
+                        // THE ELSE BLOCK THAT USED TO BE HERE IS NOW GONE!
                     }
 
                     KotlinPlatformType.native -> {
@@ -532,18 +604,10 @@ class CargoPlugin : Plugin<Project> {
         }
     }
 
-    /**
-     * Configures post-build tasks for Android targets.
-     *
-     * Key responsibilities:
-     * - Copying `.so` files to the `jniLibs` folder of the Android build.
-     * - Ensuring that `Jar` tasks depend on the copy task to package the libs correctly.
-     * - Registering JNI directories with the Android extension.
-     */
     private fun Project.configureAndroidPostBuildTasks(cargoBuildVariant: CargoAndroidBuildVariant) {
-        val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
         val findDynamicLibrariesTask = cargoBuildVariant.findDynamicLibrariesTaskProvider
+
         cargoBuildVariant.dynamicLibrarySearchPaths.add(
             cargoBuildVariant.profile.zip(cargoExtension.cargoPackage) { profile, cargoPackage ->
                 cargoPackage.outputDirectory(profile, cargoBuildVariant.rustTarget).asFile
@@ -552,47 +616,11 @@ class CargoPlugin : Plugin<Project> {
         cargoBuildVariant.dynamicLibrarySearchPaths.addAll(
             cargoBuildVariant.buildTaskProvider.flatMap { it.buildScriptOutputDirectories }
         )
+
         val projectLayout = layout
         findDynamicLibrariesTask.configure {
             libraryPathsCacheFile.set(projectLayout.outputCacheFile(this, "libraryPathsCacheFile"))
         }
-
-        @OptIn(InternalGobleyGradleApi::class)
-        if (!cargoExtension.androidTargetsToBuild.get().contains(cargoBuildVariant.rustTarget))
-            return
-
-        if (!cargoBuildVariant.embedRustLibrary.get())
-            return
-
-        val copyDestination =
-            layout.buildDirectory.dir("intermediates/rust/${cargoBuildVariant.rustTarget.rustTriple}/${cargoBuildVariant.variant}")
-
-        val copyTask = tasks.register<Copy>({
-            +"android"
-            +cargoBuildVariant
-        }) {
-            group = TASK_GROUP
-            from(
-                buildTask.flatMap { task -> task.libraryFileByCrateType.map { it[CrateType.SystemDynamicLibrary]!! } },
-                findDynamicLibrariesTask.flatMap { it.libraryPaths },
-            )
-            into(copyDestination.map { it.dir(cargoBuildVariant.rustTarget.androidAbiName) })
-            dependsOn(buildTask, findDynamicLibrariesTask)
-        }
-
-        tasks.withType<Jar> {
-            if (name.lowercase().contains("android") && variant != null) {
-                if (variant != null) {
-                    if (cargoBuildVariant.variant == variant!!) {
-                        inputs.dir(copyDestination)
-                        dependsOn(copyTask)
-                    }
-                }
-            }
-        }
-
-        @OptIn(InternalGobleyGradleApi::class)
-        androidDelegate!!.addMainJniDir(this, cargoBuildVariant.variant, copyTask, copyDestination)
 
         tasks.named("check") {
             dependsOn(checkTask)
@@ -692,4 +720,34 @@ private fun ProjectLayout.outputCacheFile(task: Task, propertyName: String): Pro
         .substringBeforeLast("File")
         .substringBeforeLast("Cache")
     return buildDirectory.file("taskOutputCache/${task.name}/$trimmedPropertyName")
+}
+
+private abstract class CopyCargoJniTask : DefaultTask() {
+    @get:InputFiles
+    abstract val rustLibs: ConfigurableFileCollection
+
+    @get:InputFiles
+    abstract val otherLibs: ConfigurableFileCollection
+
+    @get:Input
+    abstract val abiName: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @get:Inject
+    abstract val fsOperations: FileSystemOperations
+
+    @TaskAction
+    fun action() {
+        fsOperations.sync {
+            from(rustLibs) {
+                into(abiName)
+            }
+            from(otherLibs) {
+                into(abiName)
+            }
+            into(outputDir)
+        }
+    }
 }

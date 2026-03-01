@@ -68,21 +68,21 @@ class GobleyAndroidKotlinMultiplatformExtensionDelegate(
         }
     }
 
-    override fun addMainJniDir(
-        project: Project,
-        variant: Variant,
-        jniTask: TaskProvider<*>,
-        jniDirectory: Provider<Directory>
-    ) {
-        // Without BaseExtension, we hook into tasks directly to package the JNI libs.
-        // E.g. hooking MergeSourceSetFolders
-        project.tasks.withType<MergeSourceSetFolders> {
-            if (name.contains("jni", ignoreCase = true) && name.contains(variant.name, ignoreCase = true)) {
-                inputs.dir(jniDirectory)
-                dependsOn(jniTask)
-            }
-        }
-    }
+//    override fun addMainJniDir(
+//        project: Project,
+//        variant: Variant,
+//        jniTask: TaskProvider<*>,
+//        jniDirectory: Provider<Directory>
+//    ) {
+//        // Without BaseExtension, we hook into tasks directly to package the JNI libs.
+//        // E.g. hooking MergeSourceSetFolders
+//        project.tasks.withType<MergeSourceSetFolders> {
+//            if (name.contains("jni", ignoreCase = true) && name.contains(variant.name, ignoreCase = true)) {
+//                inputs.dir(jniDirectory)
+//                dependsOn(jniTask)
+//            }
+//        }
+//    }
 
     override fun addProguardFiles(
         project: Project,

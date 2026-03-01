@@ -11,21 +11,18 @@ import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.variant.AndroidComponentsExtension
-import com.android.build.gradle.tasks.MergeSourceSetFolders
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.getByVariant
-import gobley.gradle.variant
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.kotlin.dsl.withType
 import java.io.File
 
 @OptIn(InternalGobleyGradleApi::class)
-class GobleyAndroidBaseExtensionDelegate(
+class GobleyAndroidCommonExtensionDelegate(
     private val project: Project,
     private val commonExtension: CommonExtension,
     private val androidComponents: AndroidComponentsExtension<*, *, *>
@@ -42,7 +39,6 @@ class GobleyAndroidBaseExtensionDelegate(
     override val androidSdkRoot: File
         get() = androidComponents.sdkComponents.sdkDirectory.get().asFile
 
-    // TODO: Read <uses-sdk> from AndroidManifest.xml
     override val androidMinSdk: Int
         get() = commonExtension.defaultConfig.minSdk ?: 21
 
@@ -50,7 +46,7 @@ class GobleyAndroidBaseExtensionDelegate(
         get() = commonExtension.ndkPath?.let(::File)
 
     override val androidNdkVersion: String?
-        get() = commonExtension.ndkVersion.takeIf { !it.isNullOrEmpty() }
+        get() = commonExtension.ndkVersion.takeIf { it.isNotEmpty() }
 
     override val abiFilters: Set<String>
         get() = commonExtension.defaultConfig.ndk.abiFilters
@@ -66,26 +62,6 @@ class GobleyAndroidBaseExtensionDelegate(
             commonExtension.sourceSets.getByName("main")
         }
         testSourceSet.java.srcDir(sourceDirectory)
-    }
-
-    override fun addMainJniDir(
-        project: Project,
-        variant: Variant,
-        jniTask: TaskProvider<*>,
-        jniDirectory: Provider<Directory>
-    ) {
-        project.tasks.withType<MergeSourceSetFolders> {
-            if (name.lowercase().contains("jni")) {
-                if (variant == this.variant!!) {
-                    inputs.dir(jniDirectory)
-                    dependsOn(jniTask)
-                }
-            }
-        }
-
-        // Drop the { } block and access the property directly
-        val mainSourceSet = commonExtension.sourceSets.getByVariant(variant)
-        mainSourceSet.jniLibs.srcDir(jniDirectory)
     }
 
     override fun addProguardFiles(
