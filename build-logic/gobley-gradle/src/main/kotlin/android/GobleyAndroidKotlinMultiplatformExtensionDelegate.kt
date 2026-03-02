@@ -7,11 +7,7 @@
 package gobley.gradle.android
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
-import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.internal.lint.LintModelWriterTask
-import com.android.build.gradle.internal.tasks.ExtractProguardFiles
-import com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask
-import com.android.build.gradle.tasks.MergeSourceSetFolders
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import org.gradle.api.Project
@@ -20,39 +16,37 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import java.io.File
+import kotlin.jvm.java
 
 @OptIn(InternalGobleyGradleApi::class)
 @Suppress("UnstableApiUsage")
 class GobleyAndroidKotlinMultiplatformExtensionDelegate(
     private val project: Project,
     private val kotlinMultiplatformExtension: KotlinMultiplatformExtension,
-) :
-    GobleyAndroidExtensionDelegate {
-    constructor(project: Project) : this(project, project.extensions.getByType<KotlinMultiplatformExtension>())
+    private val kotlinMultiplatformLibraryExtension: KotlinMultiplatformAndroidComponentsExtension,
+) : GobleyAndroidExtensionDelegate {
+
+    constructor(project: Project) : this(
+        project,
+        project.extensions.getByType<KotlinMultiplatformExtension>(),
+        project.extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>()
+    )
 
     private fun getAndroidTarget(): KotlinMultiplatformAndroidLibraryTarget {
         return kotlinMultiplatformExtension.targets.getByName("android") as KotlinMultiplatformAndroidLibraryTarget
     }
 
+    // 2. Let AGP's `sdkComponents` do all the heavy lifting
     override val androidSdkRoot: File
-        get() = File(project.rootDir, "local.properties").let { file ->
-            val properties = java.util.Properties()
-            if (file.exists()) file.inputStream().use { properties.load(it) }
-            properties.getProperty("sdk.dir")?.let(::File)
-        } ?: File(System.getenv("ANDROID_HOME") ?: "")
+        get() = kotlinMultiplatformLibraryExtension.sdkComponents.sdkDirectory.get().asFile
 
     override val androidMinSdk: Int
         get() = getAndroidTarget().minSdk ?: 21
 
     override val androidNdkRoot: File?
-        get() = File(project.rootDir, "local.properties").let { file ->
-            val properties = java.util.Properties()
-            if (file.exists()) file.inputStream().use { properties.load(it) }
-            properties.getProperty("ndk.dir")?.let(::File)
-        } ?: System.getenv("ANDROID_NDK_HOME")?.let(::File)
+        get() = kotlinMultiplatformLibraryExtension.sdkComponents.ndkDirectory.orNull?.asFile
 
     override val androidNdkVersion: String?
         get() = null
@@ -63,26 +57,29 @@ class GobleyAndroidKotlinMultiplatformExtensionDelegate(
     override fun addMainSourceDir(variant: Variant?, sourceDirectory: Provider<Directory>) {
         getAndroidTarget().compilations.configureEach { compilation ->
             if (variant == null || compilation.name.equals(variant.name, ignoreCase = true)) {
+                // Because sourceDirectory is a Provider, Gradle inherently tracks the task dependency here!
                 compilation.defaultSourceSet.kotlin.srcDir(sourceDirectory)
             }
         }
     }
 
-//    override fun addMainJniDir(
-//        project: Project,
-//        variant: Variant,
-//        jniTask: TaskProvider<*>,
-//        jniDirectory: Provider<Directory>
-//    ) {
-//        // Without BaseExtension, we hook into tasks directly to package the JNI libs.
-//        // E.g. hooking MergeSourceSetFolders
-//        project.tasks.withType<MergeSourceSetFolders> {
-//            if (name.contains("jni", ignoreCase = true) && name.contains(variant.name, ignoreCase = true)) {
-//                inputs.dir(jniDirectory)
-//                dependsOn(jniTask)
-//            }
-//        }
-//    }
+    override fun onVariants(
+        project: Project,
+        action: OnVariantAction,
+    ) {
+        kotlinMultiplatformLibraryExtension.onVariants { agpVariant ->
+            val cargoVariantName = if (agpVariant.name == "main" || agpVariant.name == "android") "debug" else agpVariant.name.lowercase()
+
+            action(
+                agpVariant.name,
+                cargoVariantName,
+                { task -> agpVariant.sources.jniLibs?.addGeneratedSourceDirectory(task) { it.outputDir } },
+                (agpVariant as? com.android.build.api.variant.HasAndroidTest)?.androidTest?.let { testComp ->
+                    { task -> testComp.sources.jniLibs?.addGeneratedSourceDirectory(task) { it.outputDir } }
+                }
+            )
+        }
+    }
 
     override fun addProguardFiles(
         project: Project,
@@ -90,27 +87,15 @@ class GobleyAndroidKotlinMultiplatformExtensionDelegate(
         generationTask: TaskProvider<*>
     ) {
         val optimization = getAndroidTarget().optimization
-        optimization.keepRules.file(proguardFile.asFile)
-        optimization.testKeepRules.file(proguardFile.asFile)
-        optimization.consumerKeepRules.file(proguardFile.asFile)
+
+        // 1. Create the file collection with the implicit task dependency
+        val fileWithDependency = project.files(proguardFile).builtBy(generationTask)
+
+        // 2. Use the DSL function .file(), NOT the property getter!
+        optimization.keepRules.file(fileWithDependency)
+        optimization.testKeepRules.file(fileWithDependency)
+
+        optimization.consumerKeepRules.file(fileWithDependency)
         optimization.consumerKeepRules.publish = true
-
-        // extractProguardFiles
-        project.tasks.withType<ExtractProguardFiles> {
-            dependsOn(generationTask)
-        }
-        // lintVitalAnalyze<variant>
-        project.tasks.withType<AndroidLintAnalysisTask> {
-            dependsOn(generationTask)
-        }
-
-        // merge<variant>ConsumerProguardFiles
-        project.tasks.withType<MergeConsumerProguardFilesTask> {
-            dependsOn(generationTask)
-        }
-        // generate<variant>LintModel
-        project.tasks.withType<LintModelWriterTask> {
-            dependsOn(generationTask)
-        }
     }
 }

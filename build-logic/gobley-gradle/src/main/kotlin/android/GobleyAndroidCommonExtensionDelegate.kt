@@ -17,6 +17,7 @@ import gobley.gradle.getByVariant
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
+import org.gradle.api.internal.lambdas.SerializableLambdas.action
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
@@ -71,6 +72,24 @@ class GobleyAndroidCommonExtensionDelegate(
     ) {
         commonExtension.buildTypes.configureEach { buildType ->
             addProguardFilesToBuildType(project, proguardFile, buildType, generationTask)
+        }
+    }
+
+    override fun onVariants(
+        project: Project,
+        action: OnVariantAction,
+    ) {
+        val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+
+        androidComponents.onVariants { agpVariant ->
+            action(
+                agpVariant.name,
+                agpVariant.name, // standard Android maps directly
+                { task -> agpVariant.sources.jniLibs?.addGeneratedSourceDirectory(task) { it.outputDir } },
+                (agpVariant as? com.android.build.api.variant.HasAndroidTest)?.androidTest?.let { testComp ->
+                    { task -> testComp.sources.jniLibs?.addGeneratedSourceDirectory(task) { it.outputDir } }
+                }
+            )
         }
     }
 

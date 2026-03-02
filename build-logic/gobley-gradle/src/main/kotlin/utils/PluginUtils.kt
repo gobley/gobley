@@ -71,9 +71,6 @@ object PluginUtils {
         project.plugins.withId(PluginIds.KOTLIN_MULTIPLATFORM) {
             action(GobleyKotlinMultiplatformExtensionDelegate(project))
         }
-//        project.plugins.withId(PluginIds.KOTLIN_ANDROID) {
-//            action(GobleyKotlinAndroidExtensionDelegate(project))
-//        }
         project.plugins.withId(PluginIds.KOTLIN_JVM) {
             action(GobleyKotlinJvmExtensionDelegate(project))
         }

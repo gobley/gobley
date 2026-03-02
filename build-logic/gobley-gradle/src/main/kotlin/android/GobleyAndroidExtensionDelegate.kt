@@ -8,12 +8,20 @@ package gobley.gradle.android
 
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
+import gobley.gradle.tasks.InjectJniLibsTask
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
+
+typealias OnVariantAction = (
+    String,
+    String,
+    (TaskProvider<InjectJniLibsTask>) -> Unit,
+    ((TaskProvider<InjectJniLibsTask>) -> Unit)?
+) -> Unit
 
 @InternalGobleyGradleApi
 interface GobleyAndroidExtensionDelegate {
@@ -28,12 +36,10 @@ interface GobleyAndroidExtensionDelegate {
         sourceDirectory: Provider<Directory>,
     )
 
-//    fun addMainJniDir(
-//        project: Project,
-//        variant: Variant,
-//        jniTask: TaskProvider<*>,
-//        jniDirectory: Provider<Directory>,
-//    )
+    fun onVariants(
+        project: Project,
+        action: OnVariantAction,
+    )
 
     fun addProguardFiles(
         project: Project,
