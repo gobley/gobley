@@ -47,7 +47,6 @@ val anotherCustomCppLibraryBuildTasks = androidTargets.associateWith {
             "-B$cmakeOutputDirectory",
             "-DANDROID_ABI=${it.androidAbiName}",
             "-DANDROID_PLATFORM=29",
-            // 3. Apply the new ndkDir variable here
             "-DANDROID_NDK=$ndkDir",
             "-DCMAKE_TOOLCHAIN_FILE=$ndkDir/build/cmake/android.toolchain.cmake",
             "-DCMAKE_MAKE_PROGRAM=$androidSdkNinja",

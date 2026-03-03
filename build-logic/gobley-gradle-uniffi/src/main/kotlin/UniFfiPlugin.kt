@@ -39,12 +39,10 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.com.intellij.util.containers.ContainerUtil.mapNotNull
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -54,7 +52,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 private const val TASK_GROUP = "uniffi"
@@ -84,8 +81,11 @@ class UniFfiPlugin : Plugin<Project> {
     private fun applyAfterEvaluate(target: Project): Unit = with(target) {
         findRequiredExtensions()
         checkKotlinTargets()
-        configureBindingTasks()
-        configureKotlin()
+
+        // Pass the implicitly wired task down the chain!
+        val buildBindingsTask = configureBindingTasks()
+        configureKotlin(buildBindingsTask)
+
         configureCleanTasks()
 
         @OptIn(InternalGobleyGradleApi::class)
@@ -103,12 +103,20 @@ class UniFfiPlugin : Plugin<Project> {
                 PluginIds.KOTLIN_MULTIPLATFORM
             ),
             PluginUtils.PluginInfo(
-                "Kotlin Android",
-                PluginIds.KOTLIN_ANDROID,
-            ),
-            PluginUtils.PluginInfo(
                 "Kotlin JVM",
                 PluginIds.KOTLIN_JVM,
+            ),
+            PluginUtils.PluginInfo(
+                "Android Application",
+                PluginIds.ANDROID_APPLICATION,
+            ),
+            PluginUtils.PluginInfo(
+                "Android Library",
+                PluginIds.ANDROID_LIBRARY,
+            ),
+            PluginUtils.PluginInfo(
+                "Android Kotlin Multiplatform Library",
+                PluginIds.ANDROID_KOTLIN_MULTIPLATFORM_LIBRARY,
             ),
         )
         PluginUtils.ensurePluginIsApplied(project, "Kotlin AtomicFU", PluginIds.KOTLIN_ATOMIC_FU)
@@ -118,7 +126,6 @@ class UniFfiPlugin : Plugin<Project> {
             PluginIds.GOBLEY_CARGO
         )
 
-        // Since the Cargo Kotlin Multiplatform plugin is present, `CargoExtension` must be present.
         cargoExtension = extensions.getByType()
 
         PluginUtils.withKotlinPlugin(this) { delegate ->
@@ -149,7 +156,7 @@ class UniFfiPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.configureBindingTasks() {
+    private fun Project.configureBindingTasks(): TaskProvider<BuildUniffiBindingsTask> {
         val bindingsGeneration = bindingsGeneration
 
         val buildRustTarget = bindingsGeneration.build.orNull ?: run {
@@ -192,12 +199,17 @@ class UniFfiPlugin : Plugin<Project> {
         val availableVariants = build.kotlinTargets.flatMap {
             when (it) {
                 is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
-                is KotlinAndroidTarget -> Variant.values().toList()
+                is KotlinAndroidTarget -> Variant.entries
                 is KotlinNativeTarget -> listOf((build as CargoNativeBuild<*>).nativeVariant.get())
                 else -> listOf(Variant.Debug)
-                // else -> emptyList<Variant>()
             }
-        }.distinct()
+        }.distinct().ifEmpty {
+            // === PURE ANDROID AGP 9 FIX ===
+            // If there are no JetBrains Kotlin targets, but Android is applied,
+            // we natively supply the standard Android variants!
+            @OptIn(InternalGobleyGradleApi::class)
+            if (androidDelegate != null) Variant.entries else emptyList()
+        }
 
         val variant = bindingsGeneration.variant.orNull
             ?: availableVariants.firstOrNull()
@@ -221,8 +233,7 @@ class UniFfiPlugin : Plugin<Project> {
         }
 
         @OptIn(InternalGobleyGradleApi::class)
-        val externalPackageUniFfiConfigurations =
-            DependencyUtils.getExternalPackageUniFfiConfigurations(this)
+        val externalPackageUniFfiConfigurations = DependencyUtils.getExternalPackageUniFfiConfigurations(this)
 
         val mergeUniffiConfig = tasks.register<MergeUniffiConfigTask>("mergeUniffiConfig") {
             group = TASK_GROUP
@@ -230,7 +241,6 @@ class UniFfiPlugin : Plugin<Project> {
                 bindingsGeneration.config.orElse(
                     cargoExtension.packageDirectory.file("uniffi.toml"),
                 ).map { regularFile ->
-                    // TODO: This compiles well, but Android Studio shows an error. See #86.
                     regularFile.takeIf { it.asFile.exists() }
                 }
             )
@@ -273,9 +283,6 @@ class UniFfiPlugin : Plugin<Project> {
                 kotlinVersion.set(kotlinVersionFromExtension)
             }
 
-            // If the serialization plugin is applied and the runtime is added to the dependency
-            // list, set `generateSerializableTypes` to true so the bindgen renders @Serialization
-            // where applicable.
             @OptIn(InternalGobleyGradleApi::class)
             if (plugins.hasPlugin(PluginIds.KOTLIN_SERIALIZATION)) {
                 @OptIn(InternalGobleyGradleApi::class)
@@ -327,18 +334,6 @@ class UniFfiPlugin : Plugin<Project> {
             GradleUtils.runTaskDuringSync(this, buildBindings)
         }
 
-        tasks.withType<KotlinCompilationTask<*>> {
-            dependsOn(buildBindings)
-        }
-
-        tasks.withType<Jar> {
-            dependsOn(buildBindings)
-        }
-
-        tasks.withType<CInteropProcess> {
-            dependsOn(buildBindings)
-        }
-
         @OptIn(InternalGobleyGradleApi::class)
         if (androidDelegate != null) {
             val generateUniffiProguardRulesTask =
@@ -354,6 +349,8 @@ class UniFfiPlugin : Plugin<Project> {
                 )
             }
         }
+
+        return buildBindings
     }
 
     private fun Project.configureCleanTasks() {
@@ -367,11 +364,10 @@ class UniFfiPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.configureKotlin() {
-        tasks.withType<KotlinCompilationTask<*>> {
-            compilerOptions {
-                freeCompilerArgs.add("-Xexpect-actual-classes")
-            }
+    private fun Project.configureKotlin(buildBindingsTask: TaskProvider<BuildUniffiBindingsTask>) {
+        // Explicit Java classes and configureEach for configuration cache safety
+        tasks.withType(KotlinCompilationTask::class.java).configureEach {
+            compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
         }
 
         val dummyDefFile = nativeBindingsCInteropDef("dummy")
@@ -382,68 +378,72 @@ class UniFfiPlugin : Plugin<Project> {
                     writeBytes(byteArrayOf())
                 }
             }
-            mustRunAfter(tasks.named("buildUniffiBindings"))
+            mustRunAfter(buildBindingsTask)
         }
 
         @OptIn(InternalGobleyGradleApi::class)
-        kotlinExtensionDelegate?.targets?.configureEach {
-            when (this) {
-                is KotlinMetadataTarget -> configureKotlinCommonTarget()
-                is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
-                    if (kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_JVM) {
-                        configureKotlinCommonTarget()
+        if (kotlinExtensionDelegate != null) {
+            // === KMP OR PURE JVM (JETBRAINS KGP) ===
+            kotlinExtensionDelegate!!.targets.configureEach {
+                when (this) {
+                    is KotlinMetadataTarget -> configureKotlinCommonTarget(buildBindingsTask)
+                    is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
+                        if (kotlinExtensionDelegate!!.pluginId == PluginIds.KOTLIN_JVM) {
+                            configureKotlinCommonTarget(buildBindingsTask)
+                        }
+                        configureKotlinJvmTarget(buildBindingsTask)
                     }
-                    configureKotlinJvmTarget()
-                }
-
-                is KotlinAndroidTarget -> {
-                    if (kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_ANDROID) {
-                        configureKotlinCommonTarget()
+                    is KotlinAndroidTarget -> {
+                        // KOTLIN_ANDROID is purged. KMP configures Android natively here!
+                        configureKotlinAndroidTarget(buildBindingsTask)
                     }
-                    configureKotlinAndroidTarget()
+                    is KotlinNativeTarget -> configureKotlinNativeTarget(
+                        this,
+                        dummyDefFile,
+                        generateDummyDefFileTask,
+                        buildBindingsTask
+                    )
+                    else -> configureUnsupportedTarget(this, buildBindingsTask)
                 }
-
-                is KotlinNativeTarget -> configureKotlinNativeTarget(
-                    this,
-                    dummyDefFile,
-                    generateDummyDefFileTask,
-                )
-
-                else -> configureUnsupportedTarget(this)
             }
+        } else if (androidDelegate != null) {
+            // === PURE ANDROID (AGP 9 BUILT-IN KOTLIN) ===
+            // Manually trigger the configurations since JetBrains KGP isn't here to loop!
+            configureKotlinCommonTarget(buildBindingsTask)
+            configureKotlinAndroidTarget(buildBindingsTask)
         }
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinCommonTarget() {
-        // 1. Figure out which bindings directory we should use
-        // KMP uses commonBindings, while Pure Android and Pure JVM use mainBindings.
+    private fun Project.configureKotlinCommonTarget(buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         val isKmp = kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_MULTIPLATFORM
-        val targetBindingsDirectory = if (isKmp) commonBindingsDirectory else mainBindingsDirectory
-
-        // 2. Add the Source Directories based on which world we are in
-        if (kotlinExtensionDelegate != null) {
-            // --- JETBRAINS KGP WORLD (KMP or Pure JVM) ---
-            with(kotlinExtensionDelegate!!.sourceSets.commonMain) {
-                kotlin.srcDir(targetBindingsDirectory)
-
-                // Legacy fallback: If you still support AGP 8.x with KOTLIN_ANDROID,
-                // keep this workaround for the IDE sync bug.
-                if (kotlinExtensionDelegate!!.pluginId == PluginIds.KOTLIN_ANDROID) {
-                    androidDelegate?.addMainSourceDir(sourceDirectory = targetBindingsDirectory)
-                }
-            }
-        } else if (androidDelegate != null) {
-            // --- PURE ANDROID WORLD (AGP 9 Built-in Kotlin) ---
-            // We use the Android delegate directly. Because this uses the native AGP DSL,
-            // it inherently avoids the Android Studio sync bug mentioned in #79!
-            androidDelegate!!.addMainSourceDir(sourceDirectory = targetBindingsDirectory)
+        val targetBindingsDirectory = if (isKmp) {
+            buildBindings.flatMap { it.outputDirectory.dir("commonMain/kotlin") }
+        } else {
+            buildBindings.flatMap { it.outputDirectory.dir("main/kotlin") }
         }
 
-        // 3. Add Dependencies
+        // === THE FILE COLLECTION BYPASS ===
+        // Wrap the Provider in a FileCollection to bypass AGP 9's strict type check,
+        // while perfectly maintaining the execution graph dependency!
+        val targetSourceCollection = project.files(targetBindingsDirectory).builtBy(buildBindings)
+
+        if (kotlinExtensionDelegate != null) {
+            with(kotlinExtensionDelegate!!.sourceSets.commonMain) {
+                // JetBrains KGP accepts the FileCollection gracefully
+                kotlin.srcDir(targetSourceCollection)
+            }
+        } else if (androidDelegate != null) {
+            // Pure Android accepts the FileCollection and bypasses the crash!
+            androidDelegate!!.addMainSourceDir(variant = null, sourceDirectory = targetSourceCollection)
+        }
+
+        // ... (Keep the rest of your dependencies block exactly the same)
+
+        // ... (keep the dependencies block exactly the same)
+
         if (uniFfiExtension.addDependencies.get()) {
             if (kotlinExtensionDelegate != null) {
-                // JetBrains KGP DSL
                 with(kotlinExtensionDelegate!!.sourceSets.commonMain) {
                     dependencies {
                         implementation("org.jetbrains.kotlinx:atomicfu") {
@@ -458,8 +458,6 @@ class UniFfiPlugin : Plugin<Project> {
                     }
                 }
             } else {
-                // Native Gradle / AGP DSL
-                // Since we aren't in a KotlinSourceSet, we add them directly to the "implementation" configuration
                 addNativeDependency("implementation", "org.jetbrains.kotlinx:atomicfu", DependencyVersions.KOTLINX_ATOMICFU)
                 addNativeDependency("implementation", "org.jetbrains.kotlinx:kotlinx-datetime", DependencyVersions.KOTLINX_DATETIME)
                 addNativeDependency("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-core", DependencyVersions.KOTLINX_COROUTINES)
@@ -467,9 +465,6 @@ class UniFfiPlugin : Plugin<Project> {
         }
     }
 
-    /**
-     * Helper function to safely apply version constraints to standard Gradle dependencies.
-     */
     private fun Project.addNativeDependency(
         configurationName: String,
         moduleNotation: String,
@@ -482,22 +477,18 @@ class UniFfiPlugin : Plugin<Project> {
             }
         }
     }
+
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinJvmTarget() {
-        // 1. Pure Android projects (AGP 9.0) don't have a JetBrains KGP delegate.
-        // Since there is no JVM target to configure, we safely exit early.
+    private fun Project.configureKotlinJvmTarget(buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         val delegate = kotlinExtensionDelegate ?: return
 
-        // 2. We only want to configure jvmMain for KMP or pure JVM plugins.
-        // This protects against legacy KOTLIN_ANDROID delegates crashing.
         if (delegate.pluginId != PluginIds.KOTLIN_MULTIPLATFORM && delegate.pluginId != PluginIds.KOTLIN_JVM) {
             return
         }
 
-        // 3. We are safely in JetBrains territory now.
         with(delegate.sourceSets.jvmMain) {
             if (delegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
-                kotlin.srcDir(jvmBindingsDirectory)
+                kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("jvmMain/kotlin") })
             }
 
             if (uniFfiExtension.addDependencies.get()) {
@@ -510,10 +501,6 @@ class UniFfiPlugin : Plugin<Project> {
         }
     }
 
-    /**
-     * Native Gradle equivalent of `getConflictingDependency`.
-     * Scans a configuration to see if a specific group/name dependency is already defined.
-     */
     private fun Project.getNativeConflictingDependencyVersion(
         configurationName: String,
         group: String,
@@ -525,21 +512,17 @@ class UniFfiPlugin : Plugin<Project> {
     }
 
     @OptIn(InternalGobleyGradleApi::class)
-    private fun Project.configureKotlinAndroidTarget() {
+    private fun Project.configureKotlinAndroidTarget(buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         val isKmp = kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_MULTIPLATFORM
         val hasAndroid = androidDelegate != null || isKmp
 
-        // If there is no Android target at all, bail out safely.
         if (!hasAndroid) return
 
         if (isKmp) {
-            // ==========================================
-            // 1. JETBRAINS KGP WORLD (Kotlin Multiplatform)
-            // ==========================================
             val kgpDelegate = requireNotNull(kotlinExtensionDelegate)
 
             with(kgpDelegate.sourceSets.androidMain) {
-                kotlin.srcDir(androidBindingsDirectory)
+                kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("androidMain/kotlin") })
 
                 if (uniFfiExtension.addDependencies.get()) {
                     dependencies {
@@ -582,37 +565,27 @@ class UniFfiPlugin : Plugin<Project> {
             }
 
         } else {
-            // ==========================================
-            // 2. PURE ANDROID WORLD (AGP 9 Built-in Kotlin)
-            // ==========================================
-
             if (uniFfiExtension.addDependencies.get()) {
-                // Main dependencies
                 addNativeDependency("implementation", "net.java.dev.jna:jna@aar", DependencyVersions.JNA)
                 addNativeDependency("implementation", "androidx.annotation:annotation", DependencyVersions.KOTLINX_COROUTINES)
 
-                // Check for conflicts natively in Gradle's 'implementation' configuration
                 val jnaVersion = getNativeConflictingDependencyVersion(
                     configurationName = "implementation",
                     group = "net.java.dev.jna",
                     name = "jna"
                 ) ?: DependencyVersions.JNA
 
-                // Compose Preview Variant (e.g., adding to 'debugImplementation')
                 val composePreviewVariant = GradleUtils.getComposePreviewVariant(gradle)
                 if (composePreviewVariant != null) {
                     val variantPrefix = when (composePreviewVariant) {
                         Variant.Debug -> "debug"
                         Variant.Release -> "release"
-                        null -> ""
                     }
 
-                    // If variantPrefix is empty, it just falls back to "implementation"
                     val configName = if (variantPrefix.isEmpty()) "implementation" else "${variantPrefix}Implementation"
                     addNativeDependency(configName, "net.java.dev.jna:jna", jnaVersion)
                 }
 
-                // Unit Tests (adding to 'testImplementation')
                 addNativeDependency("testImplementation", "net.java.dev.jna:jna", jnaVersion)
             }
         }
@@ -622,13 +595,18 @@ class UniFfiPlugin : Plugin<Project> {
         kotlinNativeTarget: KotlinNativeTarget,
         dummyDefFile: Provider<RegularFile>,
         generateDummyDefFileTask: TaskProvider<Task>,
+        buildBindings: TaskProvider<BuildUniffiBindingsTask>
     ) {
         val namespace = bindingsGeneration.namespace.get()
         kotlinNativeTarget.compilations.getByName("main") {
             cinterops.register(TASK_GROUP) {
                 packageName("$namespace.cinterop")
-                header(project.nativeBindingsCInteropHeader(namespace))
-                // Since linking is handled by CargoPlugin and header is fed above, we don't need the defFile.
+
+                val headerFile = buildBindings.flatMap {
+                    it.outputDirectory.file("nativeInterop/cinterop/headers/$namespace/$namespace.h")
+                }
+                header(headerFile)
+
                 defFile(dummyDefFile)
                 tasks.named(interopProcessingTaskName) {
                     inputs.file(dummyDefFile)
@@ -636,7 +614,7 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             }
             defaultSourceSet {
-                kotlin.srcDir(nativeBindingsDirectory)
+                kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("nativeMain/kotlin") })
             }
             compileTaskProvider.configure {
                 compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
@@ -644,9 +622,9 @@ class UniFfiPlugin : Plugin<Project> {
         }
     }
 
-    private fun Project.configureUnsupportedTarget(kotlinTarget: KotlinTarget) {
+    private fun Project.configureUnsupportedTarget(kotlinTarget: KotlinTarget, buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         kotlinTarget.compilations.getByName("main").defaultSourceSet {
-            kotlin.srcDir(stubBindingsDirectory)
+            kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("stubMain/kotlin") })
         }
     }
 }
@@ -654,38 +632,14 @@ class UniFfiPlugin : Plugin<Project> {
 private val Project.bindingsDirectory: Provider<Directory>
     get() = layout.buildDirectory.dir("generated/uniffi")
 
-private val Project.mainBindingsDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("main/kotlin") }
-
-private val Project.commonBindingsDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("commonMain/kotlin") }
-
-private val Project.jvmBindingsDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("jvmMain/kotlin") }
-
-private val Project.androidBindingsDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("androidMain/kotlin") }
-
-private val Project.nativeBindingsDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("nativeMain/kotlin") }
-
-private val Project.stubBindingsDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("stubMain/kotlin") }
-
 private val Project.androidGeneratedProguardFile: Provider<RegularFile>
     get() = bindingsDirectory.map { it.file("androidMain/generated-proguard-rules.txt") }
-
-private val Project.nativeBindingsCInteropDirectory: Provider<Directory>
-    get() = bindingsDirectory.map { it.dir("nativeInterop/cinterop") }
 
 private val Project.mergedConfig: Provider<RegularFile>
     get() = layout.buildDirectory.file("intermediates/merged_uniffi_config/uniffi.toml")
 
 private fun Project.nativeBindingsCInteropDef(libraryCrateName: String): Provider<RegularFile> =
-    nativeBindingsCInteropDirectory.map { it.file("$libraryCrateName.def") }
-
-private fun Project.nativeBindingsCInteropHeader(namespace: String): Provider<RegularFile> =
-    nativeBindingsCInteropDirectory.map { it.file("headers/$namespace/$namespace.h") }
+    bindingsDirectory.map { it.file("nativeInterop/cinterop/$libraryCrateName.def") }
 
 private fun KotlinSourceSet.getConflictingDependency(
     dependencyNotation: String,

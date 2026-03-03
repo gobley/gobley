@@ -12,6 +12,7 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -54,7 +55,7 @@ class GobleyAndroidKotlinMultiplatformExtensionDelegate(
     override val abiFilters: Set<String>
         get() = emptySet()
 
-    override fun addMainSourceDir(variant: Variant?, sourceDirectory: Provider<Directory>) {
+    override fun addMainSourceDir(variant: Variant?, sourceDirectory: FileCollection) {
         getAndroidTarget().compilations.configureEach { compilation ->
             if (variant == null || compilation.name.equals(variant.name, ignoreCase = true)) {
                 // Because sourceDirectory is a Provider, Gradle inherently tracks the task dependency here!

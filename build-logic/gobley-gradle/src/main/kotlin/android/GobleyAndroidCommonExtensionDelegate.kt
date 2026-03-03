@@ -16,6 +16,7 @@ import gobley.gradle.Variant
 import gobley.gradle.getByVariant
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.internal.lambdas.SerializableLambdas.action
 import org.gradle.api.provider.Provider
@@ -54,7 +55,7 @@ class GobleyAndroidCommonExtensionDelegate(
 
     override fun addMainSourceDir(
         variant: Variant?,
-        sourceDirectory: Provider<Directory>,
+        sourceDirectory: FileCollection,
     ) {
         // Drop the { } block and access the property directly
         val testSourceSet = if (variant != null) {
@@ -93,22 +94,27 @@ class GobleyAndroidCommonExtensionDelegate(
         }
     }
 
+
     private fun addProguardFilesToBuildType(
         project: Project,
         proguardFile: RegularFile,
         buildType: BuildType,
         generationTask: TaskProvider<*>,
     ) {
-        // Creates a FileCollection that inherently knows it depends on 'generationTask'
-        val generatedFileCollection = project.files(proguardFile).builtBy(generationTask)
-
-        // When AGP consumes these files for R8/ProGuard, Gradle automatically injects the dependency.
+        // 1. Give the old DSL exactly what it wants: a raw, static java.io.File
         if (buildType is ApplicationBuildType) {
-            buildType.proguardFiles(generatedFileCollection)
+            buildType.proguardFiles(proguardFile.asFile)
         }
 
         if (buildType is LibraryBuildType) {
-            buildType.consumerProguardFiles(generatedFileCollection)
+            buildType.consumerProguardFiles(proguardFile.asFile)
+        }
+
+        // 2. Wire the task dependency to AGP's stable public lifecycle.
+        // By attaching to `preBuild`, we guarantee the file is generated before
+        // ANY obfuscation or packaging tasks run, without hacking internal AGP classes!
+        project.tasks.matching { it.name == "preBuild" }.configureEach {
+            it.dependsOn(generationTask)
         }
     }
 }
