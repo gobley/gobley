@@ -10,7 +10,9 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.cargo.tasks.CargoPackageTask
 import gobley.gradle.uniffi.Config
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.internal.lambdas.SerializableLambdas.spec
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -18,21 +20,43 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
+import javax.inject.Inject
 
 @CacheableTask
 abstract class BuildUniffiBindingsTask : CargoPackageTask() {
+
     /**
-     * Directory in which to write generated files. Default is same folder as .udl file.
+     * The raw directory where uniffi-bindgen places all outputs before they are split.
+     * Hidden from Gradle's output tracking to prevent caching conflicts.
+     */
+    @get:Internal
+    abstract val rawOutputDirectory: DirectoryProperty
+
+    /**
+     * The explicitly separated directory for generated Kotlin (.kt) files.
+     * This strictly satisfies the AGP 9 Variant API requirements.
      */
     @get:OutputDirectory
-    @get:Optional
-    abstract val outputDirectory: DirectoryProperty
+    abstract val kotlinOutputDir: DirectoryProperty
+
+    /**
+     * The explicitly separated directory for generated C-Interop (.h, .def) files.
+     */
+    @get:OutputDirectory
+    abstract val cinteropOutputDir: DirectoryProperty
+
+    /**
+     * Gradle's native file system router for caching-safe file copying.
+     */
+    @get:Inject
+    abstract val fsOperations: FileSystemOperations
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -106,9 +130,12 @@ abstract class BuildUniffiBindingsTask : CargoPackageTask() {
         @OptIn(InternalGobleyGradleApi::class)
         command(bindgen) {
             workingDirectory(root)
-            if (outputDirectory.isPresent) {
-                arguments("--out-dir", outputDirectory.get())
+
+            // Route the raw CLI output directly to our internal directory
+            if (rawOutputDirectory.isPresent) {
+                arguments("--out-dir", rawOutputDirectory.get())
             }
+
             if (config.isPresent) {
                 val configFile = config.get()
                 arguments("--config", configFile)
@@ -147,10 +174,29 @@ abstract class BuildUniffiBindingsTask : CargoPackageTask() {
             suppressXcodeIosToolchains()
         }.get().assertNormalExitValue()
 
+        // Generate the def file into the raw output directory alongside the bindgen files
         val defFilePath =
-            outputDirectory.get().file("nativeInterop/cinterop/${libraryCrateName.get()}.def")
+            rawOutputDirectory.get().file("nativeInterop/cinterop/${libraryCrateName.get()}.def")
         val defFileFile = defFilePath.asFile
         defFileFile.parentFile?.mkdirs()
         defFileFile.writeText("staticLibraries = lib${libraryCrateName.get()}.a\n")
+
+        // --- SPLIT OUTPUTS FOR AGP 9 COMPLIANCE ---
+
+        // 1. Sync strictly the Kotlin files to the Variant API output directory
+        fsOperations.sync {
+            from(rawOutputDirectory) {
+                include("**/*.kt")
+            }
+            into(kotlinOutputDir)
+        }
+
+        // 2. Sync strictly the C-Interop files to the native output directory
+        fsOperations.sync {
+            from(rawOutputDirectory) {
+                include("**/*.h", "**/*.def")
+            }
+            into(cinteropOutputDir)
+        }
     }
 }

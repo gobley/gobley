@@ -305,7 +305,13 @@ class UniFfiPlugin : Plugin<Project> {
 
             cargoPackage.set(cargoExtension.cargoPackage)
             bindgen.set(installBindgen.get().bindgen)
-            outputDirectory.set(bindingsDirectory)
+
+            // --- SPLIT OUTPUTS FOR AGP 9 COMPLIANCE ---
+            // Set the isolated output directories exactly as defined in the updated task
+            rawOutputDirectory.set(layout.buildDirectory.dir("intermediates/uniffi/raw"))
+            kotlinOutputDir.set(layout.buildDirectory.dir("generated/uniffi/kotlin"))
+            cinteropOutputDir.set(layout.buildDirectory.dir("generated/uniffi/cinterop"))
+
             if (uniFfiExtension.formatCode.isPresent)
                 formatCode.set(uniFfiExtension.formatCode.get())
 
@@ -416,31 +422,21 @@ class UniFfiPlugin : Plugin<Project> {
 
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.configureKotlinCommonTarget(buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
-        val isKmp = kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_MULTIPLATFORM
-        val targetBindingsDirectory = if (isKmp) {
-            buildBindings.flatMap { it.outputDirectory.dir("commonMain/kotlin") }
-        } else {
-            buildBindings.flatMap { it.outputDirectory.dir("main/kotlin") }
-        }
-
-        // === THE FILE COLLECTION BYPASS ===
-        // Wrap the Provider in a FileCollection to bypass AGP 9's strict type check,
-        // while perfectly maintaining the execution graph dependency!
-        val targetSourceCollection = project.files(targetBindingsDirectory).builtBy(buildBindings)
-
         if (kotlinExtensionDelegate != null) {
+            // === KMP OR PURE JVM (JETBRAINS KGP) ===
+            // Wrap the isolated Provider in a FileCollection to perfectly preserve the execution graph!
+            val targetSourceCollection = project.files(buildBindings.flatMap { it.kotlinOutputDir }).builtBy(buildBindings)
+
             with(kotlinExtensionDelegate!!.sourceSets.commonMain) {
-                // JetBrains KGP accepts the FileCollection gracefully
+                // Point directly to the new isolated Kotlin output
                 kotlin.srcDir(targetSourceCollection)
             }
         } else if (androidDelegate != null) {
-            // Pure Android accepts the FileCollection and bypasses the crash!
-            androidDelegate!!.addMainSourceDir(variant = null, sourceDirectory = targetSourceCollection)
+            // === PURE ANDROID (AGP 9 BUILT-IN KOTLIN) ===
+            androidDelegate!!.addGeneratedBindingsDirectory(project, buildBindings) { task ->
+                task.kotlinOutputDir
+            }
         }
-
-        // ... (Keep the rest of your dependencies block exactly the same)
-
-        // ... (keep the dependencies block exactly the same)
 
         if (uniFfiExtension.addDependencies.get()) {
             if (kotlinExtensionDelegate != null) {
@@ -488,7 +484,8 @@ class UniFfiPlugin : Plugin<Project> {
 
         with(delegate.sourceSets.jvmMain) {
             if (delegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
-                kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("jvmMain/kotlin") })
+                // Point directly to the new isolated Kotlin output
+                kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
             }
 
             if (uniFfiExtension.addDependencies.get()) {
@@ -522,7 +519,8 @@ class UniFfiPlugin : Plugin<Project> {
             val kgpDelegate = requireNotNull(kotlinExtensionDelegate)
 
             with(kgpDelegate.sourceSets.androidMain) {
-                kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("androidMain/kotlin") })
+                // Point directly to the new isolated Kotlin output
+                kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
 
                 if (uniFfiExtension.addDependencies.get()) {
                     dependencies {
@@ -602,8 +600,9 @@ class UniFfiPlugin : Plugin<Project> {
             cinterops.register(TASK_GROUP) {
                 packageName("$namespace.cinterop")
 
+                // Map straight into the new isolated C-Interop directory!
                 val headerFile = buildBindings.flatMap {
-                    it.outputDirectory.file("nativeInterop/cinterop/headers/$namespace/$namespace.h")
+                    it.cinteropOutputDir.file("headers/$namespace/$namespace.h")
                 }
                 header(headerFile)
 
@@ -614,7 +613,8 @@ class UniFfiPlugin : Plugin<Project> {
                 }
             }
             defaultSourceSet {
-                kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("nativeMain/kotlin") })
+                // Point directly to the new isolated Kotlin output
+                kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
             }
             compileTaskProvider.configure {
                 compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
@@ -624,7 +624,8 @@ class UniFfiPlugin : Plugin<Project> {
 
     private fun Project.configureUnsupportedTarget(kotlinTarget: KotlinTarget, buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         kotlinTarget.compilations.getByName("main").defaultSourceSet {
-            kotlin.srcDir(buildBindings.flatMap { it.outputDirectory.dir("stubMain/kotlin") })
+            // Point directly to the new isolated Kotlin output
+            kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
         }
     }
 }

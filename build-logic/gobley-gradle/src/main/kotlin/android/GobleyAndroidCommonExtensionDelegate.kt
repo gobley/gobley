@@ -15,7 +15,9 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.getByVariant
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.internal.lambdas.SerializableLambdas.action
@@ -53,17 +55,17 @@ class GobleyAndroidCommonExtensionDelegate(
     override val abiFilters: Set<String>
         get() = commonExtension.defaultConfig.ndk.abiFilters
 
-    override fun addMainSourceDir(
-        variant: Variant?,
-        sourceDirectory: FileCollection,
+    override fun <T : Task> addGeneratedBindingsDirectory(
+        project: Project,
+        taskProvider: TaskProvider<T>,
+        directoryMapping: (T) -> DirectoryProperty
     ) {
-        // Drop the { } block and access the property directly
-        val testSourceSet = if (variant != null) {
-            commonExtension.sourceSets.getByVariant(variant)
-        } else {
-            commonExtension.sourceSets.getByName("main")
+        val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+
+        androidComponents.onVariants { variant ->
+            // Flawless, warning-free Variant API injection
+            variant.sources.java?.addGeneratedSourceDirectory(taskProvider, directoryMapping)
         }
-        testSourceSet.java.srcDir(sourceDirectory)
     }
 
     override fun addProguardFiles(
