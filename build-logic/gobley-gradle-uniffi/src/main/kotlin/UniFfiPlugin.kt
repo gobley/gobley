@@ -38,11 +38,13 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
+import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.com.intellij.util.containers.ContainerUtil.mapNotNull
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -53,6 +55,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
+import java.io.File
 
 private const val TASK_GROUP = "uniffi"
 
@@ -204,9 +207,6 @@ class UniFfiPlugin : Plugin<Project> {
                 else -> listOf(Variant.Debug)
             }
         }.distinct().ifEmpty {
-            // === PURE ANDROID AGP 9 FIX ===
-            // If there are no JetBrains Kotlin targets, but Android is applied,
-            // we natively supply the standard Android variants!
             @OptIn(InternalGobleyGradleApi::class)
             if (androidDelegate != null) Variant.entries else emptyList()
         }
@@ -262,14 +262,21 @@ class UniFfiPlugin : Plugin<Project> {
 
             @OptIn(InternalGobleyGradleApi::class)
             kotlinTargets.set(
-                kotlinExtensionDelegate?.targets.orEmpty().mapNotNull {
-                    when (it) {
-                        is KotlinMetadataTarget -> null
-                        is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> "jvm"
-                        is KotlinAndroidTarget -> "android"
-                        is KotlinNativeTarget -> "native"
-                        else -> "stub"
+                if (kotlinExtensionDelegate != null) {
+                    kotlinExtensionDelegate!!.targets.mapNotNull {
+                        when (it) {
+                            is KotlinMetadataTarget -> null
+                            is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> "jvm"
+                            is KotlinAndroidTarget -> "android"
+                            is KotlinNativeTarget -> "native"
+                            else -> "stub"
+                        }
                     }
+                } else if (androidDelegate != null) {
+                    // PURE ANDROID FIX: Explicitly pass the android target so implementations are generated!
+                    listOf("android")
+                } else {
+                    emptyList()
                 }
             )
 
@@ -306,11 +313,19 @@ class UniFfiPlugin : Plugin<Project> {
             cargoPackage.set(cargoExtension.cargoPackage)
             bindgen.set(installBindgen.get().bindgen)
 
-            // --- SPLIT OUTPUTS FOR AGP 9 COMPLIANCE ---
-            // Set the isolated output directories exactly as defined in the updated task
             rawOutputDirectory.set(layout.buildDirectory.dir("intermediates/uniffi/raw"))
-            kotlinOutputDir.set(layout.buildDirectory.dir("generated/uniffi/kotlin"))
+
+            commonMainOutputDir.set(layout.buildDirectory.dir("generated/uniffi/commonMain"))
+            mainOutputDir.set(layout.buildDirectory.dir("generated/uniffi/main"))
+            jvmMainOutputDir.set(layout.buildDirectory.dir("generated/uniffi/jvmMain"))
+            androidMainOutputDir.set(layout.buildDirectory.dir("generated/uniffi/androidMain"))
+            nativeMainOutputDir.set(layout.buildDirectory.dir("generated/uniffi/nativeMain"))
+            stubMainOutputDir.set(layout.buildDirectory.dir("generated/uniffi/stubMain"))
+
             cinteropOutputDir.set(layout.buildDirectory.dir("generated/uniffi/cinterop"))
+
+            @OptIn(InternalGobleyGradleApi::class)
+            multiplatformMode.set(kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_MULTIPLATFORM)
 
             if (uniFfiExtension.formatCode.isPresent)
                 formatCode.set(uniFfiExtension.formatCode.get())
@@ -423,18 +438,13 @@ class UniFfiPlugin : Plugin<Project> {
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.configureKotlinCommonTarget(buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         if (kotlinExtensionDelegate != null) {
-            // === KMP OR PURE JVM (JETBRAINS KGP) ===
-            // Wrap the isolated Provider in a FileCollection to perfectly preserve the execution graph!
-            val targetSourceCollection = project.files(buildBindings.flatMap { it.kotlinOutputDir }).builtBy(buildBindings)
-
+            val targetSourceCollection = project.files(buildBindings.flatMap { it.commonMainOutputDir }).builtBy(buildBindings)
             with(kotlinExtensionDelegate!!.sourceSets.commonMain) {
-                // Point directly to the new isolated Kotlin output
                 kotlin.srcDir(targetSourceCollection)
             }
         } else if (androidDelegate != null) {
-            // === PURE ANDROID (AGP 9 BUILT-IN KOTLIN) ===
             androidDelegate!!.addGeneratedBindingsDirectory(project, buildBindings) { task ->
-                task.kotlinOutputDir
+                task.mainOutputDir // Pure Android uses the 'main' output!
             }
         }
 
@@ -484,8 +494,7 @@ class UniFfiPlugin : Plugin<Project> {
 
         with(delegate.sourceSets.jvmMain) {
             if (delegate.pluginId == PluginIds.KOTLIN_MULTIPLATFORM) {
-                // Point directly to the new isolated Kotlin output
-                kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
+                kotlin.srcDir(buildBindings.flatMap { it.jvmMainOutputDir })
             }
 
             if (uniFfiExtension.addDependencies.get()) {
@@ -519,8 +528,7 @@ class UniFfiPlugin : Plugin<Project> {
             val kgpDelegate = requireNotNull(kotlinExtensionDelegate)
 
             with(kgpDelegate.sourceSets.androidMain) {
-                // Point directly to the new isolated Kotlin output
-                kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
+                kotlin.srcDir(buildBindings.flatMap { it.androidMainOutputDir })
 
                 if (uniFfiExtension.addDependencies.get()) {
                     dependencies {
@@ -586,6 +594,18 @@ class UniFfiPlugin : Plugin<Project> {
 
                 addNativeDependency("testImplementation", "net.java.dev.jna:jna", jnaVersion)
             }
+
+            // === THE FIX for Pure Android Local Unit Tests ===
+            // 1. Safely map the path lazily using a Provider, completely avoiding Project capture
+            val jnaPathProvider = cargoExtension.cargoPackage.map {
+                val crateRoot = it.root.asFile
+                java.io.File(crateRoot.parentFile, "target/debug").absolutePath
+            }
+
+            // 2. Pass the completely insulated Provider class to the test tasks
+            tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach {
+                jvmArgumentProviders.add(JnaLibraryPathProvider(jnaPathProvider))
+            }
         }
     }
 
@@ -600,21 +620,27 @@ class UniFfiPlugin : Plugin<Project> {
             cinterops.register(TASK_GROUP) {
                 packageName("$namespace.cinterop")
 
-                // Map straight into the new isolated C-Interop directory!
+                // 1. Map straight into the new isolated C-Interop directory!
+                // Since we flattened the output, 'headers' is right at the root of the output dir.
                 val headerFile = buildBindings.flatMap {
                     it.cinteropOutputDir.file("headers/$namespace/$namespace.h")
                 }
                 header(headerFile)
 
                 defFile(dummyDefFile)
+
                 tasks.named(interopProcessingTaskName) {
                     inputs.file(dummyDefFile)
                     dependsOn(generateDummyDefFileTask)
+
+                    // 2. Force the hard task dependency!
+                    // The KMP C-Interop DSL is too old to understand implicit Provider dependencies.
+                    dependsOn(buildBindings)
                 }
             }
             defaultSourceSet {
-                // Point directly to the new isolated Kotlin output
-                kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
+                // 3. Point directly to the new isolated Native Kotlin output!
+                kotlin.srcDir(buildBindings.flatMap { it.nativeMainOutputDir })
             }
             compileTaskProvider.configure {
                 compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
@@ -624,8 +650,8 @@ class UniFfiPlugin : Plugin<Project> {
 
     private fun Project.configureUnsupportedTarget(kotlinTarget: KotlinTarget, buildBindings: TaskProvider<BuildUniffiBindingsTask>) {
         kotlinTarget.compilations.getByName("main").defaultSourceSet {
-            // Point directly to the new isolated Kotlin output
-            kotlin.srcDir(buildBindings.flatMap { it.kotlinOutputDir })
+            // Point directly to the new isolated Stub Kotlin output
+            kotlin.srcDir(buildBindings.flatMap { it.stubMainOutputDir })
         }
     }
 }
@@ -653,4 +679,19 @@ private fun KotlinSourceSet.getConflictingDependency(
                 && dependency.module.group == dependencyToAdd.module.group
                 && dependency.module.name == dependencyToAdd.module.name
     } as? ExternalModuleDependency
+}
+
+// This class is explicitly declared outside of the Project scope
+// so it cannot accidentally capture illegal Gradle objects!
+class JnaLibraryPathProvider(
+    @get:Input
+    val libraryPath: Provider<String>
+) : CommandLineArgumentProvider {
+    override fun asArguments(): Iterable<String> {
+        val path = libraryPath.get()
+        return listOf(
+            "-Djna.library.path=$path",
+            "-Djava.library.path=$path"
+        )
+    }
 }
