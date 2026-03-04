@@ -586,6 +586,7 @@ class UniFfiPlugin : Plugin<Project> {
                     val variantPrefix = when (composePreviewVariant) {
                         Variant.Debug -> "debug"
                         Variant.Release -> "release"
+                        null -> ""
                     }
 
                     val configName = if (variantPrefix.isEmpty()) "implementation" else "${variantPrefix}Implementation"
@@ -596,14 +597,25 @@ class UniFfiPlugin : Plugin<Project> {
             }
 
             // === THE FIX for Pure Android Local Unit Tests ===
-            // 1. Safely map the path lazily using a Provider, completely avoiding Project capture
-            val jnaPathProvider = cargoExtension.cargoPackage.map {
-                val crateRoot = it.root.asFile
-                java.io.File(crateRoot.parentFile, "target/debug").absolutePath
+
+            // 1. Pure Android modules only build .so files natively.
+            // We MUST force Cargo to compile the host .dylib for macOS JVM testing!
+            val crateRootFile = cargoExtension.cargoPackage.get().root.asFile
+            val buildHostLibraryForTests = tasks.register("buildHostLibraryForAndroidTests", org.gradle.api.tasks.Exec::class.java) {
+                workingDir = crateRootFile
+                commandLine("cargo", "build")
             }
 
-            // 2. Pass the completely insulated Provider class to the test tasks
+            // 2. Safely resolve the Cargo workspace target directory (usually at the root of the repo)
+            // We extract absolutePath as a string first to completely avoid capturing `Project` for the Configuration Cache!
+            val rootDirPath = project.rootProject.layout.projectDirectory.asFile.absolutePath
+            val jnaPathProvider = project.provider {
+                java.io.File(rootDirPath, "target/debug").absolutePath
+            }
+
+            // 3. Pass the completely insulated Provider class to the test tasks AND make them wait for Cargo to finish
             tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach {
+                dependsOn(buildHostLibraryForTests)
                 jvmArgumentProviders.add(JnaLibraryPathProvider(jnaPathProvider))
             }
         }
