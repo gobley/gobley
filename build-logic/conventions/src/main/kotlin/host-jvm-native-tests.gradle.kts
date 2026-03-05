@@ -26,10 +26,8 @@ kotlin {
     }
     if (propertyIsTrue("gobley.projects.nativeTests")) {
         hostNativeTarget {
-            if (GobleyHost.Platform.Windows.isCurrent) {
-                compilations.getByName("test") {
-                    useRustUpLinker()
-                }
+            compilations.getByName("test") {
+                useRustUpLinker()
             }
         }
     }

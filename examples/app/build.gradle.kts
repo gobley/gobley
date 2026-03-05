@@ -21,16 +21,14 @@ kotlin {
     jvmToolchain(17)
     jvm()
 
-    if (GobleyHost.Platform.Windows.isCurrent) {
-        arrayOf(
-            mingwX64(),
-        ).forEach {
-            it.binaries.executable {
-                entryPoint = "gobley.uniffi.examples.app.main"
-            }
-            it.compilations.configureEach {
-                useRustUpLinker()
-            }
+    arrayOf(
+        mingwX64(),
+    ).forEach {
+        it.binaries.executable {
+            entryPoint = "gobley.uniffi.examples.app.main"
+        }
+        it.compilations.configureEach {
+            useRustUpLinker()
         }
     }
 
@@ -40,20 +38,11 @@ kotlin {
         androidNativeArm32(),
         androidNativeX64(),
         androidNativeX86(),
+        linuxX64(),
+        linuxArm64(),
     ).forEach {
         it.binaries.executable {
             entryPoint = "gobley.uniffi.examples.app.main"
-        }
-    }
-
-    if (GobleyHost.Platform.Linux.isCurrent) {
-        arrayOf(
-            linuxX64(),
-            linuxArm64(),
-        ).forEach {
-            it.binaries.executable {
-                entryPoint = "gobley.uniffi.examples.app.main"
-            }
         }
     }
 
