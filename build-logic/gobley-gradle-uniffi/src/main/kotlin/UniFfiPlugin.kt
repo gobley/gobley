@@ -365,7 +365,7 @@ class UniFfiPlugin : Plugin<Project> {
             if (uniFfiExtension.generateProguardRules.get()) {
                 androidDelegate!!.addProguardFiles(
                     project,
-                    androidGeneratedProguardFile.get(),
+                    androidGeneratedProguardFile,
                     generateUniffiProguardRulesTask,
                 )
             }

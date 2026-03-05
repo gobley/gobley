@@ -1,6 +1,6 @@
 [versions]
 
-kotlin = "2.1.10"
+kotlin = "2.1.21"
 agp = "9.0.0"
 
 buildconfig = "5.5.1"

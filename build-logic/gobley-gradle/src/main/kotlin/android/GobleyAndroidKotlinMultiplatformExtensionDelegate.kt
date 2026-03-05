@@ -85,19 +85,16 @@ class GobleyAndroidKotlinMultiplatformExtensionDelegate(
 
     override fun addProguardFiles(
         project: Project,
-        proguardFile: RegularFile,
+        proguardFileProvider: Provider<RegularFile>, // THE FIX: Accept the Provider directly!
         generationTask: TaskProvider<*>
     ) {
         val optimization = getAndroidTarget().optimization
 
-        // 1. Create the file collection with the implicit task dependency
-        val fileWithDependency = project.files(proguardFile).builtBy(generationTask)
+        // Project.file() natively unwraps Providers and automatically preserves the builtBy dependency!
+        optimization.keepRules.file(proguardFileProvider)
+        optimization.testKeepRules.file(proguardFileProvider)
 
-        // 2. Use the DSL function .file(), NOT the property getter!
-        optimization.keepRules.file(fileWithDependency)
-        optimization.testKeepRules.file(fileWithDependency)
-
-        optimization.consumerKeepRules.file(fileWithDependency)
+        optimization.consumerKeepRules.file(proguardFileProvider)
         optimization.consumerKeepRules.publish = true
     }
 }

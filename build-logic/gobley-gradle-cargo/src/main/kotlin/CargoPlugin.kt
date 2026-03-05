@@ -202,13 +202,22 @@ class CargoPlugin : Plugin<Project> {
         onMainTask: (TaskProvider<InjectJniLibsTask>) -> Unit,
         onTestTask: ((TaskProvider<InjectJniLibsTask>) -> Unit)?
     ) {
+        // --- THE FIX: Intercept "androidmain" and map it to a valid Cargo Variant ---
+        val safeCargoVariant = when (cargoVariantName.lowercase()) {
+            "release" -> "release"
+            else -> "debug" // Safely fallback for 'androidmain' or other non-variant strings
+        }
+
         cargoExtension.builds.configureEach {
             val currentCargoBuild = this
             val currentRustTarget = currentCargoBuild.rustTarget
 
             if (currentRustTarget is RustAndroidTarget) {
                 val androidBuild = currentCargoBuild as CargoAndroidBuild
-                val cargoBuildVariant = androidBuild.variant(Variant(cargoVariantName))
+
+                // Use our sanitized variant name
+                val cargoBuildVariant = androidBuild.variant(Variant(safeCargoVariant))
+
                 val isTargetEnabled = cargoExtension.androidTargetsToBuild.map { it.contains(currentRustTarget) }
                 val embedRustLibrary = cargoBuildVariant.embedRustLibrary
 

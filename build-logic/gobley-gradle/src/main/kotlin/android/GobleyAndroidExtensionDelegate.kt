@@ -6,6 +6,7 @@
 
 package gobley.gradle.android
 
+import com.android.build.gradle.internal.ProguardFilesProvider
 import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.Variant
 import gobley.gradle.tasks.InjectJniLibsTask
@@ -47,7 +48,7 @@ interface GobleyAndroidExtensionDelegate {
 
     fun addProguardFiles(
         project: Project,
-        proguardFile: RegularFile,
+        proguardFileProvider: Provider<RegularFile>,
         generationTask: TaskProvider<*>,
     )
 }

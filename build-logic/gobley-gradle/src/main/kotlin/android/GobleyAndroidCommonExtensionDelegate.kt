@@ -70,11 +70,12 @@ class GobleyAndroidCommonExtensionDelegate(
 
     override fun addProguardFiles(
         project: Project,
-        proguardFile: RegularFile,
-        generationTask: TaskProvider<*>,
+        proguardFileProvider: Provider<RegularFile>, // Matches the updated interface
+        generationTask: TaskProvider<*>
     ) {
         commonExtension.buildTypes.configureEach { buildType ->
-            addProguardFilesToBuildType(project, proguardFile, buildType, generationTask)
+            // Pass the provider down to the BuildType configurator
+            addProguardFilesToBuildType(project, proguardFileProvider, buildType, generationTask)
         }
     }
 
@@ -96,20 +97,21 @@ class GobleyAndroidCommonExtensionDelegate(
         }
     }
 
-
     private fun addProguardFilesToBuildType(
         project: Project,
-        proguardFile: RegularFile,
+        proguardFileProvider: Provider<RegularFile>, // Accept the Provider
         buildType: BuildType,
         generationTask: TaskProvider<*>,
     ) {
-        // 1. Give the old DSL exactly what it wants: a raw, static java.io.File
+        // 1. Give the old DSL the Provider directly!
+        // AGP's proguard methods accept 'Object' and use Gradle's internal file resolver,
+        // which natively unpacks Providers lazily without breaking the Configuration Cache.
         if (buildType is ApplicationBuildType) {
-            buildType.proguardFiles(proguardFile.asFile)
+            buildType.proguardFiles(proguardFileProvider)
         }
 
         if (buildType is LibraryBuildType) {
-            buildType.consumerProguardFiles(proguardFile.asFile)
+            buildType.consumerProguardFiles(proguardFileProvider)
         }
 
         // 2. Wire the task dependency to AGP's stable public lifecycle.
