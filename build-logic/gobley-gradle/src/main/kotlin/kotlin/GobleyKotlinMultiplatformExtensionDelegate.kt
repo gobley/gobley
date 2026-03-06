@@ -62,8 +62,10 @@ private fun GobleyKotlinSourceSetCollection(
         override val commonMain: KotlinSourceSet
             get() = sourceSets.getByName("commonMain")
 
-        private fun androidTarget(): KotlinAndroidTarget {
-            return targets.filterIsInstance<KotlinAndroidTarget>().firstOrNull()
+        private fun androidTarget(): KotlinTarget {
+            // THE FIX: Filter by the stable platform string, and return the generic KotlinTarget
+            // This safely catches both classic JetBrains targets and the new AGP 9 targets!
+            return targets.firstOrNull { it.platformType.name == "androidJvm" }
                 ?: error("Android target not present")
         }
 

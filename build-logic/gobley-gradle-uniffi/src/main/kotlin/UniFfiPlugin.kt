@@ -261,24 +261,23 @@ class UniFfiPlugin : Plugin<Project> {
             kotlinMultiplatform.set(kotlinExtensionDelegate?.pluginId == PluginIds.KOTLIN_MULTIPLATFORM)
 
             @OptIn(InternalGobleyGradleApi::class)
-            kotlinTargets.set(
+            kotlinTargets.set(project.provider { // THE FIX: Wrap in a lazy provider!
                 if (kotlinExtensionDelegate != null) {
-                    kotlinExtensionDelegate!!.targets.mapNotNull {
-                        when (it) {
-                            is KotlinMetadataTarget -> null
-                            is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> "jvm"
-                            is KotlinAndroidTarget -> "android"
-                            is KotlinNativeTarget -> "native"
+                    kotlinExtensionDelegate!!.targets.mapNotNull { target ->
+                        when (target.platformType.name) {
+                            "common" -> null
+                            "jvm" -> "jvm"
+                            "androidJvm" -> "android" // Safely catches the new KMP Android target
+                            "native" -> "native"
                             else -> "stub"
                         }
                     }
                 } else if (androidDelegate != null) {
-                    // PURE ANDROID FIX: Explicitly pass the android target so implementations are generated!
                     listOf("android")
                 } else {
                     emptyList()
                 }
-            )
+            })
 
             if (externalPackageUniFfiConfigurations != null) {
                 externalPackageConfigs.addAll(externalPackageUniFfiConfigurations)
@@ -406,19 +405,21 @@ class UniFfiPlugin : Plugin<Project> {
         if (kotlinExtensionDelegate != null) {
             // === KMP OR PURE JVM (JETBRAINS KGP) ===
             kotlinExtensionDelegate!!.targets.configureEach {
-                when (this) {
-                    is KotlinMetadataTarget -> configureKotlinCommonTarget(buildBindingsTask)
-                    is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
+                // THE FIX: Check platformType FIRST to catch the new AGP 9 KMP targets!
+                when {
+                    platformType.name == "common" -> configureKotlinCommonTarget(buildBindingsTask)
+                    platformType.name == "androidJvm" -> {
+                        // This safely catches BOTH the classic JetBrains KotlinAndroidTarget
+                        // AND the new Google AGP 9 Android Target!
+                        configureKotlinAndroidTarget(buildBindingsTask)
+                    }
+                    this is KotlinJvmTarget || this is KotlinWithJavaTarget<*, *> -> {
                         if (kotlinExtensionDelegate!!.pluginId == PluginIds.KOTLIN_JVM) {
                             configureKotlinCommonTarget(buildBindingsTask)
                         }
                         configureKotlinJvmTarget(buildBindingsTask)
                     }
-                    is KotlinAndroidTarget -> {
-                        // KOTLIN_ANDROID is purged. KMP configures Android natively here!
-                        configureKotlinAndroidTarget(buildBindingsTask)
-                    }
-                    is KotlinNativeTarget -> configureKotlinNativeTarget(
+                    this is KotlinNativeTarget -> configureKotlinNativeTarget(
                         this,
                         dummyDefFile,
                         generateDummyDefFileTask,
