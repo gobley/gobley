@@ -16,15 +16,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import gobley.uniffi.examples.todolist.TodoList
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                Surface(Modifier.fillMaxSize()) {
-                    ContentView(remember { TodoList() })
-                }
-            }
-        }
-    }
-}
+//class MainActivity : ComponentActivity() {
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        setContent {
+//            MaterialTheme {
+//                Surface(Modifier.fillMaxSize()) {
+//                    ContentView(remember { TodoList() })
+//                }
+//            }
+//        }
+//    }
+//}

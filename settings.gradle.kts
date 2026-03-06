@@ -92,3 +92,4 @@ if (ext.propertyIsTrue("gobley.projects.examples.tokioBlake3App")) {
 if (ext.propertyIsTrue("gobley.projects.examples.tokioBoringApp")) {
     include(":examples:tokio-boring-app")
 }
+include(":examples:app-android")

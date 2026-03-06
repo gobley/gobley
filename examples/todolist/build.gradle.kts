@@ -9,7 +9,8 @@ plugins {
     id("dev.gobley.cargo")
     id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
-    alias(libs.plugins.android.library)
+    // Ensuring consistency with the plugin name from your previous module
+    alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
 cargo {
@@ -38,13 +39,30 @@ uniffi {
 }
 
 kotlin {
-    androidTarget {
+    // 1. Modern unified Android block for AGP 8.12+ / 9.0+
+    android {
+        namespace = "dev.gobley.uniffi.examples.todolist"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+
+        // 2. Modern way to declare consumer proguard rules
+        optimization {
+            consumerKeepRules.file("proguard-rules.pro")
+        }
+
+        packaging {
+            resources {
+                excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            }
         }
     }
+
     jvmToolchain(17)
     jvm("desktop")
+
     arrayOf(
         mingwX64(),
     ).forEach { nativeTarget ->
@@ -83,32 +101,5 @@ kotlin {
                 implementation(libs.kotest.assertions.core)
             }
         }
-    }
-}
-
-android {
-    namespace = "dev.gobley.uniffi.examples.todolist"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
-        ndk.abiFilters.add("arm64-v8a")
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
     }
 }
