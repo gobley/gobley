@@ -90,8 +90,9 @@ if (ext.propertyIsTrue("gobley.projects.examples.customTypes")) {
 }
 if (ext.propertyIsTrue("gobley.projects.examples.tokioBlake3App")) {
     include(":examples:tokio-blake3-app")
+    include(":examples:tokio-blake3-app-android")
 }
 if (ext.propertyIsTrue("gobley.projects.examples.tokioBoringApp")) {
     include(":examples:tokio-boring-app")
+    include(":examples:tokio-boring-app-android")
 }
-include(":examples:tokio-blake3-app-android")
