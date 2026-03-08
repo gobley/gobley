@@ -2,29 +2,40 @@ import gobley.gradle.GobleyHost
 import gobley.gradle.cargo.dsl.android
 import gobley.gradle.cargo.dsl.appleMobile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 
 plugins {
     kotlin("multiplatform")
     id("dev.gobley.cargo")
     id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     id(libs.plugins.kotlin.serialization.get().pluginId)
 }
 
+// 1. Define SDK versions up here so both the Kotlin block and the Windows workaround can share them safely
+val androidMinSdk = 26
+val androidCompileSdk = libs.versions.android.compileSdk.get().toInt()
+
 if (GobleyHost.Platform.Windows.isCurrent) {
     afterEvaluate {
+        // THE FIX: Fetch the KMP Components Extension to access the resolved SDK and NDK paths
+        val androidComponents = project.extensions.getByType(KotlinMultiplatformAndroidComponentsExtension::class.java)
+
         cargo {
             // A workaround for #207
             builds.android {
                 val envVariables = rustTarget.ndkEnvVariables(
-                    sdkRoot = android.sdkDirectory,
-                    apiLevel = android.defaultConfig.minSdk ?: 21,
-                    ndkVersion = android.ndkVersion,
-                    ndkRoot = android.ndkPath?.let(::File),
+                    // Extract the File object from the Gradle Provider
+                    sdkRoot = androidComponents.sdkComponents.sdkDirectory.get().asFile,
+                    apiLevel = androidMinSdk,
+                    // Because AGP now gives us the exact resolved NDK directory,
+                    // we don't even need to pass the ndkVersion string anymore!
+                    ndkRoot = androidComponents.sdkComponents.ndkDirectory.get().asFile
                 ).toMutableMap()
+
                 val envVariableNamesToModify = arrayOf(
                     "ANDROID_HOME",
                     "ANDROID_NDK_HOME",
@@ -56,6 +67,7 @@ if (GobleyHost.Platform.Windows.isCurrent) {
         }
     }
 }
+
 if (GobleyHost.Platform.MacOS.isCurrent) {
     cargo {
         builds.appleMobile {
@@ -76,11 +88,18 @@ uniffi {
 }
 
 kotlin {
-    androidTarget {
+    // 2. Unified Android DSL block (replaces both androidTarget {} and the top-level android {} block)
+    android {
+        namespace = "dev.gobley.uniffi.examples.tokioblake3app" // Inferred from your bundleId
+        compileSdk = androidCompileSdk
+        minSdk = androidMinSdk
+
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+
+    jvmToolchain(17) // Replaces the top-level java { toolchain { ... } }
 
     if (GobleyHost.Platform.MacOS.isCurrent) {
         arrayOf(
@@ -108,41 +127,5 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
         }
-    }
-}
-
-android {
-    namespace = "dev.gobley.uniffi.examples.tokioblake3app"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        applicationId = "dev.gobley.uniffi.examples.tokioblake3app"
-        minSdk = 24
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1"
-        ndk.abiFilters.add("arm64-v8a")
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    buildTypes {
-        getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
     }
 }
