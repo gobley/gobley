@@ -6,6 +6,7 @@
 
 package gobley.gradle.cargo
 
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import gobley.gradle.AppleSdk
 import gobley.gradle.GobleyHost
@@ -460,22 +461,6 @@ class CargoPlugin : Plugin<Project> {
                         }
                     }
 
-                    KotlinPlatformType.androidJvm -> {
-                        if (cargoBuild is CargoJvmBuild<*>) {
-                            if (jvmTarget == null) {
-                                cargoBuild.variants {
-                                    configureJvmPostBuildTasks(
-                                        kotlinTarget,
-                                        // cargoBuild.jvmVariant is checked inside
-                                        this,
-                                        kotlinTarget as KotlinAndroidTarget,
-                                    )
-                                }
-                            }
-                        }
-                        // THE ELSE BLOCK THAT USED TO BE HERE IS NOW GONE!
-                    }
-
                     KotlinPlatformType.native -> {
                         cargoBuild as CargoNativeBuild<*>
                         configureNativeCompilation(
@@ -512,7 +497,7 @@ class CargoPlugin : Plugin<Project> {
         // Android local unit tests.
         kotlinTarget: KotlinTarget,
         cargoBuildVariant: CargoJvmBuildVariant<*>,
-        androidTarget: KotlinAndroidTarget?,
+        androidTarget: KotlinTarget?,
     ) {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
@@ -573,11 +558,16 @@ class CargoPlugin : Plugin<Project> {
                     }
                 }
             }
-            with(kotlinExtensionDelegate!!.sourceSets.jvmMain) {
+            // THE FIX: Dynamically fetch the source set for the current target (e.g., 'androidMain' or 'jvmMain')
+            val mainSourceSet = kotlinTarget.compilations.getByName("main").defaultSourceSet
+            with(mainSourceSet) {
                 if (invokedByKotlinJvmBuild) {
                     resources.srcDir(resourceDirectory)
                 }
                 dependencies {
+                    // In modern Gradle/KGP, you may need to use 'implementation'
+                    // instead of 'runtimeOnly' if the source set rejects runtimeOnly.
+                    // But if runtimeOnly is currently working for your setup, leave it as is!
                     runtimeOnly(files(jarTask.flatMap { it.archiveFile }))
                 }
             }
