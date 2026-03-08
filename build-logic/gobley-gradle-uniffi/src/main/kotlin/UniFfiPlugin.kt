@@ -602,9 +602,15 @@ class UniFfiPlugin : Plugin<Project> {
             // 1. Pure Android modules only build .so files natively.
             // We MUST force Cargo to compile the host .dylib for macOS JVM testing!
             val crateRootFile = cargoExtension.cargoPackage.get().root.asFile
+            val cargoExecutable = project.providers.systemProperty("user.home").map { userHome ->
+                val defaultCargoPath = File(userHome, ".cargo/bin/cargo")
+                if (defaultCargoPath.exists()) defaultCargoPath.absolutePath else "cargo"
+            }.getOrElse("cargo")
+
             val buildHostLibraryForTests = tasks.register("buildHostLibraryForAndroidTests", org.gradle.api.tasks.Exec::class.java) {
                 workingDir = crateRootFile
-                commandLine("cargo", "build")
+                // Use the absolute path here!
+                commandLine(cargoExecutable, "build")
             }
 
             // 2. Safely resolve the Cargo workspace target directory (usually at the root of the repo)

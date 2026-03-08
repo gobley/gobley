@@ -461,6 +461,35 @@ class CargoPlugin : Plugin<Project> {
                         }
                     }
 
+                    KotlinPlatformType.androidJvm -> {
+                        if (cargoBuild is CargoJvmBuild<*>) {
+                            if (jvmTarget == null) {
+                                cargoBuild.variants {
+                                    configureJvmPostBuildTasks(
+                                        kotlinTarget,
+                                        // cargoBuild.jvmVariant is checked inside
+                                        this,
+                                        kotlinTarget,
+                                    )
+                                }
+                            }
+                        } else {
+                            cargoBuild as CargoAndroidBuild
+                            cargoBuild.dynamicLibrarySearchPaths.addAll(
+                                @OptIn(InternalGobleyGradleApi::class)
+                                cargoBuild.rustTarget.ndkLibraryDirectories(
+                                    sdkRoot = androidDelegate!!.androidSdkRoot,
+                                    apiLevel = androidDelegate!!.androidMinSdk,
+                                    ndkVersion = androidDelegate!!.androidNdkVersion,
+                                    ndkRoot = androidDelegate!!.androidNdkRoot,
+                                ),
+                            )
+                            Variant.entries.forEach {
+                                configureAndroidPostBuildTasks(cargoBuild.variant(it))
+                            }
+                        }
+                    }
+
                     KotlinPlatformType.native -> {
                         cargoBuild as CargoNativeBuild<*>
                         configureNativeCompilation(
