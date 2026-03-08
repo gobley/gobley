@@ -45,12 +45,10 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.gradle.process.CommandLineArgumentProvider
-import org.jetbrains.kotlin.com.intellij.util.containers.ContainerUtil.mapNotNull
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
@@ -415,9 +413,15 @@ class UniFfiPlugin : Plugin<Project> {
                     }
                     this is KotlinJvmTarget || this is KotlinWithJavaTarget<*, *> -> {
                         if (kotlinExtensionDelegate!!.pluginId == PluginIds.KOTLIN_JVM) {
+                            // THE FIX: Pure JVM modules sync files to mainOutputDir. Wire the compiler directly to it!
+                            compilations.getByName("main").defaultSourceSet {
+                                kotlin.srcDir(buildBindingsTask.flatMap { it.mainOutputDir })
+                            }
+                        } else {
+                            // KMP Modules need the split directories
                             configureKotlinCommonTarget(buildBindingsTask)
+                            configureKotlinJvmTarget(buildBindingsTask)
                         }
-                        configureKotlinJvmTarget(buildBindingsTask)
                     }
                     this is KotlinNativeTarget -> configureKotlinNativeTarget(
                         this,

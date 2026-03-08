@@ -29,6 +29,15 @@ kotlin {
         jvmTarget = JvmTarget.JVM_21
     }
     sourceSets {
+        main {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.jna)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.atomicfu)
+            }
+        }
+
         test {
             dependencies {
                 implementation(kotlin("test"))
