@@ -28,7 +28,6 @@ abstract class CargoInstallTask : CargoTask() {
 
     @get:OutputDirectory
     abstract val installDirectory: DirectoryProperty
-
     protected fun binaryCrateOutput(crateName: String): RegularFileProperty {
         return project.objects.fileProperty()
             .convention(
@@ -37,6 +36,11 @@ abstract class CargoInstallTask : CargoTask() {
                 )
             )
     }
+
+    // TODO: Make this public in the next version
+    @InternalGobleyGradleApi
+    @get:Input
+    internal val locked: Property<Boolean> = project.objects.property<Boolean>().convention(true)
 
     @TaskAction
     fun installBinaries() {
@@ -47,6 +51,10 @@ abstract class CargoInstallTask : CargoTask() {
             if (quiet.get()) {
                 arguments("--quiet")
             }
+            if (locked.get()) {
+                arguments("--locked")
+            }
+
             when (val source = binaryCrateSource.get()) {
                 is CargoBinaryCrateSource.Registry -> {
                     arguments("${source.packageName}@${source.version}")
