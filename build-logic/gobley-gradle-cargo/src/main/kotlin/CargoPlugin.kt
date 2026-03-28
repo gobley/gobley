@@ -31,6 +31,8 @@ import gobley.gradle.cargo.tasks.InstallWasmTransformerTask
 import gobley.gradle.cargo.tasks.RustUpTargetAddTask
 import gobley.gradle.cargo.tasks.RustUpTask
 import gobley.gradle.cargo.utils.register
+import gobley.gradle.kotlin.gobleyPlatformType
+import gobley.gradle.kotlin.isGobleyAndroidTarget
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustAndroidTarget
@@ -68,6 +70,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 
+@OptIn(InternalGobleyGradleApi::class)
 class CargoPlugin : Plugin<Project> {
     companion object {
         internal const val TASK_GROUP = "cargo"
@@ -180,7 +183,7 @@ class CargoPlugin : Plugin<Project> {
     }
 
     private fun KotlinTarget.requiredRustTargets(): List<RustTarget> {
-        return when (platformType) {
+        return when (gobleyPlatformType) {
             KotlinPlatformType.jvm -> {
                 GobleyHost.current.platform.supportedTargets.filterIsInstance<RustJvmTarget>()
             }
@@ -205,13 +208,13 @@ class CargoPlugin : Plugin<Project> {
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.checkKotlinTargets() {
         val hasWasmTargets =
-            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.wasm }
+            kotlinExtensionDelegate.targets.any { it.gobleyPlatformType == KotlinPlatformType.wasm }
         if (hasWasmTargets) {
             project.logger.warn("WASM targets are added, but Gobley does not support WASM targets yet.")
         }
 
         val hasAndroidJvmTargets =
-            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.androidJvm }
+            kotlinExtensionDelegate.targets.any { it.gobleyPlatformType == KotlinPlatformType.androidJvm }
         if (hasAndroidJvmTargets && !::androidDelegate.isInitialized) {
             throw GradleException("Android JVM targets are added, but Android Gradle Plugin is not found.")
         }
@@ -221,7 +224,7 @@ class CargoPlugin : Plugin<Project> {
         val requiredCrateTypes = cargoExtension
             .builds
             .flatMap { it.kotlinTargets }
-            .map { it.platformType.requiredCrateType() }
+            .map { it.gobleyPlatformType.requiredCrateType() }
             .distinct()
         val actualCrateTypes = cargoExtension.cargoPackage.get().libraryCrateTypes
         if (!actualCrateTypes.containsAll(requiredCrateTypes)) {
@@ -246,11 +249,12 @@ class CargoPlugin : Plugin<Project> {
 
     private fun Project.configureBuildTasks() {
         val androidTarget = cargoExtension.builds.firstNotNullOfOrNull { build ->
-            build.kotlinTargets.firstNotNullOfOrNull { it as? KotlinAndroidTarget }
+            build.kotlinTargets.firstOrNull { it.isGobleyAndroidTarget }
         }
         val jvmTarget = cargoExtension.builds.firstNotNullOfOrNull { build ->
             build.kotlinTargets.firstOrNull {
-                it is KotlinJvmTarget || it is KotlinWithJavaTarget<*, *>
+                (it is KotlinJvmTarget || it is KotlinWithJavaTarget<*, *>)
+                        && !it.isGobleyAndroidTarget
             }
         }
         val wasmBindgenInstallTask =
@@ -312,7 +316,7 @@ class CargoPlugin : Plugin<Project> {
                 }
             }
             for (kotlinTarget in cargoBuild.kotlinTargets) {
-                when (kotlinTarget.platformType) {
+                when (kotlinTarget.gobleyPlatformType) {
                     KotlinPlatformType.jvm -> {
                         cargoBuild as CargoJvmBuild<*>
                         cargoBuild.variants {
@@ -333,7 +337,7 @@ class CargoPlugin : Plugin<Project> {
                                         kotlinTarget,
                                         // cargoBuild.jvmVariant is checked inside
                                         this,
-                                        kotlinTarget as KotlinAndroidTarget,
+                                        kotlinTarget,
                                     )
                                 }
                             }
@@ -382,7 +386,7 @@ class CargoPlugin : Plugin<Project> {
         // Android local unit tests.
         kotlinTarget: KotlinTarget,
         cargoBuildVariant: CargoJvmBuildVariant<*>,
-        androidTarget: KotlinAndroidTarget?,
+        androidTarget: KotlinTarget?,
     ) {
         val buildTask = cargoBuildVariant.buildTaskProvider
         val checkTask = cargoBuildVariant.checkTaskProvider
@@ -427,7 +431,7 @@ class CargoPlugin : Plugin<Project> {
 
         @OptIn(InternalGobleyGradleApi::class)
         if (
-            kotlinTarget !is KotlinAndroidTarget
+            !kotlinTarget.isGobleyAndroidTarget
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()
         ) {
@@ -455,7 +459,7 @@ class CargoPlugin : Plugin<Project> {
 
         @OptIn(InternalGobleyGradleApi::class)
         if (
-            kotlinTarget !is KotlinAndroidTarget
+            !kotlinTarget.isGobleyAndroidTarget
             && cargoBuildVariant.embedRustLibrary.get()
             && cargoBuildVariant.variant == cargoBuildVariant.build.jvmPublishingVariant.get()
             && cargoExtension.publishJvmArtifacts.get()
@@ -477,7 +481,12 @@ class CargoPlugin : Plugin<Project> {
         }
 
         @OptIn(InternalGobleyGradleApi::class)
-        if (androidTarget != null && cargoBuildVariant.androidUnitTest.get()) {
+        val shouldConfigureAndroidUnitTestRuntime = when (androidTarget) {
+            null -> false
+            is KotlinAndroidTarget -> true
+            else -> cargoBuildVariant.variant == cargoBuildVariant.build.jvmVariant.get()
+        }
+        if (shouldConfigureAndroidUnitTestRuntime && cargoBuildVariant.androidUnitTest.get()) {
             DependencyUtils.addAndroidUnitTestRuntimeRustLibraryJar(
                 this,
                 cargoBuildVariant.rustTarget,
