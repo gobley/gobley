@@ -17,8 +17,11 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 import javax.inject.Inject
@@ -31,7 +34,8 @@ abstract class FindDynamicLibrariesTask : DefaultTask() {
     @get:Input
     abstract val libraryNames: SetProperty<String>
 
-    @get:Input
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.ABSOLUTE)
     abstract val searchPaths: ListProperty<File>
 
     @get:OutputFile
@@ -59,7 +63,12 @@ abstract class FindDynamicLibrariesTask : DefaultTask() {
 
             searchPaths.firstNotNullOfOrNull { searchPath ->
                 searchPath
-                    .resolve(rustTarget.outputFileName(libraryName, CrateType.SystemDynamicLibrary)!!)
+                    .resolve(
+                        rustTarget.outputFileName(
+                            libraryName,
+                            CrateType.SystemDynamicLibrary,
+                        )!!,
+                    )
                     .takeIf(File::exists)
                     ?: searchPath
                         .resolve(libraryName)
@@ -68,7 +77,7 @@ abstract class FindDynamicLibrariesTask : DefaultTask() {
         }
 
         libraryPathsCacheFile.get().asFile.run {
-            parentFile.mkdirs()
+            parentFile?.mkdirs()
             writeText(libraryPaths.joinToString(" ") { it.absolutePath })
         }
     }

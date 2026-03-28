@@ -6,12 +6,12 @@
 
 package gobley.gradle.cargo.dsl
 
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import gobley.gradle.Variant
 import gobley.gradle.cargo.tasks.FindDynamicLibrariesTask
 import gobley.gradle.cargo.utils.register
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustPosixTarget
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.jvm.tasks.Jar
@@ -44,6 +44,10 @@ abstract class CargoPosixBuildVariant @Inject constructor(
             libraryNames.set(this@CargoPosixBuildVariant.dynamicLibraries)
             searchPaths.set(this@CargoPosixBuildVariant.dynamicLibrarySearchPaths)
         }
+
+    init {
+        findDynamicLibrariesTaskProvider.dependsOn(buildTaskProvider)
+    }
 
     override val libraryFiles: Provider<List<File>> = project.objects.listProperty<File>().apply {
         add(buildTaskProvider.flatMap { task ->
