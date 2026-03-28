@@ -25,10 +25,17 @@ uniffi {
 
 kotlin {
     explicitApi()
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-    }
+    jvmToolchain(17)
     sourceSets {
+        main {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.jna)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.atomicfu)
+            }
+        }
+
         test {
             dependencies {
                 implementation(kotlin("test"))

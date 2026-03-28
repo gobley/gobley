@@ -47,6 +47,7 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.atomicfu.locks.ReentrantLock
+import kotlinx.atomicfu.locks.reentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -75,7 +76,7 @@ class CoverallTest {
     }
 
     // Ensures getNumAlive() always returns deterministic value
-    private val coverallLock = ReentrantLock()
+    private val coverallLock = reentrantLock()
 
     private class CoverallLockScope(val initialNumAlive: ULong) {
         fun getNumAlive(): ULong {
