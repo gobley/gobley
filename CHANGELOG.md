@@ -2,6 +2,10 @@
 
 ## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.7...HEAD)
 
+### Fixes
+
+- Fixed the generated UniFFI ProGuard rules not reaching consumers of Android library projects.
+
 ## [0.3.7](https://github.com/gobley/gobley/releases/tag/v0.3.7) - 2025-10-08
 
 ### Fixes
