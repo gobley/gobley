@@ -48,6 +48,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -574,19 +575,31 @@ class CoverallTest {
         ThreadsafeCounter().use { counter ->
             val coroutineScope = CoroutineScope(multithreadedCoroutineContext)
             try {
-                val busyWaiting = coroutineScope.launch {
-                    // 1000 ms should be long enough for the other thread to easily finish
-                    // its loop, but not so long as to annoy the user with a slow test.
-                    counter.busyWait(1000)
-                }
+                val busyWaitDone = CompletableDeferred<Unit>()
+                val incrementerReady = CompletableDeferred<Unit>()
+
                 val incrementing = coroutineScope.async {
+                    incrementerReady.complete(Unit)
                     var count = 0
-                    for (n in 1..100) {
-                        // We expect most iterations of this loop to run concurrently
-                        // with the busy-waiting thread.
+                    // Keep polling until we actually observe the other thread being busy.
+                    // A fixed iteration count can run to completion before that thread is
+                    // ever scheduled at all on a loaded machine, which made this test flaky.
+                    while (count == 0 && !busyWaitDone.isCompleted) {
                         count = counter.incrementIfBusy()
                     }
                     count
+                }
+                // Only start busy-waiting once the incrementing coroutine is actually
+                // running, so it cannot miss the window by not having started yet.
+                incrementerReady.await()
+                val busyWaiting = coroutineScope.launch {
+                    try {
+                        // 300 ms is long enough for the other thread to observe this one
+                        // as busy, but not so long as to annoy the user with a slow test.
+                        counter.busyWait(300)
+                    } finally {
+                        busyWaitDone.complete(Unit)
+                    }
                 }
 
                 busyWaiting.join()
