@@ -13,10 +13,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldHave
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFails
@@ -284,14 +286,20 @@ class FuturesTest {
             .inWholeMilliseconds shouldBeGreaterThanOrEqualTo 195L
     }
 
+    // Cancelling the first task must let the second one acquire the resource. As above,
+    // the detector is useSharedResource throwing AsyncError.Timeout against its own
+    // 1000 ms budget, so there is no wall-clock bound here either.
     @Test
-    fun testFutureWithLockAndCancelled() = assertMaxTime(100) {
+    fun testFutureWithLockAndCancelled() = runTest {
         val job = launch {
             useSharedResource(SharedResourceOptions(releaseAfterMs = 5000U, timeoutMs = 100U))
         }
 
-        // Wait some time to ensure the task has locked the shared resource
-        delay(50)
+        // Wait some time to ensure the task has locked the shared resource. This has to
+        // leave the test scheduler: on its own, delay() runs on runTest's virtual clock
+        // and returns in about 3 ms, so the job got cancelled before it ever took the
+        // lock and the test was not exercising what it describes.
+        withContext(Dispatchers.Default) { delay(50) }
         // Cancel the job before the shared resource has been released.
         job.cancel()
 
@@ -300,9 +308,16 @@ class FuturesTest {
         useSharedResource(SharedResourceOptions(releaseAfterMs = 0U, timeoutMs = 1000U))
     }
 
+    // The first call holds the shared resource for 100 ms, and the second must still be
+    // able to take it afterwards. A resource that never gets released shows up as
+    // useSharedResource throwing AsyncError.Timeout against its own 1000 ms budget, so
+    // that is what actually detects the failure here and only the lower bound is worth
+    // asserting on the clock.
     @Test
-    fun testFutureWithLockButNotCancelled() = assertApproximateTime(100) {
-        useSharedResource(SharedResourceOptions(releaseAfterMs = 100U, timeoutMs = 1000U))
+    fun testFutureWithLockButNotCancelled() = runTest {
+        measureTime {
+            useSharedResource(SharedResourceOptions(releaseAfterMs = 100U, timeoutMs = 1000U))
+        }.inWholeMilliseconds shouldBeGreaterThanOrEqualTo 95L
         useSharedResource(SharedResourceOptions(releaseAfterMs = 0U, timeoutMs = 1000U))
     }
 }
