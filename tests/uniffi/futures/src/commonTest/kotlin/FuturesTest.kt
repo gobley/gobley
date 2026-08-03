@@ -6,6 +6,7 @@
 
 import futures.*
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.ranges.beIn
 import io.kotest.matchers.shouldBe
@@ -259,13 +260,28 @@ class FuturesTest {
         newMyRecord("foo", 42u) shouldBe MyRecord("foo", 42u)
     }
 
+    // What this guards is that a waker firing a second time does not corrupt the
+    // future it belongs to, or let a later future complete early.
+    //
+    // Only lower bounds are asserted. An upper bound on the total would also be
+    // measuring per-await timer and FFI overhead, which on a shared CI runner is
+    // large enough to rival the sleeps themselves, and a future that never
+    // completes is already caught by runTest's own timeout.
     @Test
-    fun testBrokenSleep() = assertApproximateTime(500) {
-        brokenSleep(100U, 0U) // calls the waker twice immediately
-        sleep(100U) // wait for possible failure
+    fun testBrokenSleep() = runTest {
+        // Calls the waker a second time immediately.
+        measureTime { brokenSleep(100U, 0U) }
+            .inWholeMilliseconds shouldBeGreaterThanOrEqualTo 95L
+        // The stray wake must not have completed this one early.
+        measureTime { sleep(100U) shouldBe true }
+            .inWholeMilliseconds shouldBeGreaterThanOrEqualTo 95L
 
-        brokenSleep(100U, 100U) // calls the waker a second time after 1s
-        sleep(200U) // wait for possible failure
+        // Calls the waker a second time 100 ms later, so it lands while the
+        // following sleep is still in flight.
+        measureTime { brokenSleep(100U, 100U) }
+            .inWholeMilliseconds shouldBeGreaterThanOrEqualTo 95L
+        measureTime { sleep(200U) shouldBe true }
+            .inWholeMilliseconds shouldBeGreaterThanOrEqualTo 195L
     }
 
     @Test
