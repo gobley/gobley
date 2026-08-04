@@ -855,7 +855,7 @@ impl KotlinCodeOracle {
             FfiType::Float64 => "Double".to_string(),
             FfiType::Handle => "Long".to_string(),
             FfiType::RustBuffer(maybe_external) => match maybe_external {
-                Some(external_meta) if external_meta.module_path != ci.crate_name() => {
+                Some(external_meta) if external_meta.crate_name() != ci.crate_name() => {
                     format!("RustBuffer{}", external_meta.name)
                 }
                 _ => "RustBuffer".to_string(),
@@ -883,7 +883,7 @@ impl KotlinCodeOracle {
             FfiType::Float64 => "double".to_string(),
             FfiType::Handle => "int64_t".to_string(),
             FfiType::RustBuffer(maybe_external) => match maybe_external {
-                Some(external_meta) if external_meta.module_path != ci.crate_name() => {
+                Some(external_meta) if external_meta.crate_name() != ci.crate_name() => {
                     format!("RustBuffer{}", external_meta.name)
                 }
                 _ => "RustBuffer".to_string(),
@@ -1298,7 +1298,7 @@ mod filters {
         let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
-        if metadata.module_path == ci.crate_name() {
+        if metadata.crate_name() == ci.crate_name() {
             return Ok(String::new());
         }
         Ok(format!(".as{}()", metadata.name))
@@ -1312,7 +1312,7 @@ mod filters {
         let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
-        if metadata.module_path == ci.crate_name() {
+        if metadata.crate_name() == ci.crate_name() {
             return Ok(String::new());
         }
         Ok(format!(".from{}ToLocal()", metadata.name))
