@@ -1,6 +1,6 @@
 [package]
 name = "gobley-uniffi-bindgen"
-version = "0.3.7"
+version = "0.4.0"
 edition = "2021"
 authors = ["Gobley Contributors"]
 description = "A UniFFI Kotlin Multiplatform bindings generator for Rust"
@@ -24,8 +24,9 @@ fs-err = "2.11.0"
 heck = "0.5.0"
 serde = "1.0.203"
 textwrap = "0.16.1"
-toml = "0.5"
+toml = "0.9"
 uniffi_bindgen = { workspace = true }
 uniffi_meta = { workspace = true }
-# TODO: Remove the following after upgrading MSRV to 1.78. cargo-platform 0.1.9 does not support 1.77 or older.
-cargo-platform = "=0.1.8"
+
+[dev-dependencies]
+insta = "1"

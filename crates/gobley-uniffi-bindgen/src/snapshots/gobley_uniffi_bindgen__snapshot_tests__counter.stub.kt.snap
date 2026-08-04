@@ -1,0 +1,64 @@
+---
+source: crates/gobley-uniffi-bindgen/src/snapshot_tests.rs
+expression: "bindings.stub.as_deref().unwrap_or(\"\")"
+---
+
+
+@file:Suppress("RemoveRedundantBackticks")
+
+package uniffi.counter
+
+// Public interface members begin here.
+
+
+
+
+
+
+
+
+public actual open class Counter: Disposable, CounterInterface {
+
+    /**
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    public actual constructor(noPointer: NoPointer)
+
+    public actual constructor(`initial`: kotlin.Int) {
+        TODO()
+    }
+
+    actual override fun destroy() {
+        TODO()
+    }
+
+    actual override fun close() {
+        TODO()
+    }
+
+    
+    public actual override fun `cloneCounter`(): Counter {
+        TODO()
+    }
+
+    public actual override fun `increment`() {
+        TODO()
+    }
+
+    public actual override fun `value`(): kotlin.Int {
+        TODO()
+    }
+
+
+    
+    
+    public actual companion object
+    
+}
+
+
+public actual fun `makeCounter`(`initial`: kotlin.Int): Counter {
+    TODO()
+}

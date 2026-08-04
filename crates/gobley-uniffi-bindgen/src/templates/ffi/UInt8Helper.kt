@@ -4,6 +4,10 @@
         return value.toUByte()
     }
 
+    {{ visibility() }}fun lift(value: Int): UByte {
+        return value.toUByte()
+    }
+
     override fun read(buf: ByteBuffer): UByte {
         return lift(buf.get())
     }

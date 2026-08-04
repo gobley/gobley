@@ -11,7 +11,7 @@
     {%- call kt::docstring(field, 4) %}
     {% if config.generate_immutable_records() %}val{% else %}var{% endif %} {{ field.name()|var_name }}: {{ field|type_name(ci) -}}
     {%- match field.default_value() %}
-        {%- when Some with(literal) %} = {{ literal|render_literal(field, ci, config) }}
+        {%- when Some with(literal) %} = {{ literal|render_default(field, ci, config) }}
         {%- else %}
     {%- endmatch -%}
     {% if !loop.last %}, {% endif %}

@@ -83,27 +83,32 @@ internal object {{ trait_impl }} {
             uniffiFutureCallback.invoke(uniffiCallbackData, uniffiResult)
         }
 
-        uniffiOutReturn.uniffiSetValue(
-            {%- match meth.throws_type() %}
-            {%- when None %}
-            uniffiTraitInterfaceCallAsync(
-                makeCall,
-                uniffiHandleSuccess,
-                uniffiHandleError
-            )
-            {%- when Some(error_type) %}
-            uniffiTraitInterfaceCallAsyncWithError(
-                makeCall,
-                uniffiHandleSuccess,
-                uniffiHandleError,
-            ) { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) }
-            {%- endmatch %}
+        {%- match meth.throws_type() %}
+        {%- when None %}
+        uniffiTraitInterfaceCallAsync(
+            makeCall,
+            uniffiHandleSuccess,
+            uniffiHandleError,
+            uniffiOutDroppedCallback,
         )
+        {%- when Some(error_type) %}
+        uniffiTraitInterfaceCallAsyncWithError(
+            makeCall,
+            uniffiHandleSuccess,
+            uniffiHandleError,
+            { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) },
+            uniffiOutDroppedCallback,
+        )
+        {%- endmatch %}
         {%- endif %}
     }
     {% endfor %}
     internal fun uniffiFree(handle: Long) {
         {{ ffi_converter_name }}.handleMap.remove(handle)
+    }
+
+    internal fun uniffiClone(handle: Long): Long {
+        return {{ ffi_converter_name }}.handleMap.clone(handle)
     }
 
     internal val vtable = nativeHeap.alloc<{{ci.namespace()}}.cinterop.{{ vtable|ffi_type_name(ci) }}> {
@@ -134,6 +139,9 @@ internal object {{ trait_impl }} {
         {%- endfor %}
         this.uniffiFree = staticCFunction { handle: Long ->
             {{ trait_impl }}.uniffiFree(handle)
+        }
+        this.uniffiClone = staticCFunction { handle: Long ->
+            {{ trait_impl }}.uniffiClone(handle)
         }
     }.ptr
 

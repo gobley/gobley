@@ -1,0 +1,259 @@
+---
+source: crates/gobley-uniffi-bindgen/src/snapshot_tests.rs
+expression: "bindings.header.as_deref().unwrap_or(\"\")"
+---
+#pragma once
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+
+typedef struct RustBuffer
+{
+    int64_t capacity;
+    int64_t len;
+    uint8_t *_Nullable data;
+} RustBuffer;
+
+typedef struct ForeignBytes
+{
+    int32_t len;
+    const uint8_t *_Nullable data;
+} ForeignBytes;
+
+typedef struct UniffiRustCallStatus {
+  int8_t code;
+  RustBuffer errorBuf;
+} UniffiRustCallStatus;
+
+// Public interface members begin here.
+
+
+// Contains loading, initialization code,
+// and the FFI Function declarations.
+
+typedef void (*UniffiRustFutureContinuationCallback)(int64_t, int8_t
+    );
+
+typedef void (*UniffiForeignFutureDroppedCallback)(int64_t
+    );
+
+typedef void (*UniffiCallbackInterfaceFree)(int64_t
+    );
+
+typedef int64_t (*UniffiCallbackInterfaceClone)(int64_t
+    );
+
+typedef struct UniffiForeignFutureDroppedCallbackStruct {
+    int64_t handle;
+    UniffiForeignFutureDroppedCallback free;
+} UniffiForeignFutureDroppedCallbackStruct;
+
+typedef struct UniffiForeignFutureResultU8 {
+    int8_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultU8;
+
+typedef void (*UniffiForeignFutureCompleteU8)(int64_t, UniffiForeignFutureResultU8
+    );
+
+typedef struct UniffiForeignFutureResultI8 {
+    int8_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultI8;
+
+typedef void (*UniffiForeignFutureCompleteI8)(int64_t, UniffiForeignFutureResultI8
+    );
+
+typedef struct UniffiForeignFutureResultU16 {
+    int16_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultU16;
+
+typedef void (*UniffiForeignFutureCompleteU16)(int64_t, UniffiForeignFutureResultU16
+    );
+
+typedef struct UniffiForeignFutureResultI16 {
+    int16_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultI16;
+
+typedef void (*UniffiForeignFutureCompleteI16)(int64_t, UniffiForeignFutureResultI16
+    );
+
+typedef struct UniffiForeignFutureResultU32 {
+    int32_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultU32;
+
+typedef void (*UniffiForeignFutureCompleteU32)(int64_t, UniffiForeignFutureResultU32
+    );
+
+typedef struct UniffiForeignFutureResultI32 {
+    int32_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultI32;
+
+typedef void (*UniffiForeignFutureCompleteI32)(int64_t, UniffiForeignFutureResultI32
+    );
+
+typedef struct UniffiForeignFutureResultU64 {
+    int64_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultU64;
+
+typedef void (*UniffiForeignFutureCompleteU64)(int64_t, UniffiForeignFutureResultU64
+    );
+
+typedef struct UniffiForeignFutureResultI64 {
+    int64_t returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultI64;
+
+typedef void (*UniffiForeignFutureCompleteI64)(int64_t, UniffiForeignFutureResultI64
+    );
+
+typedef struct UniffiForeignFutureResultF32 {
+    float returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultF32;
+
+typedef void (*UniffiForeignFutureCompleteF32)(int64_t, UniffiForeignFutureResultF32
+    );
+
+typedef struct UniffiForeignFutureResultF64 {
+    double returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultF64;
+
+typedef void (*UniffiForeignFutureCompleteF64)(int64_t, UniffiForeignFutureResultF64
+    );
+
+typedef struct UniffiForeignFutureResultRustBuffer {
+    RustBuffer returnValue;
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultRustBuffer;
+
+typedef void (*UniffiForeignFutureCompleteRustBuffer)(int64_t, UniffiForeignFutureResultRustBuffer
+    );
+
+typedef struct UniffiForeignFutureResultVoid {
+    UniffiRustCallStatus callStatus;
+} UniffiForeignFutureResultVoid;
+
+typedef void (*UniffiForeignFutureCompleteVoid)(int64_t, UniffiForeignFutureResultVoid
+    );
+
+int64_t uniffi_errors_fn_func_checked_add(int64_t a, int64_t b, UniffiRustCallStatus *_Nonnull out_status
+);
+RustBuffer ffi_errors_rustbuffer_alloc(int64_t size, UniffiRustCallStatus *_Nonnull out_status
+);
+RustBuffer ffi_errors_rustbuffer_from_bytes(ForeignBytes bytes, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rustbuffer_free(RustBuffer buf, UniffiRustCallStatus *_Nonnull out_status
+);
+RustBuffer ffi_errors_rustbuffer_reserve(RustBuffer buf, int64_t additional, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_u8(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_u8(int64_t handle
+);
+void ffi_errors_rust_future_free_u8(int64_t handle
+);
+int8_t ffi_errors_rust_future_complete_u8(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_i8(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_i8(int64_t handle
+);
+void ffi_errors_rust_future_free_i8(int64_t handle
+);
+int8_t ffi_errors_rust_future_complete_i8(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_u16(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_u16(int64_t handle
+);
+void ffi_errors_rust_future_free_u16(int64_t handle
+);
+int16_t ffi_errors_rust_future_complete_u16(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_i16(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_i16(int64_t handle
+);
+void ffi_errors_rust_future_free_i16(int64_t handle
+);
+int16_t ffi_errors_rust_future_complete_i16(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_u32(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_u32(int64_t handle
+);
+void ffi_errors_rust_future_free_u32(int64_t handle
+);
+int32_t ffi_errors_rust_future_complete_u32(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_i32(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_i32(int64_t handle
+);
+void ffi_errors_rust_future_free_i32(int64_t handle
+);
+int32_t ffi_errors_rust_future_complete_i32(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_u64(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_u64(int64_t handle
+);
+void ffi_errors_rust_future_free_u64(int64_t handle
+);
+int64_t ffi_errors_rust_future_complete_u64(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_i64(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_i64(int64_t handle
+);
+void ffi_errors_rust_future_free_i64(int64_t handle
+);
+int64_t ffi_errors_rust_future_complete_i64(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_f32(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_f32(int64_t handle
+);
+void ffi_errors_rust_future_free_f32(int64_t handle
+);
+float ffi_errors_rust_future_complete_f32(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_f64(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_f64(int64_t handle
+);
+void ffi_errors_rust_future_free_f64(int64_t handle
+);
+double ffi_errors_rust_future_complete_f64(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_rust_buffer(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_rust_buffer(int64_t handle
+);
+void ffi_errors_rust_future_free_rust_buffer(int64_t handle
+);
+RustBuffer ffi_errors_rust_future_complete_rust_buffer(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+void ffi_errors_rust_future_poll_void(int64_t handle, UniffiRustFutureContinuationCallback callback, int64_t callbackData
+);
+void ffi_errors_rust_future_cancel_void(int64_t handle
+);
+void ffi_errors_rust_future_free_void(int64_t handle
+);
+void ffi_errors_rust_future_complete_void(int64_t handle, UniffiRustCallStatus *_Nonnull out_status
+);
+int16_t uniffi_errors_checksum_func_checked_add(void
+    
+);
+int32_t ffi_errors_uniffi_contract_version(void
+    
+);

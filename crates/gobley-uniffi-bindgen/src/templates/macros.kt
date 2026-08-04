@@ -13,8 +13,8 @@
 {%- endmacro %}
 
 {%- macro to_ffi_call(func, indent) -%}
-                        {%- if func.takes_self() -%}
-                        callWithPointer {
+                        {%- if func.self_type().is_some() -%}
+                        callWithHandle {
 {{ " "|repeat(indent) }}    {% call to_raw_ffi_call(func, indent + 4) %}
 {{ " "|repeat(indent) }}{{ '}' }}
                         {%- else -%}
@@ -30,7 +30,7 @@
                         uniffiRustCall
                         {%- endmatch %} { uniffiRustCallStatus ->
 {{ " "|repeat(indent) }}    UniffiLib.{{ func.ffi_func().name() }}(
-                                {%- if func.takes_self() %}
+                                {%- if func.self_type().is_some() %}
 {{ " "|repeat(indent) }}        it,
                                 {%- endif -%}
                                 {%- call arg_list_lowered(func, indent + 8) %}
@@ -57,7 +57,7 @@
 {{ " "|repeat(indent) }}{{ visibility() }}{% if func_decl.len() != 0 -%}{{ func_decl }} {% endif -%}
                         {%- if callable.is_async() -%}suspend {% endif -%}
                         fun {{ callable.name()|fn_name }}(
-                            {%- call arg_list(callable, is_decl_override || !callable.takes_self()) -%}
+                            {%- call arg_list(callable, is_decl_override || callable.self_type().is_none()) -%}
                         )
                         {%- match callable.return_type() -%}
                         {%-     when Some(return_type) %}: {{ return_type|type_name(ci) -}}
@@ -111,8 +111,8 @@
 
 {%- macro call_async(callable, indent) -%}
                         uniffiRustCallAsync(
-                            {%- if callable.takes_self() %}
-{{ " "|repeat(indent) }}    callWithPointer { thisPtr ->
+                            {%- if callable.self_type().is_some() %}
+{{ " "|repeat(indent) }}    callWithHandle { thisPtr ->
 {{ " "|repeat(indent) }}        UniffiLib.{{ callable.ffi_func().name() }}(
 {{ " "|repeat(indent) }}            thisPtr,
                                     {%- call arg_list_lowered(callable, indent + 12) %}
@@ -165,7 +165,7 @@
         {{ arg.name()|var_name }}: {{ arg|type_name(ci) }}
 {%-     if is_decl %}
 {%-         match arg.default_value() %}
-{%-             when Some with(literal) %} = {{ literal|render_literal(arg, ci, config) }}
+{%-             when Some with(literal) %} = {{ literal|render_default(arg, ci, config) }}
 {%-             else %}
 {%-         endmatch %}
 {%-     endif %}

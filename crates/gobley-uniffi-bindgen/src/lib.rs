@@ -14,6 +14,9 @@ use uniffi_bindgen::{BindingGenerator, Component, ComponentInterface, Generation
 mod gen_kotlin_multiplatform;
 use gen_kotlin_multiplatform::{generate_bindings, Config};
 
+#[cfg(test)]
+mod snapshot_tests;
+
 pub struct KotlinBindingGenerator;
 impl BindingGenerator for KotlinBindingGenerator {
     type Config = Config;

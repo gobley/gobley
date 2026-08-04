@@ -1,0 +1,23 @@
+---
+source: crates/gobley-uniffi-bindgen/src/snapshot_tests.rs
+expression: "bindings.stub.as_deref().unwrap_or(\"\")"
+---
+
+
+@file:Suppress("RemoveRedundantBackticks")
+
+package uniffi.errors
+
+// Public interface members begin here.
+
+
+
+
+
+
+
+
+
+public actual fun `checkedAdd`(`a`: kotlin.ULong, `b`: kotlin.ULong): kotlin.ULong {
+    TODO()
+}

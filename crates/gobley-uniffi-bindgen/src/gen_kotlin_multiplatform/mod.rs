@@ -56,15 +56,33 @@ trait CodeType: Debug {
     /// with this type only.
     fn canonical_name(&self) -> String;
 
-    fn literal(
+    /// Renders the default value for a field or argument of this type.
+    fn default(
         &self,
-        literal: &Literal,
+        default: &DefaultValue,
         ci: &ComponentInterface,
         config: &Config,
     ) -> Result<String> {
-        let _ = literal;
         let _ = config;
-        bail!("Unimplemented for {}", self.type_label(ci))
+        match default {
+            // A bare `#[uniffi(default)]` (no explicit value) asks the binding to synthesize the
+            // type's default. For most named types (objects/interfaces, custom types, callback
+            // interfaces) there is no public no-argument constructor that reconstructs the
+            // Rust-side default, so emitting `TypeName()` would silently produce Kotlin that fails
+            // to compile later. Fail fast here instead. Types that *can* be default-constructed
+            // (primitives, optionals, sequences, maps, and all-defaulted records) override this.
+            DefaultValue::Default => bail!(
+                "`#[uniffi(default)]` without an explicit value is not supported for type `{}`. \
+                 Only primitives, optionals, sequences, maps, and records whose fields all have \
+                 defaults can be default-constructed in the generated bindings; provide an \
+                 explicit default value instead.",
+                self.type_label(ci)
+            ),
+            DefaultValue::Literal(_) => bail!(
+                "Literals for named types are not supported: {}",
+                self.type_label(ci)
+            ),
+        }
     }
 
     /// Name of the FfiConverter
@@ -582,6 +600,21 @@ fn trait_interface_name(ci: &ComponentInterface, name: &str) -> Result<String> {
     }
 }
 
+// Resolve the Kotlin interface name for a trait implemented by an object.
+//
+// As of UniFFI 0.30, `ObjectTraitImplMetadata` stores the implemented trait as a `trait_ty: Type`
+// instead of a `trait_name: String` field, so we derive the trait name from that type.
+fn object_trait_impl_interface_name(
+    ci: &ComponentInterface,
+    trait_impl: &uniffi_meta::ObjectTraitImplMetadata,
+) -> Result<String> {
+    let trait_name = trait_impl
+        .trait_ty
+        .name()
+        .ok_or_else(|| anyhow!("trait impl type {:?} has no name", trait_impl.trait_ty))?;
+    trait_interface_name(ci, trait_name)
+}
+
 // The name of the object exposing a Rust implementation.
 fn object_impl_name(ci: &ComponentInterface, obj: &Object) -> String {
     let class_name = KotlinCodeOracle.class_name(ci, obj.name());
@@ -604,9 +637,11 @@ impl KotlinCodeOracle {
     fn class_name(&self, ci: &ComponentInterface, nm: &str) -> String {
         let name = nm.to_string().to_upper_camel_case();
         // fixup errors.
-        ci.is_name_used_as_error(nm)
-            .then(|| self.convert_error_suffix(&name))
-            .unwrap_or(name)
+        if ci.is_name_used_as_error(nm) {
+            self.convert_error_suffix(&name)
+        } else {
+            name
+        }
     }
 
     fn convert_error_suffix(&self, nm: &str) -> String {
@@ -667,6 +702,19 @@ impl KotlinCodeOracle {
         }
     }
 
+    /// Kotlin/JNA direct mapping can mis-handle unsigned 8/16-bit direct return values
+    /// on some runtimes, so widen the raw carrier to Int and lift it back into UByte/UShort.
+    fn ffi_type_label_for_direct_return(
+        &self,
+        ffi_type: &FfiType,
+        ci: &ComponentInterface,
+    ) -> String {
+        match ffi_type {
+            FfiType::UInt8 | FfiType::UInt16 => "Int".to_string(),
+            _ => self.ffi_type_label_by_value(ffi_type, ci),
+        }
+    }
+
     /// FFI type name to use inside structs
     ///
     /// The main requirement here is that all types must have default values or else the struct
@@ -694,8 +742,7 @@ impl KotlinCodeOracle {
             FfiType::UInt64 | FfiType::Int64 => "0.toLong()".to_owned(),
             FfiType::Float32 => "0.0f".to_owned(),
             FfiType::Float64 => "0.0".to_owned(),
-            // NOTE: NullPointer is the same as Pointer.NULL
-            FfiType::RustArcPtr(_) => "NullPointer".to_owned(),
+            FfiType::Handle => "0.toLong()".to_owned(),
             FfiType::RustBuffer(_) => "RustBufferHelper.allocValue()".to_owned(),
             FfiType::Callback(_) => "null".to_owned(),
             FfiType::RustCallStatus => "UniffiRustCallStatusHelper.allocValue()".to_owned(),
@@ -714,8 +761,8 @@ impl KotlinCodeOracle {
             | FfiType::Int64
             | FfiType::UInt64
             | FfiType::Float32
-            | FfiType::Float64 => format!("{}ByReference", self.ffi_type_label(ffi_type, ci)),
-            FfiType::RustArcPtr(_) => "PointerByReference".to_owned(),
+            | FfiType::Float64
+            | FfiType::Handle => format!("{}ByReference", self.ffi_type_label(ffi_type, ci)),
             // JNA structs default to ByReference
             FfiType::RustBuffer(_) | FfiType::Struct(_) => self.ffi_type_label(ffi_type, ci),
             _ => panic!("{ffi_type:?} by reference is not implemented"),
@@ -737,8 +784,8 @@ impl KotlinCodeOracle {
             | FfiType::Int64
             | FfiType::UInt64
             | FfiType::Float32
-            | FfiType::Float64 => format!("{}ByReference", self.ffi_type_label(ffi_type, ci)),
-            FfiType::RustArcPtr(_) => "PointerByReference".to_owned(),
+            | FfiType::Float64
+            | FfiType::Handle => format!("{}ByReference", self.ffi_type_label(ffi_type, ci)),
             // JNA structs default to ByReference
             FfiType::RustBuffer(_) | FfiType::Struct(_) => self.ffi_type_label(ffi_type, ci),
             _ => panic!("{ffi_type:?} by reference is not implemented"),
@@ -760,8 +807,8 @@ impl KotlinCodeOracle {
             | FfiType::Int64
             | FfiType::UInt64
             | FfiType::Float32
-            | FfiType::Float64 => format!("{} const *", self.ffi_type_label_header(ffi_type, ci)),
-            FfiType::RustArcPtr(_) => "void * const *".to_owned(),
+            | FfiType::Float64
+            | FfiType::Handle => format!("{} const *", self.ffi_type_label_header(ffi_type, ci)),
             // JNA structs default to ByReference
             FfiType::RustBuffer(_) | FfiType::Struct(_) => {
                 format!("{} const *", self.ffi_type_label_header(ffi_type, ci))
@@ -785,8 +832,8 @@ impl KotlinCodeOracle {
             | FfiType::Int64
             | FfiType::UInt64
             | FfiType::Float32
-            | FfiType::Float64 => format!("{} *", self.ffi_type_label_header(ffi_type, ci)),
-            FfiType::RustArcPtr(_) => "void **".to_owned(),
+            | FfiType::Float64
+            | FfiType::Handle => format!("{} *", self.ffi_type_label_header(ffi_type, ci)),
             // JNA structs default to ByReference
             FfiType::RustBuffer(_) | FfiType::Struct(_) => {
                 format!("{} *", self.ffi_type_label_header(ffi_type, ci))
@@ -807,9 +854,8 @@ impl KotlinCodeOracle {
             FfiType::Float32 => "Float".to_string(),
             FfiType::Float64 => "Double".to_string(),
             FfiType::Handle => "Long".to_string(),
-            FfiType::RustArcPtr(_) => "Pointer?".to_string(),
             FfiType::RustBuffer(maybe_external) => match maybe_external {
-                Some(external_meta) if external_meta.module_path != ci.crate_name() => {
+                Some(external_meta) if external_meta.crate_name() != ci.crate_name() => {
                     format!("RustBuffer{}", external_meta.name)
                 }
                 _ => "RustBuffer".to_string(),
@@ -836,9 +882,8 @@ impl KotlinCodeOracle {
             FfiType::Float32 => "float".to_string(),
             FfiType::Float64 => "double".to_string(),
             FfiType::Handle => "int64_t".to_string(),
-            FfiType::RustArcPtr(_) => "void *".to_string(),
             FfiType::RustBuffer(maybe_external) => match maybe_external {
-                Some(external_meta) if external_meta.module_path != ci.crate_name() => {
+                Some(external_meta) if external_meta.crate_name() != ci.crate_name() => {
                     format!("RustBuffer{}", external_meta.name)
                 }
                 _ => "RustBuffer".to_string(),
@@ -927,12 +972,37 @@ pub enum DataClassFieldType {
 }
 
 mod filters {
-    pub use uniffi_bindgen::backend::filters::*;
-    use uniffi_bindgen::{backend::filters::to_askama_error, interface::ffi::ExternalFfiMetadata};
+    use uniffi_bindgen::interface::ffi::ExternalFfiMetadata;
     use uniffi_meta::LiteralMetadata;
     use variant::VariantCodeType;
 
     use super::*;
+
+    /// Error type used to surface filter failures to Askama.
+    ///
+    /// `uniffi_bindgen::backend::filters::to_askama_error` was removed in UniFFI 0.30, so we
+    /// provide our own equivalent here.
+    #[derive(Debug)]
+    pub struct AskamaFilterError(String);
+
+    impl std::fmt::Display for AskamaFilterError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    impl std::error::Error for AskamaFilterError {}
+
+    pub fn to_askama_error(message: &(impl ToString + ?Sized)) -> askama::Error {
+        askama::Error::Custom(Box::new(AskamaFilterError(message.to_string())))
+    }
+
+    /// Get the `FfiType` corresponding to a UniFFI `Type`.
+    ///
+    /// Previously provided by `uniffi_bindgen::backend::filters::ffi_type`.
+    pub(super) fn ffi_type(as_ct: &impl AsType) -> Result<FfiType, askama::Error> {
+        Ok(FfiType::from(as_ct.as_type()))
+    }
 
     pub(super) fn type_name(
         as_ct: &impl AsCodeType,
@@ -997,7 +1067,10 @@ mod filters {
     }
 
     pub(super) fn need_non_null_assertion(type_: &FfiType) -> Result<bool, askama::Error> {
-        Ok(matches!(type_, FfiType::RustArcPtr(_)))
+        // As of UniFFI 0.30, object/interface FFI values are non-nullable `Handle`s (`Long`)
+        // rather than nullable `RustArcPtr` pointers, so no non-null assertion is ever required.
+        let _ = type_;
+        Ok(false)
     }
 
     pub(super) fn read_fn(
@@ -1014,15 +1087,15 @@ mod filters {
         }
     }
 
-    pub fn render_literal(
-        literal: &Literal,
+    pub fn render_default(
+        default: &DefaultValue,
         as_ct: &impl AsType,
         ci: &ComponentInterface,
         config: &Config,
     ) -> Result<String, askama::Error> {
         as_ct
             .as_codetype()
-            .literal(literal, ci, config)
+            .default(default, ci, config)
             .map_err(|e| to_askama_error(&e))
     }
 
@@ -1225,7 +1298,7 @@ mod filters {
         let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
-        if metadata.module_path == ci.crate_name() {
+        if metadata.crate_name() == ci.crate_name() {
             return Ok(String::new());
         }
         Ok(format!(".as{}()", metadata.name))
@@ -1239,7 +1312,7 @@ mod filters {
         let FfiType::RustBuffer(Some(metadata)) = type_ else {
             return Ok(String::new());
         };
-        if metadata.module_path == ci.crate_name() {
+        if metadata.crate_name() == ci.crate_name() {
             return Ok(String::new());
         }
         Ok(format!(".from{}ToLocal()", metadata.name))
@@ -1266,6 +1339,13 @@ mod filters {
         ci: &ComponentInterface,
     ) -> Result<String, askama::Error> {
         Ok(KotlinCodeOracle.ffi_type_label_for_ffi_struct(type_, ci))
+    }
+
+    pub fn ffi_type_name_for_direct_return(
+        type_: &FfiType,
+        ci: &ComponentInterface,
+    ) -> Result<String, askama::Error> {
+        Ok(KotlinCodeOracle.ffi_type_label_for_direct_return(type_, ci))
     }
 
     pub fn ffi_default_value(type_: FfiType) -> Result<String, askama::Error> {

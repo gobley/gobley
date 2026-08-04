@@ -1,0 +1,2106 @@
+---
+source: crates/gobley-uniffi-bindgen/src/snapshot_tests.rs
+expression: "bindings.native.as_deref().unwrap_or(\"\")"
+---
+
+
+@file:Suppress("RemoveRedundantBackticks")
+@file:OptIn(ExperimentalForeignApi::class)
+
+package uniffi.traits
+
+// Common helper code.
+//
+// Ideally this would live in a separate .kt file where it can be unittested etc
+// in isolation, and perhaps even published as a re-useable package.
+//
+// However, it's important that the details of how this helper code works (e.g. the
+// way that different builtin types are passed across the FFI) exactly match what's
+// expected by the Rust code on the other side of the interface. In practice right
+// now that means coming from the exact some version of `uniffi` that was used to
+// compile the Rust component. The easiest way to ensure this is to bundle the Kotlin
+// helpers directly inline like we're doing here.
+
+import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.COpaquePointerVar
+import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.CValue
+import kotlinx.cinterop.DoubleVar
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.FloatVar
+import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.LongVar
+import kotlinx.cinterop.ShortVar
+import kotlinx.cinterop.get
+import kotlinx.cinterop.pointed
+import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.set
+import kotlinx.cinterop.staticCFunction
+import kotlinx.cinterop.useContents
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.cValue
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.plus
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.readValue
+import kotlinx.cinterop.toCPointer
+import kotlinx.cinterop.usePinned
+import kotlin.experimental.ExperimentalNativeApi
+import kotlinx.cinterop.nativeHeap
+import kotlinx.cinterop.value
+import kotlinx.cinterop.CFunction
+import kotlinx.cinterop.write
+import kotlin.coroutines.resume
+import platform.posix.memcpy
+import kotlin.native.ref.createCleaner
+import kotlinx.atomicfu.AtomicBoolean
+import kotlinx.atomicfu.atomic
+import kotlinx.cinterop.invoke
+
+
+internal typealias Pointer = CPointer<out kotlinx.cinterop.CPointed>
+internal val NullPointer: Pointer? = null
+internal fun Pointer.toLong(): Long = rawValue.toLong()
+internal fun kotlin.Long.toPointer(): Pointer = requireNotNull(this.toCPointer())
+
+
+public class ByteBuffer(
+    internal val pointer: CPointer<kotlinx.cinterop.ByteVar>,
+    internal val capacity: Int,
+    internal var position: Int = 0,
+) {
+    public fun position(): Int = position
+
+    public fun hasRemaining(): Boolean = capacity != position
+
+    private fun checkRemaining(bytes: Int) {
+        val remaining = capacity - position
+        require(bytes <= remaining) { 
+            "buffer is exhausted: required: $bytes, remaining: $remaining, capacity: $capacity, position: $position" 
+        }
+    }
+
+    public fun get(): Byte {
+        checkRemaining(1)
+        return pointer[position++]
+    }
+
+    public fun get(bytesToRead: Int): ByteArray {
+        checkRemaining(bytesToRead)
+        val result = ByteArray(bytesToRead)
+        if (result.isNotEmpty()) {
+            result.usePinned { pinned ->
+                memcpy(pinned.addressOf(0), pointer + position, bytesToRead.convert())
+            }
+            position += bytesToRead
+        }
+        return result
+    }
+
+    public fun getShort(): Short {
+        checkRemaining(2)
+        return (((pointer[position++].toInt() and 0xff) shl 8)
+                or (pointer[position++].toInt() and 0xff)).toShort()
+    }
+
+    public fun getInt(): Int {
+        checkRemaining(4)
+        return (((pointer[position++].toInt() and 0xff) shl 24)
+                or ((pointer[position++].toInt() and 0xff) shl 16)
+                or ((pointer[position++].toInt() and 0xff) shl 8)
+                or (pointer[position++].toInt() and 0xff))
+    }
+
+    public fun getLong(): Long {
+        checkRemaining(8)
+        return (((pointer[position++].toLong() and 0xffL) shl 56)
+                or ((pointer[position++].toLong() and 0xffL) shl 48)
+                or ((pointer[position++].toLong() and 0xffL) shl 40)
+                or ((pointer[position++].toLong() and 0xffL) shl 32)
+                or ((pointer[position++].toLong() and 0xffL) shl 24)
+                or ((pointer[position++].toLong() and 0xffL) shl 16)
+                or ((pointer[position++].toLong() and 0xffL) shl 8)
+                or (pointer[position++].toLong() and 0xffL))
+    }
+
+    public fun getFloat(): Float = Float.fromBits(getInt())
+
+    public fun getDouble(): Double = Double.fromBits(getLong())
+
+    public fun put(value: Byte) {
+        checkRemaining(1)
+        pointer[position++] = value
+    }
+
+    public fun put(src: ByteArray) {
+        checkRemaining(src.size)
+        if (src.isNotEmpty()) {
+            src.usePinned { pinned ->
+                memcpy(pointer + position, pinned.addressOf(0), src.size.convert())
+            }
+            position += src.size
+        }
+    }
+
+    public fun putShort(value: Short) {
+        checkRemaining(2)
+        pointer[position++] = (value.toInt() ushr 8 and 0xff).toByte()
+        pointer[position++] = (value.toInt() and 0xff).toByte()
+    }
+
+    public fun putInt(value: Int) {
+        checkRemaining(4)
+        pointer[position++] = (value ushr 24 and 0xff).toByte()
+        pointer[position++] = (value ushr 16 and 0xff).toByte()
+        pointer[position++] = (value ushr 8 and 0xff).toByte()
+        pointer[position++] = (value and 0xff).toByte()
+    }
+
+    public fun putLong(value: Long) {
+        checkRemaining(8)
+        pointer[position++] = (value ushr 56 and 0xffL).toByte()
+        pointer[position++] = (value ushr 48 and 0xffL).toByte()
+        pointer[position++] = (value ushr 40 and 0xffL).toByte()
+        pointer[position++] = (value ushr 32 and 0xffL).toByte()
+        pointer[position++] = (value ushr 24 and 0xffL).toByte()
+        pointer[position++] = (value ushr 16 and 0xffL).toByte()
+        pointer[position++] = (value ushr 8 and 0xffL).toByte()
+        pointer[position++] = (value and 0xffL).toByte()
+    }
+
+    public fun putFloat(value: Float): Unit = putInt(value.toRawBits())
+
+    public fun putDouble(value: Double): Unit = putLong(value.toRawBits())
+}
+public fun RustBuffer.setValue(array: RustBufferByValue) {
+    this.data = array.data
+    this.len = array.len
+    this.capacity = array.capacity
+}
+
+internal object RustBufferHelper {
+    internal fun allocValue(size: ULong = 0UL): RustBufferByValue = uniffiRustCall { status ->
+        // Note: need to convert the size to a `Long` value to make this work with JVM.
+        UniffiLib.ffi_traits_rustbuffer_alloc(size.toLong(), status)
+    }.also {
+        if(it.data == null) {
+            throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
+        }
+    }
+
+    internal fun free(buf: RustBufferByValue) = uniffiRustCall { status ->
+        UniffiLib.ffi_traits_rustbuffer_free(buf, status)
+    }
+}
+
+public typealias RustBuffer = CPointer<traits.cinterop.RustBuffer>
+
+public var RustBuffer.capacity: Long
+    get() = pointed.capacity
+    set(value) { pointed.capacity = value }
+public var RustBuffer.len: Long
+    get() = pointed.len
+    set(value) { pointed.len = value }
+public var RustBuffer.data: Pointer?
+    get() = pointed.data
+    set(value) { pointed.data = value?.reinterpret() }
+public fun RustBuffer.asByteBuffer(): ByteBuffer? {
+    require(pointed.len <= Int.MAX_VALUE) {
+        val length = pointed.len
+        "cannot handle RustBuffer longer than Int.MAX_VALUE bytes: length is $length"
+    }
+    return ByteBuffer(
+        pointed.data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,
+        pointed.len.toInt(),
+    )
+}
+
+public typealias RustBufferByValue = CValue<traits.cinterop.RustBuffer>
+public fun RustBufferByValue(
+    capacity: Long,
+    len: Long,
+    data: Pointer?,
+): RustBufferByValue {
+    return cValue<traits.cinterop.RustBuffer> {
+        this.capacity = capacity
+        this.len = len
+        this.data = data?.reinterpret()
+    }
+}
+public val RustBufferByValue.capacity: Long
+    get() = useContents { capacity }
+public val RustBufferByValue.len: Long
+    get() = useContents { len }
+public val RustBufferByValue.data: Pointer?
+    get() = useContents { data }
+public fun RustBufferByValue.asByteBuffer(): ByteBuffer? {
+    require(len <= Int.MAX_VALUE) {
+        val length = len
+        "cannot handle RustBuffer longer than Int.MAX_VALUE bytes: length is $length"
+    }
+    return ByteBuffer(
+        data?.reinterpret<kotlinx.cinterop.ByteVar>() ?: return null,
+        len.toInt(),
+    )
+}
+
+internal typealias ForeignBytes = CPointer<traits.cinterop.ForeignBytes>
+internal var ForeignBytes.len: Int
+    get() = pointed.len
+    set(value) { pointed.len = value }
+internal var ForeignBytes.data: Pointer?
+    get() = pointed.data
+    set(value) { pointed.data = value?.reinterpret() }
+
+internal typealias ForeignBytesByValue = CValue<traits.cinterop.ForeignBytes>
+internal val ForeignBytesByValue.len: Int
+    get() = useContents { len }
+internal val ForeignBytesByValue.data: Pointer?
+    get() = useContents { data }
+
+public interface FfiConverter<KotlinType, FfiType> {
+    // Convert an FFI type to a Kotlin type
+    public fun lift(value: FfiType): KotlinType
+
+    // Convert an Kotlin type to an FFI type
+    public fun lower(value: KotlinType): FfiType
+
+    // Read a Kotlin type from a `ByteBuffer`
+    public fun read(buf: ByteBuffer): KotlinType
+
+    // Calculate bytes to allocate when creating a `RustBuffer`
+    //
+    // This must return at least as many bytes as the write() function will
+    // write. It can return more bytes than needed, for example when writing
+    // Strings we can't know the exact bytes needed until we the UTF-8
+    // encoding, so we pessimistically allocate the largest size possible (3
+    // bytes per codepoint).  Allocating extra bytes is not really a big deal
+    // because the `RustBuffer` is short-lived.
+    public fun allocationSize(value: KotlinType): ULong
+
+    // Write a Kotlin type to a `ByteBuffer`
+    public fun write(value: KotlinType, buf: ByteBuffer)
+
+    // Lower a value into a `RustBuffer`
+    //
+    // This method lowers a value into a `RustBuffer` rather than the normal
+    // FfiType.  It's used by the callback interface code.  Callback interface
+    // returns are always serialized into a `RustBuffer` regardless of their
+    // normal FFI type.
+    public fun lowerIntoRustBuffer(value: KotlinType): RustBufferByValue {
+        val rbuf = RustBufferHelper.allocValue(allocationSize(value))
+        val bbuf = rbuf.asByteBuffer()!!
+        write(value, bbuf)
+        return RustBufferByValue(
+            capacity = rbuf.capacity,
+            len = bbuf.position().toLong(),
+            data = rbuf.data,
+        )
+    }
+
+    // Lift a value from a `RustBuffer`.
+    //
+    // This here mostly because of the symmetry with `lowerIntoRustBuffer()`.
+    // It's currently only used by the `FfiConverterRustBuffer` class below.
+    public fun liftFromRustBuffer(rbuf: RustBufferByValue): KotlinType {
+        val byteBuf = rbuf.asByteBuffer()!!
+        try {
+           val item = read(byteBuf)
+           if (byteBuf.hasRemaining()) {
+               throw RuntimeException("junk remaining in buffer after lifting, something is very wrong!!")
+           }
+           return item
+        } finally {
+            RustBufferHelper.free(rbuf)
+        }
+    }
+}
+
+// FfiConverter that uses `RustBuffer` as the FfiType
+public interface FfiConverterRustBuffer<KotlinType>: FfiConverter<KotlinType, RustBufferByValue> {
+    override fun lift(value: RustBufferByValue): KotlinType = liftFromRustBuffer(value)
+    override fun lower(value: KotlinType): RustBufferByValue = lowerIntoRustBuffer(value)
+}
+
+internal const val UNIFFI_CALL_SUCCESS = 0.toByte()
+internal const val UNIFFI_CALL_ERROR = 1.toByte()
+internal const val UNIFFI_CALL_UNEXPECTED_ERROR = 2.toByte()
+
+// Default Implementations
+internal fun UniffiRustCallStatus.isSuccess(): Boolean
+    = code == UNIFFI_CALL_SUCCESS
+
+internal fun UniffiRustCallStatus.isError(): Boolean
+    = code == UNIFFI_CALL_ERROR
+
+internal fun UniffiRustCallStatus.isPanic(): Boolean
+    = code == UNIFFI_CALL_UNEXPECTED_ERROR
+
+internal fun UniffiRustCallStatusByValue.isSuccess(): Boolean
+    = code == UNIFFI_CALL_SUCCESS
+
+internal fun UniffiRustCallStatusByValue.isError(): Boolean
+    = code == UNIFFI_CALL_ERROR
+
+internal fun UniffiRustCallStatusByValue.isPanic(): Boolean
+    = code == UNIFFI_CALL_UNEXPECTED_ERROR
+
+// Each top-level error class has a companion object that can lift the error from the call status's rust buffer
+public interface UniffiRustCallStatusErrorHandler<E> {
+    public fun lift(errorBuf: RustBufferByValue): E
+}
+
+// Helpers for calling Rust
+// In practice we usually need to be synchronized to call this safely, so it doesn't
+// synchronize itself
+
+// Call a rust function that returns a Result<>.  Pass in the Error class companion that corresponds to the Err
+internal inline fun <U, E: kotlin.Exception> uniffiRustCallWithError(errorHandler: UniffiRustCallStatusErrorHandler<E>, crossinline callback: (UniffiRustCallStatus) -> U): U {
+    return UniffiRustCallStatusHelper.withReference() { status ->
+        val returnValue = callback(status)
+        uniffiCheckCallStatus(errorHandler, status)
+        returnValue
+    }
+}
+
+// Check `status` and throw an error if the call wasn't successful
+internal fun<E: kotlin.Exception> uniffiCheckCallStatus(errorHandler: UniffiRustCallStatusErrorHandler<E>, status: UniffiRustCallStatus) {
+    if (status.isSuccess()) {
+        return
+    } else if (status.isError()) {
+        throw errorHandler.lift(status.errorBuf)
+    } else if (status.isPanic()) {
+        // when the rust code sees a panic, it tries to construct a rustbuffer
+        // with the message.  but if that code panics, then it just sends back
+        // an empty buffer.
+        if (status.errorBuf.len > 0) {
+            throw InternalException(FfiConverterString.lift(status.errorBuf))
+        } else {
+            throw InternalException("Rust panic")
+        }
+    } else {
+        throw InternalException("Unknown rust call status: $status.code")
+    }
+}
+
+// UniffiRustCallStatusErrorHandler implementation for times when we don't expect a CALL_ERROR
+public object UniffiNullRustCallStatusErrorHandler: UniffiRustCallStatusErrorHandler<InternalException> {
+    override fun lift(errorBuf: RustBufferByValue): InternalException {
+        RustBufferHelper.free(errorBuf)
+        return InternalException("Unexpected CALL_ERROR")
+    }
+}
+
+// Call a rust function that returns a plain value
+internal inline fun <U> uniffiRustCall(crossinline callback: (UniffiRustCallStatus) -> U): U {
+    return uniffiRustCallWithError(UniffiNullRustCallStatusErrorHandler, callback)
+}
+
+internal inline fun<T> uniffiTraitInterfaceCall(
+    callStatus: UniffiRustCallStatus,
+    makeCall: () -> T,
+    writeReturn: (T) -> Unit,
+) {
+    try {
+        writeReturn(makeCall())
+    } catch(e: kotlin.Exception) {
+        callStatus.code = UNIFFI_CALL_UNEXPECTED_ERROR
+        callStatus.errorBuf = FfiConverterString.lower(e.toString())
+    }
+}
+
+internal inline fun<T, reified E: Throwable> uniffiTraitInterfaceCallWithError(
+    callStatus: UniffiRustCallStatus,
+    makeCall: () -> T,
+    writeReturn: (T) -> Unit,
+    lowerError: (E) -> RustBufferByValue
+) {
+    try {
+        writeReturn(makeCall())
+    } catch(e: kotlin.Exception) {
+        if (e is E) {
+            callStatus.code = UNIFFI_CALL_ERROR
+            callStatus.errorBuf = lowerError(e)
+        } else {
+            callStatus.code = UNIFFI_CALL_UNEXPECTED_ERROR
+            callStatus.errorBuf = FfiConverterString.lower(e.toString())
+        }
+    }
+}
+
+internal typealias UniffiRustCallStatus = CPointer<traits.cinterop.UniffiRustCallStatus>
+internal var UniffiRustCallStatus.code: Byte
+    get() = pointed.code
+    set(value) { pointed.code = value }
+internal var UniffiRustCallStatus.errorBuf: RustBufferByValue
+    get() = pointed.errorBuf.readValue()
+    set(value) { value.place(pointed.errorBuf.ptr) }
+
+internal typealias UniffiRustCallStatusByValue = CValue<traits.cinterop.UniffiRustCallStatus>
+internal fun UniffiRustCallStatusByValue(
+    code: Byte,
+    errorBuf: RustBufferByValue
+): UniffiRustCallStatusByValue {
+    return cValue<traits.cinterop.UniffiRustCallStatus> {
+        this.code = code
+        errorBuf.write(this.errorBuf.rawPtr)
+    }
+}
+internal val UniffiRustCallStatusByValue.code: Byte
+    get() = useContents { code }
+internal val UniffiRustCallStatusByValue.errorBuf: RustBufferByValue
+    get() = useContents { errorBuf.readValue() }
+
+internal object UniffiRustCallStatusHelper {
+    fun allocValue() = cValue<traits.cinterop.UniffiRustCallStatus>()
+    fun <U> withReference(
+        block: (UniffiRustCallStatus) -> U
+    ): U {
+        return memScoped {
+            val status = alloc<traits.cinterop.UniffiRustCallStatus>()
+            block(status.ptr)
+        }
+    }
+}
+
+// Initial value and increment amount for handles.
+// These ensure that Kotlin-generated handles always have the lowest bit set, which
+// distinguishes them from Rust-generated handles (lowest bit clear).
+private const val UNIFFI_HANDLEMAP_INITIAL = 1L
+private const val UNIFFI_HANDLEMAP_DELTA = 2L
+
+internal class UniffiHandleMap<T: Any> {
+    private val mapLock = kotlinx.atomicfu.locks.ReentrantLock()
+    private val map = HashMap<Long, T>()
+
+    private val counter: kotlinx.atomicfu.AtomicLong = kotlinx.atomicfu.atomic(UNIFFI_HANDLEMAP_INITIAL)
+
+    internal val size: Int
+        get() = map.size
+
+    // Insert a new object into the handle map and get a handle for it
+    internal fun insert(obj: T): Long {
+        val handle = counter.getAndAdd(UNIFFI_HANDLEMAP_DELTA)
+        syncAccess { map.put(handle, obj) }
+        return handle
+    }
+
+    // Clone a handle, creating a new one that refers to the same object
+    internal fun clone(handle: Long): Long {
+        val obj = syncAccess { map.get(handle) } ?: throw InternalException("UniffiHandleMap.clone: Invalid handle")
+        return insert(obj)
+    }
+
+    // Get an object from the handle map
+    internal fun get(handle: Long): T {
+        return syncAccess { map.get(handle) } ?: throw InternalException("UniffiHandleMap.get: Invalid handle")
+    }
+
+    // Remove an entry from the handlemap and get the Kotlin object back
+    internal fun remove(handle: Long): T {
+        return syncAccess { map.remove(handle) } ?: throw InternalException("UniffiHandleMap.remove: Invalid handle")
+    }
+
+    internal fun <T> syncAccess(block: () -> T): T {
+        mapLock.lock()
+        try {
+            return block()
+        } finally {
+            mapLock.unlock()
+        }
+    }
+}
+
+internal typealias ByteByReference = CPointer<ByteVar>
+internal fun ByteByReference.setValue(value: Byte) {
+    this.pointed.value = value
+}
+internal fun ByteByReference.getValue() : Byte {
+    return this.pointed.value
+}
+
+internal typealias DoubleByReference = CPointer<DoubleVar>
+internal fun DoubleByReference.setValue(value: Double) {
+    this.pointed.value = value
+}
+internal fun DoubleByReference.getValue() : Double {
+    return this.pointed.value
+}
+
+internal typealias FloatByReference = CPointer<FloatVar>
+internal fun FloatByReference.setValue(value: Float) {
+    this.pointed.value = value
+}
+internal fun FloatByReference.getValue() : Float {
+    return this.pointed.value
+}
+
+internal typealias IntByReference = CPointer<IntVar>
+internal fun IntByReference.setValue(value: Int) {
+    this.pointed.value = value
+}
+internal fun IntByReference.getValue() : Int {
+    return this.pointed.value
+}
+
+internal typealias LongByReference = CPointer<LongVar>
+internal fun LongByReference.setValue(value: Long) {
+    this.pointed.value = value
+}
+internal fun LongByReference.getValue() : Long {
+    return this.pointed.value
+}
+
+internal typealias PointerByReference = CPointer<COpaquePointerVar>
+internal fun PointerByReference.setValue(value: Pointer?) {
+    this.pointed.value = value
+}
+internal fun PointerByReference.getValue(): Pointer? {
+    return this.pointed.value
+}
+
+internal typealias ShortByReference = CPointer<ShortVar>
+internal fun ShortByReference.setValue(value: Short) {
+    this.pointed.value = value
+}
+internal fun ShortByReference.getValue(): Short {
+    return this.pointed.value
+}
+
+// Contains loading, initialization code,
+// and the FFI Function declarations.
+
+internal typealias UniffiRustFutureContinuationCallback = traits.cinterop.UniffiRustFutureContinuationCallback
+internal typealias UniffiForeignFutureDroppedCallback = traits.cinterop.UniffiForeignFutureDroppedCallback
+internal typealias UniffiCallbackInterfaceFree = traits.cinterop.UniffiCallbackInterfaceFree
+internal typealias UniffiCallbackInterfaceClone = traits.cinterop.UniffiCallbackInterfaceClone
+internal typealias UniffiForeignFutureDroppedCallbackStruct = CPointer<traits.cinterop.UniffiForeignFutureDroppedCallbackStruct>
+
+internal var UniffiForeignFutureDroppedCallbackStruct.`handle`: Long
+    get() = pointed.`handle`
+    set(value) {
+        pointed.`handle` = value
+    }
+
+internal var UniffiForeignFutureDroppedCallbackStruct.`free`: UniffiForeignFutureDroppedCallback?
+    get() = pointed.`free`
+    set(value) {
+        pointed.`free` = value
+    }
+
+
+internal fun UniffiForeignFutureDroppedCallbackStruct.uniffiSetValue(other: UniffiForeignFutureDroppedCallbackStruct) {
+    `handle` = other.`handle`
+    `free` = other.`free`
+}
+internal fun UniffiForeignFutureDroppedCallbackStruct.uniffiSetValue(other: UniffiForeignFutureDroppedCallbackStructUniffiByValue) {
+    `handle` = other.`handle`
+    `free` = other.`free`
+}
+
+internal typealias UniffiForeignFutureDroppedCallbackStructUniffiByValue = CValue<traits.cinterop.UniffiForeignFutureDroppedCallbackStruct>
+internal fun UniffiForeignFutureDroppedCallbackStructUniffiByValue(
+    `handle`: Long,
+    `free`: UniffiForeignFutureDroppedCallback?,
+): UniffiForeignFutureDroppedCallbackStructUniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureDroppedCallbackStruct> {
+        this.`handle` = `handle`
+        this.`free` = `free`
+    }
+}
+
+
+internal val UniffiForeignFutureDroppedCallbackStructUniffiByValue.`handle`: Long
+    get() = useContents { `handle` }
+
+internal val UniffiForeignFutureDroppedCallbackStructUniffiByValue.`free`: UniffiForeignFutureDroppedCallback?
+    get() = useContents { `free` }
+
+internal typealias UniffiForeignFutureResultU8 = CPointer<traits.cinterop.UniffiForeignFutureResultU8>
+
+internal var UniffiForeignFutureResultU8.`returnValue`: Byte
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultU8.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultU8.uniffiSetValue(other: UniffiForeignFutureResultU8) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultU8.uniffiSetValue(other: UniffiForeignFutureResultU8UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultU8UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultU8>
+internal fun UniffiForeignFutureResultU8UniffiByValue(
+    `returnValue`: Byte,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultU8UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultU8> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultU8UniffiByValue.`returnValue`: Byte
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultU8UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteU8 = traits.cinterop.UniffiForeignFutureCompleteU8
+internal typealias UniffiForeignFutureResultI8 = CPointer<traits.cinterop.UniffiForeignFutureResultI8>
+
+internal var UniffiForeignFutureResultI8.`returnValue`: Byte
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultI8.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultI8.uniffiSetValue(other: UniffiForeignFutureResultI8) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultI8.uniffiSetValue(other: UniffiForeignFutureResultI8UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultI8UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultI8>
+internal fun UniffiForeignFutureResultI8UniffiByValue(
+    `returnValue`: Byte,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultI8UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultI8> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultI8UniffiByValue.`returnValue`: Byte
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultI8UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteI8 = traits.cinterop.UniffiForeignFutureCompleteI8
+internal typealias UniffiForeignFutureResultU16 = CPointer<traits.cinterop.UniffiForeignFutureResultU16>
+
+internal var UniffiForeignFutureResultU16.`returnValue`: Short
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultU16.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultU16.uniffiSetValue(other: UniffiForeignFutureResultU16) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultU16.uniffiSetValue(other: UniffiForeignFutureResultU16UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultU16UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultU16>
+internal fun UniffiForeignFutureResultU16UniffiByValue(
+    `returnValue`: Short,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultU16UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultU16> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultU16UniffiByValue.`returnValue`: Short
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultU16UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteU16 = traits.cinterop.UniffiForeignFutureCompleteU16
+internal typealias UniffiForeignFutureResultI16 = CPointer<traits.cinterop.UniffiForeignFutureResultI16>
+
+internal var UniffiForeignFutureResultI16.`returnValue`: Short
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultI16.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultI16.uniffiSetValue(other: UniffiForeignFutureResultI16) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultI16.uniffiSetValue(other: UniffiForeignFutureResultI16UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultI16UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultI16>
+internal fun UniffiForeignFutureResultI16UniffiByValue(
+    `returnValue`: Short,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultI16UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultI16> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultI16UniffiByValue.`returnValue`: Short
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultI16UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteI16 = traits.cinterop.UniffiForeignFutureCompleteI16
+internal typealias UniffiForeignFutureResultU32 = CPointer<traits.cinterop.UniffiForeignFutureResultU32>
+
+internal var UniffiForeignFutureResultU32.`returnValue`: Int
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultU32.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultU32.uniffiSetValue(other: UniffiForeignFutureResultU32) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultU32.uniffiSetValue(other: UniffiForeignFutureResultU32UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultU32UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultU32>
+internal fun UniffiForeignFutureResultU32UniffiByValue(
+    `returnValue`: Int,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultU32UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultU32> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultU32UniffiByValue.`returnValue`: Int
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultU32UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteU32 = traits.cinterop.UniffiForeignFutureCompleteU32
+internal typealias UniffiForeignFutureResultI32 = CPointer<traits.cinterop.UniffiForeignFutureResultI32>
+
+internal var UniffiForeignFutureResultI32.`returnValue`: Int
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultI32.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultI32.uniffiSetValue(other: UniffiForeignFutureResultI32) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultI32.uniffiSetValue(other: UniffiForeignFutureResultI32UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultI32UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultI32>
+internal fun UniffiForeignFutureResultI32UniffiByValue(
+    `returnValue`: Int,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultI32UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultI32> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultI32UniffiByValue.`returnValue`: Int
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultI32UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteI32 = traits.cinterop.UniffiForeignFutureCompleteI32
+internal typealias UniffiForeignFutureResultU64 = CPointer<traits.cinterop.UniffiForeignFutureResultU64>
+
+internal var UniffiForeignFutureResultU64.`returnValue`: Long
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultU64.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultU64.uniffiSetValue(other: UniffiForeignFutureResultU64) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultU64.uniffiSetValue(other: UniffiForeignFutureResultU64UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultU64UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultU64>
+internal fun UniffiForeignFutureResultU64UniffiByValue(
+    `returnValue`: Long,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultU64UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultU64> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultU64UniffiByValue.`returnValue`: Long
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultU64UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteU64 = traits.cinterop.UniffiForeignFutureCompleteU64
+internal typealias UniffiForeignFutureResultI64 = CPointer<traits.cinterop.UniffiForeignFutureResultI64>
+
+internal var UniffiForeignFutureResultI64.`returnValue`: Long
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultI64.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultI64.uniffiSetValue(other: UniffiForeignFutureResultI64) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultI64.uniffiSetValue(other: UniffiForeignFutureResultI64UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultI64UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultI64>
+internal fun UniffiForeignFutureResultI64UniffiByValue(
+    `returnValue`: Long,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultI64UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultI64> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultI64UniffiByValue.`returnValue`: Long
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultI64UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteI64 = traits.cinterop.UniffiForeignFutureCompleteI64
+internal typealias UniffiForeignFutureResultF32 = CPointer<traits.cinterop.UniffiForeignFutureResultF32>
+
+internal var UniffiForeignFutureResultF32.`returnValue`: Float
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultF32.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultF32.uniffiSetValue(other: UniffiForeignFutureResultF32) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultF32.uniffiSetValue(other: UniffiForeignFutureResultF32UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultF32UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultF32>
+internal fun UniffiForeignFutureResultF32UniffiByValue(
+    `returnValue`: Float,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultF32UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultF32> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultF32UniffiByValue.`returnValue`: Float
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultF32UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteF32 = traits.cinterop.UniffiForeignFutureCompleteF32
+internal typealias UniffiForeignFutureResultF64 = CPointer<traits.cinterop.UniffiForeignFutureResultF64>
+
+internal var UniffiForeignFutureResultF64.`returnValue`: Double
+    get() = pointed.`returnValue`
+    set(value) {
+        pointed.`returnValue` = value
+    }
+
+internal var UniffiForeignFutureResultF64.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultF64.uniffiSetValue(other: UniffiForeignFutureResultF64) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultF64.uniffiSetValue(other: UniffiForeignFutureResultF64UniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultF64UniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultF64>
+internal fun UniffiForeignFutureResultF64UniffiByValue(
+    `returnValue`: Double,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultF64UniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultF64> {
+        this.`returnValue` = `returnValue`
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultF64UniffiByValue.`returnValue`: Double
+    get() = useContents { `returnValue` }
+
+internal val UniffiForeignFutureResultF64UniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteF64 = traits.cinterop.UniffiForeignFutureCompleteF64
+internal typealias UniffiForeignFutureResultRustBuffer = CPointer<traits.cinterop.UniffiForeignFutureResultRustBuffer>
+
+internal var UniffiForeignFutureResultRustBuffer.`returnValue`: RustBufferByValue
+    get() = pointed.`returnValue`.readValue()
+    set(value) {
+        value.write(pointed.`returnValue`.rawPtr)
+    }
+
+internal var UniffiForeignFutureResultRustBuffer.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultRustBuffer.uniffiSetValue(other: UniffiForeignFutureResultRustBuffer) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultRustBuffer.uniffiSetValue(other: UniffiForeignFutureResultRustBufferUniffiByValue) {
+    `returnValue` = other.`returnValue`
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultRustBufferUniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultRustBuffer>
+internal fun UniffiForeignFutureResultRustBufferUniffiByValue(
+    `returnValue`: RustBufferByValue,
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultRustBufferUniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultRustBuffer> {
+        `returnValue`.write(this.`returnValue`.rawPtr)
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultRustBufferUniffiByValue.`returnValue`: RustBufferByValue
+    get() = useContents { `returnValue`.readValue() }
+
+internal val UniffiForeignFutureResultRustBufferUniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteRustBuffer = traits.cinterop.UniffiForeignFutureCompleteRustBuffer
+internal typealias UniffiForeignFutureResultVoid = CPointer<traits.cinterop.UniffiForeignFutureResultVoid>
+
+internal var UniffiForeignFutureResultVoid.`callStatus`: UniffiRustCallStatusByValue
+    get() = pointed.`callStatus`.readValue()
+    set(value) {
+        value.write(pointed.`callStatus`.rawPtr)
+    }
+
+
+internal fun UniffiForeignFutureResultVoid.uniffiSetValue(other: UniffiForeignFutureResultVoid) {
+    `callStatus` = other.`callStatus`
+}
+internal fun UniffiForeignFutureResultVoid.uniffiSetValue(other: UniffiForeignFutureResultVoidUniffiByValue) {
+    `callStatus` = other.`callStatus`
+}
+
+internal typealias UniffiForeignFutureResultVoidUniffiByValue = CValue<traits.cinterop.UniffiForeignFutureResultVoid>
+internal fun UniffiForeignFutureResultVoidUniffiByValue(
+    `callStatus`: UniffiRustCallStatusByValue,
+): UniffiForeignFutureResultVoidUniffiByValue {
+    return cValue<traits.cinterop.UniffiForeignFutureResultVoid> {
+        `callStatus`.write(this.`callStatus`.rawPtr)
+    }
+}
+
+
+internal val UniffiForeignFutureResultVoidUniffiByValue.`callStatus`: UniffiRustCallStatusByValue
+    get() = useContents { `callStatus`.readValue() }
+
+internal typealias UniffiForeignFutureCompleteVoid = traits.cinterop.UniffiForeignFutureCompleteVoid
+internal typealias UniffiCallbackInterfaceGreeterMethod0 = traits.cinterop.UniffiCallbackInterfaceGreeterMethod0
+internal typealias UniffiCallbackInterfaceGreeterMethod1 = traits.cinterop.UniffiCallbackInterfaceGreeterMethod1
+internal typealias UniffiVTableCallbackInterfaceGreeter = CPointer<traits.cinterop.UniffiVTableCallbackInterfaceGreeter>
+
+internal var UniffiVTableCallbackInterfaceGreeter.`uniffiFree`: UniffiCallbackInterfaceFree?
+    get() = pointed.`uniffiFree`
+    set(value) {
+        pointed.`uniffiFree` = value
+    }
+
+internal var UniffiVTableCallbackInterfaceGreeter.`uniffiClone`: UniffiCallbackInterfaceClone?
+    get() = pointed.`uniffiClone`
+    set(value) {
+        pointed.`uniffiClone` = value
+    }
+
+internal var UniffiVTableCallbackInterfaceGreeter.`callCount`: UniffiCallbackInterfaceGreeterMethod0?
+    get() = pointed.`callCount`
+    set(value) {
+        pointed.`callCount` = value
+    }
+
+internal var UniffiVTableCallbackInterfaceGreeter.`greeting`: UniffiCallbackInterfaceGreeterMethod1?
+    get() = pointed.`greeting`
+    set(value) {
+        pointed.`greeting` = value
+    }
+
+
+internal fun UniffiVTableCallbackInterfaceGreeter.uniffiSetValue(other: UniffiVTableCallbackInterfaceGreeter) {
+    `uniffiFree` = other.`uniffiFree`
+    `uniffiClone` = other.`uniffiClone`
+    `callCount` = other.`callCount`
+    `greeting` = other.`greeting`
+}
+internal fun UniffiVTableCallbackInterfaceGreeter.uniffiSetValue(other: UniffiVTableCallbackInterfaceGreeterUniffiByValue) {
+    `uniffiFree` = other.`uniffiFree`
+    `uniffiClone` = other.`uniffiClone`
+    `callCount` = other.`callCount`
+    `greeting` = other.`greeting`
+}
+
+internal typealias UniffiVTableCallbackInterfaceGreeterUniffiByValue = CValue<traits.cinterop.UniffiVTableCallbackInterfaceGreeter>
+internal fun UniffiVTableCallbackInterfaceGreeterUniffiByValue(
+    `uniffiFree`: UniffiCallbackInterfaceFree?,
+    `uniffiClone`: UniffiCallbackInterfaceClone?,
+    `callCount`: UniffiCallbackInterfaceGreeterMethod0?,
+    `greeting`: UniffiCallbackInterfaceGreeterMethod1?,
+): UniffiVTableCallbackInterfaceGreeterUniffiByValue {
+    return cValue<traits.cinterop.UniffiVTableCallbackInterfaceGreeter> {
+        this.`uniffiFree` = `uniffiFree`
+        this.`uniffiClone` = `uniffiClone`
+        this.`callCount` = `callCount`
+        this.`greeting` = `greeting`
+    }
+}
+
+
+internal val UniffiVTableCallbackInterfaceGreeterUniffiByValue.`uniffiFree`: UniffiCallbackInterfaceFree?
+    get() = useContents { `uniffiFree` }
+
+internal val UniffiVTableCallbackInterfaceGreeterUniffiByValue.`uniffiClone`: UniffiCallbackInterfaceClone?
+    get() = useContents { `uniffiClone` }
+
+internal val UniffiVTableCallbackInterfaceGreeterUniffiByValue.`callCount`: UniffiCallbackInterfaceGreeterMethod0?
+    get() = useContents { `callCount` }
+
+internal val UniffiVTableCallbackInterfaceGreeterUniffiByValue.`greeting`: UniffiCallbackInterfaceGreeterMethod1?
+    get() = useContents { `greeting` }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+internal object UniffiLib {
+    init {
+            uniffiCallbackInterfaceGreeter.register(this)
+    }
+    // The Cleaner for the whole library
+    internal val CLEANER: UniffiCleaner by lazy {
+        UniffiCleaner.create()
+    }
+
+    fun uniffi_traits_fn_clone_greeter(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Long = traits.cinterop.uniffi_traits_fn_clone_greeter(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun uniffi_traits_fn_free_greeter(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Unit = traits.cinterop.uniffi_traits_fn_free_greeter(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun uniffi_traits_fn_init_callback_vtable_greeter(
+        `vtable`: UniffiVTableCallbackInterfaceGreeter,
+    ): Unit = traits.cinterop.uniffi_traits_fn_init_callback_vtable_greeter(
+        `vtable`,
+    )
+    fun uniffi_traits_fn_method_greeter_call_count(
+        `ptr`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Int = traits.cinterop.uniffi_traits_fn_method_greeter_call_count(
+        `ptr`,
+        uniffiCallStatus,
+    )
+    fun uniffi_traits_fn_method_greeter_greeting(
+        `ptr`: Long,
+        `name`: RustBufferByValue,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): RustBufferByValue = traits.cinterop.uniffi_traits_fn_method_greeter_greeting(
+        `ptr`,
+        `name`,
+        uniffiCallStatus,
+    )
+    fun uniffi_traits_fn_func_greet_with(
+        `greeter`: Long,
+        `name`: RustBufferByValue,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): RustBufferByValue = traits.cinterop.uniffi_traits_fn_func_greet_with(
+        `greeter`,
+        `name`,
+        uniffiCallStatus,
+    )
+    fun uniffi_traits_fn_func_make_greeter(
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Long = traits.cinterop.uniffi_traits_fn_func_make_greeter(
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rustbuffer_alloc(
+        `size`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): RustBufferByValue = traits.cinterop.ffi_traits_rustbuffer_alloc(
+        `size`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rustbuffer_from_bytes(
+        `bytes`: ForeignBytesByValue,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): RustBufferByValue = traits.cinterop.ffi_traits_rustbuffer_from_bytes(
+        `bytes`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rustbuffer_free(
+        `buf`: RustBufferByValue,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Unit = traits.cinterop.ffi_traits_rustbuffer_free(
+        `buf`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rustbuffer_reserve(
+        `buf`: RustBufferByValue,
+        `additional`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): RustBufferByValue = traits.cinterop.ffi_traits_rustbuffer_reserve(
+        `buf`,
+        `additional`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_u8(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_u8(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_u8(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_u8(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_u8(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_u8(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_u8(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Byte = traits.cinterop.ffi_traits_rust_future_complete_u8(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_i8(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_i8(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_i8(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_i8(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_i8(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_i8(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_i8(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Byte = traits.cinterop.ffi_traits_rust_future_complete_i8(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_u16(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_u16(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_u16(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_u16(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_u16(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_u16(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_u16(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Short = traits.cinterop.ffi_traits_rust_future_complete_u16(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_i16(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_i16(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_i16(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_i16(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_i16(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_i16(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_i16(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Short = traits.cinterop.ffi_traits_rust_future_complete_i16(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_u32(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_u32(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_u32(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_u32(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_u32(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_u32(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_u32(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Int = traits.cinterop.ffi_traits_rust_future_complete_u32(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_i32(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_i32(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_i32(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_i32(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_i32(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_i32(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_i32(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Int = traits.cinterop.ffi_traits_rust_future_complete_i32(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_u64(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_u64(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_u64(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_u64(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_u64(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_u64(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_u64(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Long = traits.cinterop.ffi_traits_rust_future_complete_u64(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_i64(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_i64(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_i64(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_i64(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_i64(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_i64(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_i64(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Long = traits.cinterop.ffi_traits_rust_future_complete_i64(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_f32(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_f32(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_f32(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_f32(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_f32(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_f32(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_f32(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Float = traits.cinterop.ffi_traits_rust_future_complete_f32(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_f64(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_f64(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_f64(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_f64(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_f64(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_f64(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_f64(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Double = traits.cinterop.ffi_traits_rust_future_complete_f64(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_rust_buffer(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_rust_buffer(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_rust_buffer(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_rust_buffer(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_rust_buffer(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_rust_buffer(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_rust_buffer(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): RustBufferByValue = traits.cinterop.ffi_traits_rust_future_complete_rust_buffer(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun ffi_traits_rust_future_poll_void(
+        `handle`: Long,
+        `callback`: UniffiRustFutureContinuationCallback,
+        `callbackData`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_poll_void(
+        `handle`,
+        `callback`,
+        `callbackData`,
+    )
+    fun ffi_traits_rust_future_cancel_void(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_cancel_void(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_free_void(
+        `handle`: Long,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_free_void(
+        `handle`,
+    )
+    fun ffi_traits_rust_future_complete_void(
+        `handle`: Long,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ): Unit = traits.cinterop.ffi_traits_rust_future_complete_void(
+        `handle`,
+        uniffiCallStatus,
+    )
+    fun uniffi_traits_checksum_func_greet_with(
+    ): Short = traits.cinterop.uniffi_traits_checksum_func_greet_with(
+    )
+    fun uniffi_traits_checksum_func_make_greeter(
+    ): Short = traits.cinterop.uniffi_traits_checksum_func_make_greeter(
+    )
+    fun uniffi_traits_checksum_method_greeter_call_count(
+    ): Short = traits.cinterop.uniffi_traits_checksum_method_greeter_call_count(
+    )
+    fun uniffi_traits_checksum_method_greeter_greeting(
+    ): Short = traits.cinterop.uniffi_traits_checksum_method_greeter_greeting(
+    )
+    fun ffi_traits_uniffi_contract_version(
+    ): Int = traits.cinterop.ffi_traits_uniffi_contract_version(
+    )
+    
+}
+
+public fun uniffiEnsureInitialized() {
+    UniffiLib
+}
+
+// Public interface members begin here.
+
+internal const val IDX_CALLBACK_FREE = 0
+// Callback return codes
+internal const val UNIFFI_CALLBACK_SUCCESS = 0
+internal const val UNIFFI_CALLBACK_ERROR = 1
+internal const val UNIFFI_CALLBACK_UNEXPECTED_ERROR = 2
+
+public abstract class FfiConverterCallbackInterface<CallbackInterface: Any>: FfiConverter<CallbackInterface, Long> {
+    internal val handleMap = UniffiHandleMap<CallbackInterface>()
+
+    internal fun drop(handle: Long) {
+        handleMap.remove(handle)
+    }
+
+    override fun lift(value: Long): CallbackInterface {
+        return handleMap.get(value)
+    }
+
+    override fun read(buf: ByteBuffer): CallbackInterface = lift(buf.getLong())
+
+    override fun lower(value: CallbackInterface): Long = handleMap.insert(value)
+
+    override fun allocationSize(value: CallbackInterface): ULong = 8UL
+
+    override fun write(value: CallbackInterface, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+// The cleaner interface for Object finalization code to run.
+// This is the entry point to any implementation that we're using.
+//
+// The cleaner registers disposables and returns cleanables, so now we are
+// defining a `UniffiCleaner` with a `UniffiClenaer.Cleanable` to abstract the
+// different implementations available at compile time.
+public interface UniffiCleaner {
+    public interface Cleanable {
+        public fun clean()
+    }
+
+    public fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable
+
+    public companion object
+}
+
+private class NativeCleaner : UniffiCleaner {
+    override fun register(resource: Any, disposable: Disposable): UniffiCleaner.Cleanable =
+        // Ignore value here. In Kotlin/Native, if a cleaner object is referenced by the resource
+        // object, both objects might leak and cleanupAction won't be called.
+        //
+        // Since this cleanable instance will be referenced by the resource instance, ignoring
+        // the resource and making the cleaner only reference the disposable prevents the cleaner
+        // from making a reference cycle thus able to destroy the disposable at a proper moment.
+        UniffiNativeCleanable(disposable)
+}
+
+private class UniffiNativeCleanable(val disposable: Disposable) : UniffiCleaner.Cleanable {
+    private val cleanAction = UniffiNativeCleanAction(disposable)
+
+    @Suppress("unused")
+    @OptIn(ExperimentalNativeApi::class)
+    private val cleaner = createCleaner(cleanAction, UniffiNativeCleanAction::clean)
+
+    override fun clean() {
+        cleanAction.clean()
+    }
+
+    private class UniffiNativeCleanAction(private val disposable: Disposable) {
+        private val cleaned = atomic(false)
+        fun clean() {
+            if (cleaned.compareAndSet(false, true)) {
+                disposable.destroy()
+            }
+        }
+    }
+}
+
+private fun UniffiCleaner.Companion.create(): UniffiCleaner =
+    NativeCleaner()
+
+
+public object FfiConverterUInt: FfiConverter<UInt, Int> {
+    override fun lift(value: Int): UInt {
+        return value.toUInt()
+    }
+
+    override fun read(buf: ByteBuffer): UInt {
+        return lift(buf.getInt())
+    }
+
+    override fun lower(value: UInt): Int {
+        return value.toInt()
+    }
+
+    override fun allocationSize(value: UInt): ULong = 4UL
+
+    override fun write(value: UInt, buf: ByteBuffer) {
+        buf.putInt(value.toInt())
+    }
+}
+
+
+public object FfiConverterString: FfiConverter<String, RustBufferByValue> {
+    // Note: we don't inherit from FfiConverterRustBuffer, because we use a
+    // special encoding when lowering/lifting.  We can use `RustBuffer.len` to
+    // store our length and avoid writing it out to the buffer.
+    override fun lift(value: RustBufferByValue): String {
+        try {
+            require(value.len <= Int.MAX_VALUE) {
+        val length = value.len
+        "cannot handle RustBuffer longer than Int.MAX_VALUE bytes: length is $length"
+    }
+            val byteArr =  value.asByteBuffer()!!.get(value.len.toInt())
+            return byteArr.decodeToString()
+        } finally {
+            RustBufferHelper.free(value)
+        }
+    }
+
+    override fun read(buf: ByteBuffer): String {
+        val len = buf.getInt()
+        val byteArr = buf.get(len)
+        return byteArr.decodeToString()
+    }
+
+    override fun lower(value: String): RustBufferByValue {
+        // TODO: prevent allocating a new byte array here
+        val encoded = value.encodeToByteArray(throwOnInvalidSequence = true)
+        return RustBufferHelper.allocValue(encoded.size.toULong()).apply {
+            asByteBuffer()!!.put(encoded)
+        }
+    }
+
+    // We aren't sure exactly how many bytes our string will be once it's UTF-8
+    // encoded.  Allocate 3 bytes per UTF-16 code unit which will always be
+    // enough.
+    override fun allocationSize(value: String): ULong {
+        val sizeForLength = 4UL
+        val sizeForString = value.length.toULong() * 3UL
+        return sizeForLength + sizeForString
+    }
+
+    override fun write(value: String, buf: ByteBuffer) {
+        // TODO: prevent allocating a new byte array here
+        val encoded = value.encodeToByteArray(throwOnInvalidSequence = true)
+        buf.putInt(encoded.size)
+        buf.put(encoded)
+    }
+}
+
+
+
+public actual open class GreeterImpl: Disposable, Greeter {
+
+    public constructor(handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiHandleDestroyer(handle))
+    }
+
+    /**
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    public actual constructor(noPointer: NoPointer) {
+        this.handle = 0L
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiHandleDestroyer(0L))
+    }
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable
+
+    private val wasDestroyed: kotlinx.atomicfu.AtomicBoolean = kotlinx.atomicfu.atomic(false)
+    private val callCounter: kotlinx.atomicfu.AtomicLong = kotlinx.atomicfu.atomic(1L)
+
+    private val lock = kotlinx.atomicfu.locks.ReentrantLock()
+
+    private fun <T> synchronized(block: () -> T): T {
+        lock.lock()
+        try {
+            return block()
+        } finally {
+            lock.unlock()
+        }
+    }
+
+    actual override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable.clean()
+            }
+        }
+    }
+
+    actual override fun close() {
+        synchronized { this.destroy() }
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.value
+            if (c == 0L) {
+                throw IllegalStateException("${this::class::simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this::class::simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiHandleDestroyer(private val handle: Long) : Disposable {
+        override fun destroy() {
+            if (handle == 0L) {
+                // Fake object created with `NoPointer`, don't try to free.
+                return
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_traits_fn_free_greeter(handle, status)
+            }
+        }
+    }
+
+    public fun uniffiCloneHandle(): Long {
+        if (handle == 0L) {
+            throw InternalException("uniffiCloneHandle() called on NoPointer object")
+        }
+        return uniffiRustCall { status ->
+            UniffiLib.uniffi_traits_fn_clone_greeter(handle, status)
+        }
+    }
+
+    
+    public actual override fun `callCount`(): kotlin.UInt {
+        return FfiConverterUInt.lift(callWithHandle {
+            uniffiRustCall { uniffiRustCallStatus ->
+                UniffiLib.uniffi_traits_fn_method_greeter_call_count(
+                    it,
+                    uniffiRustCallStatus,
+                )
+            }
+        })
+    }
+
+    public actual override fun `greeting`(`name`: kotlin.String): kotlin.String {
+        return FfiConverterString.lift(callWithHandle {
+            uniffiRustCall { uniffiRustCallStatus ->
+                UniffiLib.uniffi_traits_fn_method_greeter_greeting(
+                    it,
+                    FfiConverterString.lower(`name`),
+                    uniffiRustCallStatus,
+                )
+            }
+        })
+    }
+
+
+    
+    
+    public actual companion object
+    
+}
+
+
+
+
+
+public object FfiConverterTypeGreeter: FfiConverter<Greeter, Long> {
+    internal val handleMap = UniffiHandleMap<Greeter>()
+
+    override fun lower(value: Greeter): Long {
+        if (value is GreeterImpl) {
+            // Rust-implemented object. Clone the handle and return it.
+            return value.uniffiCloneHandle()
+        } else {
+            // Kotlin object, generate a new vtable handle and return that.
+            return handleMap.insert(value)
+        }
+    }
+
+    override fun lift(value: Long): Greeter {
+        if ((value and 1L) == 0L) {
+            // Rust-generated handle, construct a new class that wraps the handle.
+            return GreeterImpl(value)
+        } else {
+            // Kotlin-generated handle, get the object from the handle map.
+            return handleMap.remove(value)
+        }
+    }
+
+    override fun read(buf: ByteBuffer): Greeter {
+        // The Rust code always writes handles as 8 bytes, and will
+        // fail to compile if they don't fit.
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: Greeter): ULong = 8UL
+
+    override fun write(value: Greeter, buf: ByteBuffer) {
+        // The Rust code always expects handles written as 8 bytes,
+        // and will fail to compile if they don't fit.
+        buf.putLong(lower(value))
+    }
+}
+
+
+// Put the implementation in an object so we don't pollute the top-level namespace
+internal object uniffiCallbackInterfaceGreeter {
+    internal fun `callCount`(
+        `uniffiHandle`: Long,
+        `uniffiOutReturn`: IntByReference,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ) {
+        val uniffiObj = FfiConverterTypeGreeter.handleMap.get(uniffiHandle)
+        val makeCall = { ->
+            uniffiObj.`callCount`(
+            )
+        }
+        val writeReturn = { uniffiResultValue: kotlin.UInt ->
+            uniffiOutReturn.setValue(FfiConverterUInt.lower(uniffiResultValue))
+        }
+        uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+    }
+    
+    internal fun `greeting`(
+        `uniffiHandle`: Long,
+        `name`: RustBufferByValue,
+        `uniffiOutReturn`: RustBuffer,
+        uniffiCallStatus: UniffiRustCallStatus,
+    ) {
+        val uniffiObj = FfiConverterTypeGreeter.handleMap.get(uniffiHandle)
+        val makeCall = { ->
+            uniffiObj.`greeting`(
+                FfiConverterString.lift(`name`),
+            )
+        }
+        val writeReturn = { uniffiResultValue: kotlin.String ->
+            uniffiOutReturn.setValue(FfiConverterString.lower(uniffiResultValue))
+        }
+        uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+    }
+    
+    internal fun uniffiFree(handle: Long) {
+        FfiConverterTypeGreeter.handleMap.remove(handle)
+    }
+
+    internal fun uniffiClone(handle: Long): Long {
+        return FfiConverterTypeGreeter.handleMap.clone(handle)
+    }
+
+    internal val vtable = nativeHeap.alloc<traits.cinterop.UniffiVTableCallbackInterfaceGreeter> {
+        @Suppress("UNCHECKED_CAST")
+        this.`callCount` = staticCFunction {
+            `uniffiHandle`: Long,
+            `uniffiOutReturn`: IntByReference,
+            uniffiCallStatus: UniffiRustCallStatus,
+            ->
+            uniffiCallbackInterfaceGreeter.`callCount`(
+                `uniffiHandle`,
+                `uniffiOutReturn`,
+                uniffiCallStatus,
+            )
+        } as traits.cinterop.UniffiCallbackInterfaceGreeterMethod0
+        @Suppress("UNCHECKED_CAST")
+        this.`greeting` = staticCFunction {
+            `uniffiHandle`: Long,
+            `name`: RustBufferByValue,
+            `uniffiOutReturn`: RustBuffer,
+            uniffiCallStatus: UniffiRustCallStatus,
+            ->
+            uniffiCallbackInterfaceGreeter.`greeting`(
+                `uniffiHandle`,
+                `name`,
+                `uniffiOutReturn`,
+                uniffiCallStatus,
+            )
+        } as traits.cinterop.UniffiCallbackInterfaceGreeterMethod1
+        this.uniffiFree = staticCFunction { handle: Long ->
+            uniffiCallbackInterfaceGreeter.uniffiFree(handle)
+        }
+        this.uniffiClone = staticCFunction { handle: Long ->
+            uniffiCallbackInterfaceGreeter.uniffiClone(handle)
+        }
+    }.ptr
+
+    internal fun register(lib: UniffiLib) {
+        lib.uniffi_traits_fn_init_callback_vtable_greeter(vtable)
+    }
+}
+
+
+public actual fun `greetWith`(`greeter`: Greeter, `name`: kotlin.String): kotlin.String {
+    return FfiConverterString.lift(uniffiRustCall { uniffiRustCallStatus ->
+        UniffiLib.uniffi_traits_fn_func_greet_with(
+            FfiConverterTypeGreeter.lower(`greeter`),
+            FfiConverterString.lower(`name`),
+            uniffiRustCallStatus,
+        )
+    })
+}
+
+public actual fun `makeGreeter`(): Greeter {
+    return FfiConverterTypeGreeter.lift(uniffiRustCall { uniffiRustCallStatus ->
+        UniffiLib.uniffi_traits_fn_func_make_greeter(
+            uniffiRustCallStatus,
+        )
+    })
+}
+
+
+// Async support

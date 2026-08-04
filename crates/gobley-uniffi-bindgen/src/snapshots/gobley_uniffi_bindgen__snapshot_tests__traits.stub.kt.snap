@@ -1,0 +1,60 @@
+---
+source: crates/gobley-uniffi-bindgen/src/snapshot_tests.rs
+expression: "bindings.stub.as_deref().unwrap_or(\"\")"
+---
+
+
+@file:Suppress("RemoveRedundantBackticks")
+
+package uniffi.traits
+
+// Public interface members begin here.
+
+
+
+
+
+
+
+
+public actual open class GreeterImpl: Disposable, Greeter {
+
+    /**
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    public actual constructor(noPointer: NoPointer)
+
+    actual override fun destroy() {
+        TODO()
+    }
+
+    actual override fun close() {
+        TODO()
+    }
+
+    
+    public actual override fun `callCount`(): kotlin.UInt {
+        TODO()
+    }
+
+    public actual override fun `greeting`(`name`: kotlin.String): kotlin.String {
+        TODO()
+    }
+
+
+    
+    
+    public actual companion object
+    
+}
+
+
+public actual fun `greetWith`(`greeter`: Greeter, `name`: kotlin.String): kotlin.String {
+    TODO()
+}
+
+public actual fun `makeGreeter`(): Greeter {
+    TODO()
+}

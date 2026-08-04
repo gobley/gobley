@@ -1,19 +1,30 @@
 
+// Initial value and increment amount for handles.
+// These ensure that Kotlin-generated handles always have the lowest bit set, which
+// distinguishes them from Rust-generated handles (lowest bit clear).
+private const val UNIFFI_HANDLEMAP_INITIAL = 1L
+private const val UNIFFI_HANDLEMAP_DELTA = 2L
+
 internal class UniffiHandleMap<T: Any> {
     private val mapLock = kotlinx.atomicfu.locks.ReentrantLock()
     private val map = HashMap<Long, T>()
 
-    // We'll start at 1L to prevent "Null Pointers" in native's `interpretCPointer`
-    private val counter: kotlinx.atomicfu.AtomicLong = kotlinx.atomicfu.atomic(1L)
+    private val counter: kotlinx.atomicfu.AtomicLong = kotlinx.atomicfu.atomic(UNIFFI_HANDLEMAP_INITIAL)
 
     internal val size: Int
         get() = map.size
 
     // Insert a new object into the handle map and get a handle for it
     internal fun insert(obj: T): Long {
-        val handle = counter.getAndAdd(1)
+        val handle = counter.getAndAdd(UNIFFI_HANDLEMAP_DELTA)
         syncAccess { map.put(handle, obj) }
         return handle
+    }
+
+    // Clone a handle, creating a new one that refers to the same object
+    internal fun clone(handle: Long): Long {
+        val obj = syncAccess { map.get(handle) } ?: throw InternalException("UniffiHandleMap.clone: Invalid handle")
+        return insert(obj)
     }
 
     // Get an object from the handle map
