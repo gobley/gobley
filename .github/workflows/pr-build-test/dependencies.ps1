@@ -5,6 +5,7 @@ if ($IsWindows) {
     choco install -y mingw;
     # Required by :examples:tokio-blake3-app to use Perl to build OpenSSL
     choco install -y msys2;
+    & "C:\tools\msys64\usr\bin\bash.exe" --login -c "pacman -S --needed --noconfirm perl";
     # Check if OpenSSL will complain about backslashes with the perl shipped with MSYS2
     & "C:\tools\msys64\usr\bin\perl.exe" -MFile::Spec::Functions=rel2abs,abs2rel -e "abs2rel(rel2abs('.')) =~ m{\\\\} and die 'This perl does not produce Unix-like paths';"
     # Prepend the path to the directory containing MSYS2 Perl to PATH
