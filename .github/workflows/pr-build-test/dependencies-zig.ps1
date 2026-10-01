@@ -75,6 +75,9 @@ try {
 $actualZigVersion = & $zigBinary version;
 Write-Host "Zig installed: $actualZigVersion";
 
+# Keep the toolchain set in rust-toolchain.toml for test compilations.
+$rustToolchain = (& "rustup" "show" "active-toolchain").Split(' ')[0];
+
 # Prepare compilation test file
 $compilationTestDirectory = Join-Path $zigHome "test-compilation";
 $compilationTestCFilePath = Join-Path $compilationTestDirectory "main.c";
@@ -120,16 +123,16 @@ try {
 
             # Install the Rust target and Compile a Rust program linked using the shell script
             Write-Host "Installting a Rust target $rustTarget...";
-            & "rustup" "target" "add" $rustTarget;
+            & "rustup" "target" "add" $rustTarget "--toolchain" $rustToolchain;
             $rustTargetInstalled = $true;
             Write-Host "Building a test Rust program for $rustTarget linked using Zig...";
-            & "rustc" $compilationTestRustFilePath `
+            & "rustc" "+$rustToolchain" $compilationTestRustFilePath `
                 "--target" $rustTarget         `
                 "-Clinker=$zigCompilerScriptPath";
         } finally {
             # Remove the target so the RustUpTargetAddTask Gradle task can be tested properly
             if ($rustTargetInstalled) {
-                & "rustup" "target" "remove" $rustTarget;
+                & "rustup" "target" "remove" $rustTarget "--toolchain" $rustToolchain;
             }
             Pop-Location;
         }
