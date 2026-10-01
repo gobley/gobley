@@ -109,6 +109,8 @@ jobs:
           java-version: "17"
       - name: Set up the Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install additional required Android SDK packages and configure environment variables
         shell: pwsh
         run: |
