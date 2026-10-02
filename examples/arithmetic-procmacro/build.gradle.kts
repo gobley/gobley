@@ -9,7 +9,7 @@ plugins {
     id("dev.gobley.cargo")
     id("dev.gobley.uniffi")
     alias(libs.plugins.kotlin.atomicfu)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
 cargo {
@@ -35,11 +35,25 @@ uniffi {
 }
 
 kotlin {
-    androidTarget {
+    android {
+        namespace = "dev.gobley.uniffi.examples.arithmeticpm"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+
+        optimization {
+            consumerKeepRules.file("proguard-rules.pro")
+        }
+
+        packaging {
+            resources {
+                excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            }
         }
     }
+
     jvmToolchain(17)
     jvm("desktop")
     arrayOf(
@@ -56,6 +70,7 @@ kotlin {
     androidNativeX86()
     linuxX64()
     linuxArm64()
+
     if (GobleyHost.Platform.MacOS.isCurrent) {
         iosArm64()
         iosSimulatorArm64()
@@ -79,32 +94,5 @@ kotlin {
                 implementation(libs.kotest.assertions.core)
             }
         }
-    }
-}
-
-android {
-    namespace = "dev.gobley.uniffi.examples.arithmeticpm"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        consumerProguardFiles("proguard-rules.pro")
-        ndk.abiFilters.add("arm64-v8a")
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
     }
 }

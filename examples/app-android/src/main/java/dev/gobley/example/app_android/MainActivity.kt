@@ -1,10 +1,4 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
-package gobley.uniffi.examples.app
+package dev.gobley.example.app_android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import gobley.uniffi.examples.app.ContentView
 import gobley.uniffi.examples.todolist.TodoList
 
 class MainActivity : ComponentActivity() {

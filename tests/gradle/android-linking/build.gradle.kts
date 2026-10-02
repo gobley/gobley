@@ -5,12 +5,13 @@ import gobley.gradle.rust.targets.RustAndroidTarget
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("android")
     id("dev.gobley.cargo")
     alias(libs.plugins.android.library)
 }
 
-// Build a library manually to test passing an absolute path to `dynamicLibraries` works well
+val sdkDir = androidComponents.sdkComponents.sdkDirectory.get().asFile
+val ndkDir = androidComponents.sdkComponents.ndkDirectory.get().asFile
+
 val anotherCustomCppLibraryRoot: Directory =
     project.layout.projectDirectory.dir("another-android-linking-cpp")
 val androidTargets = RustAndroidTarget.values()
@@ -21,15 +22,18 @@ val anotherCustomCppLibraryCmakeOutputDirectories = androidTargets.associateWith
 val anotherCustomCppLibraryLocations = anotherCustomCppLibraryCmakeOutputDirectories.mapValues {
     it.value.file("libanother-android-linking-cpp.so")
 }
-val androidSdkCMakeDirectory = android.sdkDirectory
+
+val androidSdkCMakeDirectory = sdkDir
     .resolve("cmake")
     .listFiles()
     ?.firstOrNull { file -> file.name.startsWith("3.") }
     ?.resolve("bin") ?: error("CMake is not installed in Android SDK")
+
 val androidSdkCMake =
     androidSdkCMakeDirectory.resolve(GobleyHost.Platform.current.convertExeName("cmake"))
 val androidSdkNinja =
     androidSdkCMakeDirectory.resolve(GobleyHost.Platform.current.convertExeName("ninja"))
+
 val anotherCustomCppLibraryBuildTasks = androidTargets.associateWith {
     val cmakeOutputDirectory = anotherCustomCppLibraryCmakeOutputDirectories[it]!!
     val libraryLocation = anotherCustomCppLibraryLocations[it]!!
@@ -40,8 +44,8 @@ val anotherCustomCppLibraryBuildTasks = androidTargets.associateWith {
             "-B$cmakeOutputDirectory",
             "-DANDROID_ABI=${it.androidAbiName}",
             "-DANDROID_PLATFORM=29",
-            "-DANDROID_NDK=${android.ndkDirectory}",
-            "-DCMAKE_TOOLCHAIN_FILE=${android.ndkDirectory}/build/cmake/android.toolchain.cmake",
+            "-DANDROID_NDK=$ndkDir",
+            "-DCMAKE_TOOLCHAIN_FILE=$ndkDir/build/cmake/android.toolchain.cmake",
             "-DCMAKE_MAKE_PROGRAM=$androidSdkNinja",
             "-G",
             "Ninja",
@@ -75,19 +79,10 @@ cargo {
     }
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-    }
-    sourceSets {
-        androidTest {
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.androidx.test.core)
-                implementation(libs.androidx.test.runner)
-            }
-        }
-    }
+dependencies {
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 android {
@@ -109,6 +104,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     externalNativeBuild {

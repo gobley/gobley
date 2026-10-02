@@ -7,19 +7,32 @@ import org.jetbrains.kotlin.konan.target.Architecture
 plugins {
     kotlin("multiplatform")
     id("dev.gobley.rust")
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose.compiler)
 }
 
 kotlin {
     applyDefaultHierarchyTemplate()
-    androidTarget {
+
+    android {
+        namespace = "dev.gobley.uniffi.examples.app"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = 24
+
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
+
+        packaging {
+            resources {
+                excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            }
         }
     }
+
     jvmToolchain(17)
     jvm()
+
     arrayOf(
         mingwX64(),
     ).forEach {
@@ -118,13 +131,12 @@ kotlin {
         androidNativeX86(),
     ).forEach {
         it.binaries.configureEach {
-            // Find the directory containing libunwind.a
             val ndkHostTag = when (GobleyHost.Platform.current) {
                 GobleyHost.Platform.Windows -> "windows-x86_64"
                 GobleyHost.Platform.MacOS -> "darwin-x86_64"
                 GobleyHost.Platform.Linux -> "linux-x86_64"
             }
-            val toolchainDir = android.ndkDirectory
+            val toolchainDir = androidComponents.sdkComponents.ndkDirectory.get().asFile
                 .resolve("toolchains/llvm/prebuilt")
                 .resolve(ndkHostTag)
             val clangResourceDir = toolchainDir
@@ -145,30 +157,6 @@ kotlin {
             linkerOpts("-L${clangRuntimeDir.absolutePath}")
         }
     }
-
-    // TODO: Generate .def file with pkg-config automatically
-    // macOS: brew install pkg-config gtk4
-    // Debian: apt install pkg-config libgtk-4-dev
-    //
-    // headers = gtk/gtk.h
-    // compilerOpts = $(pkg-config --cflags gtk4)
-    // linkerOpts = $(pkg-config --libs gtk4)
-    //
-    // TODO: Support cross-compilation
-    // arrayOf(
-    //     linuxX64(),
-    //     linuxArm64(),
-    // ).forEach {
-    //     it.binaries.executable {
-    //         entryPoint = "gobley.uniffi.examples.app.main"
-    //     }
-    //     it.compilations.getByName("main") {
-    //         cinterops.register("gtk") {
-    //             defFile("src/gtkMain/cinterop/gtk.def")
-    //             packageName("org.gnome.gitlab.gtk")
-    //         }
-    //     }
-    // }
 
     if (GobleyHost.Platform.MacOS.isCurrent) {
         arrayOf(
@@ -213,7 +201,6 @@ kotlin {
         }
 
         commonTest {
-            // TODO: Test the following in a dedicated test, not in an example. See #52 for more details.
             kotlin.srcDir(project.layout.projectDirectory.dir("../arithmetic-procmacro/src/commonTest/kotlin"))
             kotlin.srcDir(project.layout.projectDirectory.dir("../todolist/src/commonTest/kotlin"))
             dependencies {
@@ -231,11 +218,6 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
 
-        // val gtkMain by creating
-        // linuxMain {
-        //     dependsOn(gtkMain)
-        // }
-
         val cmdlineMain by creating {
             dependsOn(commonMain.get())
         }
@@ -250,41 +232,4 @@ kotlin {
 
 composeCompiler {
     targetKotlinPlatforms = setOf(KotlinPlatformType.androidJvm)
-}
-
-android {
-    namespace = "dev.gobley.uniffi.examples.app"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        applicationId = "dev.gobley.uniffi.examples.app"
-        minSdk = 24
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1"
-        ndk.abiFilters.add("arm64-v8a")
-    }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    buildTypes {
-        getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
 }

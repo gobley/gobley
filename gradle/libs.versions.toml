@@ -1,7 +1,7 @@
 [versions]
 
-kotlin = "2.1.10"
-agp = "8.7.3"
+kotlin = "2.1.21"
+agp = "9.1.0"
 
 buildconfig = "5.5.1"
 vanniktech-maven-publish = "0.31.0"
@@ -31,11 +31,19 @@ compose-multiplatform = "1.7.3"
 compose-material3 = "1.3.1"
 
 kotest = "5.9.1"
+coreKtx = "1.17.0"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.6.1"
+composeBom = "2024.09.00"
+appcompat = "1.6.1"
+material = "1.10.0"
 
 [plugins]
 
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

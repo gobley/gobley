@@ -10,6 +10,7 @@ import gobley.gradle.InternalGobleyGradleApi
 import gobley.gradle.cargo.tasks.CargoPackageTask
 import gobley.gradle.uniffi.Config
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -18,21 +19,47 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
+import javax.inject.Inject
 
 @CacheableTask
 abstract class BuildUniffiBindingsTask : CargoPackageTask() {
-    /**
-     * Directory in which to write generated files. Default is same folder as .udl file.
-     */
+
+    @get:Internal
+    abstract val rawOutputDirectory: DirectoryProperty
+
     @get:OutputDirectory
-    @get:Optional
-    abstract val outputDirectory: DirectoryProperty
+    abstract val commonMainOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val mainOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val jvmMainOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val androidMainOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val nativeMainOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val stubMainOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val cinteropOutputDir: DirectoryProperty
+
+    @get:Input
+    abstract val multiplatformMode: Property<Boolean>
+
+    @get:Inject
+    abstract val fsOperations: FileSystemOperations
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -106,8 +133,8 @@ abstract class BuildUniffiBindingsTask : CargoPackageTask() {
         @OptIn(InternalGobleyGradleApi::class)
         command(bindgen) {
             workingDirectory(root)
-            if (outputDirectory.isPresent) {
-                arguments("--out-dir", outputDirectory.get())
+            if (rawOutputDirectory.isPresent) {
+                arguments("--out-dir", rawOutputDirectory.get())
             }
             if (config.isPresent) {
                 val configFile = config.get()
@@ -147,10 +174,39 @@ abstract class BuildUniffiBindingsTask : CargoPackageTask() {
             suppressXcodeIosToolchains()
         }.get().assertNormalExitValue()
 
-        val defFilePath =
-            outputDirectory.get().file("nativeInterop/cinterop/${libraryCrateName.get()}.def")
+        val defFilePath = rawOutputDirectory.get().file("nativeInterop/cinterop/${libraryCrateName.get()}.def")
         val defFileFile = defFilePath.asFile
         defFileFile.parentFile?.mkdirs()
         defFileFile.writeText("staticLibraries = lib${libraryCrateName.get()}.a\n")
+
+        if (multiplatformMode.get()) {
+            val sourceSets = listOf(
+                "commonMain" to commonMainOutputDir,
+                "main" to mainOutputDir,
+                "jvmMain" to jvmMainOutputDir,
+                "androidMain" to androidMainOutputDir,
+                "nativeMain" to nativeMainOutputDir,
+                "stubMain" to stubMainOutputDir
+            )
+
+            sourceSets.forEach { (sourceSetName, outputDir) ->
+                fsOperations.sync {
+                    from(rawOutputDirectory.dir("$sourceSetName/kotlin"))
+                    into(outputDir)
+                }
+            }
+        } else {
+            fsOperations.sync {
+                from(rawOutputDirectory.dir("main/kotlin")) {
+                    include("**/*.kt")
+                }
+                into(mainOutputDir)
+            }
+        }
+
+        fsOperations.sync {
+            from(rawOutputDirectory.dir("nativeInterop/cinterop"))
+            into(cinteropOutputDir)
+        }
     }
 }

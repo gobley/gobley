@@ -206,10 +206,10 @@ val Task.variant: Variant?
         }
     }
 
-fun <T> NamedDomainObjectContainer<T>.getByVariant(variant: Variant, postfix: String = ""): T {
+fun <T : Any> NamedDomainObjectContainer<T>.getByVariant(variant: Variant, postfix: String = ""): T {
     return getByName(variant.name.lowercase() + postfix.uppercaseFirstChar())
 }
 
-fun <T> NamedDomainObjectContainer<T>.getByVariant(prefix: String, variant: Variant, postfix: String = ""): T {
+fun <T : Any> NamedDomainObjectContainer<T>.getByVariant(prefix: String, variant: Variant, postfix: String = ""): T {
     return getByName(prefix + variant.name.lowercase().uppercaseFirstChar() + postfix.uppercaseFirstChar())
 }

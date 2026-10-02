@@ -62,9 +62,8 @@ private fun GobleyKotlinSourceSetCollection(
         override val commonMain: KotlinSourceSet
             get() = sourceSets.getByName("commonMain")
 
-        private fun androidTarget(): KotlinAndroidTarget {
-            return targets.filterIsInstance<KotlinAndroidTarget>().firstOrNull()
-                ?: error("Android target not present")
+        private fun androidTarget(): KotlinTarget {
+            return targets.firstOrNull { it.platformType == KotlinPlatformType.androidJvm } ?: error("Android target not present")
         }
 
         override fun androidMain(variant: Variant?): KotlinSourceSet {
