@@ -11,7 +11,10 @@ cargo {
     builds.jvm {
         resourcePrefix = ""
         embedRustLibrary = rustTarget == GobleyHost.current.rustTarget
-        dynamicLibraries.add("gobley-fixture-gradle-jvm-only-cpp")
+        dynamicLibraries.addAll(
+            "gobley-fixture-gradle-jvm-only-cpp",
+            "gobley-fixture-gradle-jvm-only-cpp-2",
+        )
     }
 }
 

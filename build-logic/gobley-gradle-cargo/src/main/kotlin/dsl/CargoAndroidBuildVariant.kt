@@ -6,6 +6,7 @@
 
 package gobley.gradle.cargo.dsl
 
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import gobley.gradle.Variant
 import gobley.gradle.cargo.tasks.FindDynamicLibrariesTask
 import gobley.gradle.cargo.utils.register
@@ -35,5 +36,9 @@ abstract class CargoAndroidBuildVariant @Inject constructor(
         rustTarget.set(this@CargoAndroidBuildVariant.rustTarget)
         libraryNames.set(this@CargoAndroidBuildVariant.dynamicLibraries)
         searchPaths.set(this@CargoAndroidBuildVariant.dynamicLibrarySearchPaths)
+    }
+    
+    init {
+        findDynamicLibrariesTaskProvider.dependsOn(buildTaskProvider)
     }
 }

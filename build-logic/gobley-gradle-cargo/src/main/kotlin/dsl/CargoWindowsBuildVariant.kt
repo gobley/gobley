@@ -6,6 +6,7 @@
 
 package gobley.gradle.cargo.dsl
 
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import gobley.gradle.Variant
 import gobley.gradle.cargo.tasks.FindDynamicLibrariesTask
 import gobley.gradle.cargo.utils.register
@@ -25,7 +26,12 @@ abstract class CargoWindowsBuildVariant @Inject constructor(
     build: CargoWindowsBuild,
     variant: Variant,
     extension: CargoExtension,
-) : DefaultCargoBuildVariant<RustWindowsTarget, CargoWindowsBuild>(project, build, variant, extension),
+) : DefaultCargoBuildVariant<RustWindowsTarget, CargoWindowsBuild>(
+    project,
+    build,
+    variant,
+    extension
+),
     CargoJvmBuildVariant<RustWindowsTarget> {
     init {
         dynamicLibraries.addAll(build.dynamicLibraries)
@@ -35,12 +41,17 @@ abstract class CargoWindowsBuildVariant @Inject constructor(
         androidUnitTest.convention(build.androidUnitTest)
     }
 
-    override val findDynamicLibrariesTaskProvider = project.tasks.register<FindDynamicLibrariesTask>({
-        +this@CargoWindowsBuildVariant
-    }) {
-        rustTarget.set(this@CargoWindowsBuildVariant.rustTarget)
-        libraryNames.set(this@CargoWindowsBuildVariant.dynamicLibraries)
-        searchPaths.set(this@CargoWindowsBuildVariant.dynamicLibrarySearchPaths)
+    override val findDynamicLibrariesTaskProvider =
+        project.tasks.register<FindDynamicLibrariesTask>({
+            +this@CargoWindowsBuildVariant
+        }) {
+            rustTarget.set(this@CargoWindowsBuildVariant.rustTarget)
+            libraryNames.set(this@CargoWindowsBuildVariant.dynamicLibraries)
+            searchPaths.set(this@CargoWindowsBuildVariant.dynamicLibrarySearchPaths)
+        }
+    
+    init {
+        findDynamicLibrariesTaskProvider.dependsOn(buildTaskProvider)
     }
 
     override val libraryFiles: Provider<List<File>> = project.objects.listProperty<File>().apply {
