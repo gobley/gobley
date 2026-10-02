@@ -71,22 +71,23 @@ internal object {{ trait_impl }} {
                 )
             }
 
-            uniffiOutReturn.uniffiSetValue(
-                {%- match meth.throws_type() %}
-                {%- when None %}
-                uniffiTraitInterfaceCallAsync(
-                    makeCall,
-                    uniffiHandleSuccess,
-                    uniffiHandleError
-                )
-                {%- when Some(error_type) %}
-                uniffiTraitInterfaceCallAsyncWithError(
-                    makeCall,
-                    uniffiHandleSuccess,
-                    uniffiHandleError,
-                ) { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) }
-                {%- endmatch %}
+            {%- match meth.throws_type() %}
+            {%- when None %}
+            uniffiTraitInterfaceCallAsync(
+                makeCall,
+                uniffiHandleSuccess,
+                uniffiHandleError,
+                uniffiOutDroppedCallback,
             )
+            {%- when Some(error_type) %}
+            uniffiTraitInterfaceCallAsyncWithError(
+                makeCall,
+                uniffiHandleSuccess,
+                uniffiHandleError,
+                { e: {{error_type|type_name(ci) }} -> {{ error_type|lower_fn }}(e) },
+                uniffiOutDroppedCallback,
+            )
+            {%- endmatch %}
             {%- endif %}
         }
     }
@@ -97,11 +98,18 @@ internal object {{ trait_impl }} {
         }
     }
 
+    internal object uniffiClone: {{ "CallbackInterfaceClone"|ffi_callback_name }} {
+        override fun callback(handle: Long): Long {
+            return {{ ffi_converter_name }}.handleMap.clone(handle)
+        }
+    }
+
     internal val vtable = {{ vtable|ffi_type_name(ci) }}(
+        uniffiFree,
+        uniffiClone,
         {%- for (ffi_callback, meth) in vtable_methods.iter() %}
         {{ meth.name()|var_name() }},
         {%- endfor %}
-        uniffiFree,
     )
 
     internal fun register(lib: UniffiLib) {

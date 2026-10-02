@@ -93,7 +93,7 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    [dependencies]
    # We need to add this.
-   uniffi = "0.29.4"
+   uniffi = "0.31.2"
 
    # This as well.
    [lib]
@@ -104,7 +104,7 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    Let's see what each part of the modification does:
 
-    - `uniffi = "0.29.4"` downloads UniFFI, the library used to generate the Kotlin code (the "
+    - `uniffi = "0.31.2"` downloads UniFFI, the library used to generate the Kotlin code (the "
       bindings") that calls the Rust library.
     - `crate-type = ["cdylib"]` will make Cargo generate a `.dll` (Windows), `.dylib` (macOS), or
       `.so` (Linux) file that can be used by Gobley.
@@ -118,8 +118,8 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    plugins {
        kotlin("jvm") version "<kotlin version>"
-       id("dev.gobley.cargo") version "0.3.7"
-       id("dev.gobley.uniffi") version "0.3.7"
+       id("dev.gobley.cargo") version "0.4.0"
+       id("dev.gobley.uniffi") version "0.4.0"
        kotlin("plugin.atomicfu") version "<kotlin version>"
    }
 

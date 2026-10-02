@@ -13,7 +13,7 @@
 {% else -%}
 {{ visibility() }}actual open class {{ impl_class_name }}: Disposable, {{ interface_name }}
 {%- for t in obj.trait_impls() -%}
-, {{ self::trait_interface_name(ci, t.trait_name)? }}
+, {{ self::object_trait_impl_interface_name(ci, t)? }}
 {%- endfor %} {
 {%- endif %}
 

@@ -86,7 +86,7 @@ Let's add a Cargo package to the Kotlin/JVM project.
 
    [dependencies]
    # We need to add this.
-   uniffi = "0.29.4"
+   uniffi = "0.31.2"
 
    # This as well.
    [lib]
@@ -108,8 +108,8 @@ Let's add a Cargo package to the Kotlin/JVM project.
    ```kotlin
    plugins {
        // Other plugins here
-       id("dev.gobley.cargo") version "0.3.7"
-       id("dev.gobley.uniffi") version "0.3.7"
+       id("dev.gobley.cargo") version "0.4.0"
+       id("dev.gobley.uniffi") version "0.4.0"
        kotlin("plugin.atomicfu") version libs.versions.kotlin
    }
    ```

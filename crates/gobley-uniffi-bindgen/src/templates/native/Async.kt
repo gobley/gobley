@@ -6,7 +6,7 @@ internal val uniffiRustFutureContinuationCallbackCallback = staticCFunction { ha
 
 {%- if ci.has_async_callback_interface_definition() %}
 
-internal val uniffiForeignFutureFreeImpl = staticCFunction { handle: Long ->
+internal val uniffiForeignFutureDroppedCallbackImpl = staticCFunction { handle: Long ->
     val job = uniffiForeignFutureHandleMap.remove(handle)
     if (!job.isCompleted) {
         job.cancel()

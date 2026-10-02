@@ -100,7 +100,7 @@ Let's add a Cargo package to the Kotlin Multiplatform project.
 
    [dependencies]
    # We need to add this.
-   uniffi = "0.29.4"
+   uniffi = "0.31.2"
 
    # This as well.
    [lib]
@@ -111,7 +111,7 @@ Let's add a Cargo package to the Kotlin Multiplatform project.
 
    Let's see what each part of the modification does:
 
-    - `uniffi = "0.29.4"` downloads UniFFI, the library used to generate the Kotlin code (the "
+    - `uniffi = "0.31.2"` downloads UniFFI, the library used to generate the Kotlin code (the "
       bindings") that calls the Rust library.
     - `crate-type = ["cdylib", "staticlib"]` will make Cargo generate a `.a` (static library) file
       and a `.so`/`.dylib` (dynamic library) file that can be used by Gobley. Gobley uses the static
@@ -123,8 +123,8 @@ Let's add a Cargo package to the Kotlin Multiplatform project.
    ```kotlin
    plugins {
        // Other plugins here
-       id("dev.gobley.cargo") version "0.3.7"
-       id("dev.gobley.uniffi") version "0.3.7"
+       id("dev.gobley.cargo") version "0.4.0"
+       id("dev.gobley.uniffi") version "0.4.0"
        kotlin("plugin.atomicfu") version libs.versions.kotlin
    }
    ```

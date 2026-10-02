@@ -35,3 +35,37 @@ impl CodeType for ObjectCodeType {
             .then(|| format!("uniffiCallbackInterface{}.register", self.name))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use uniffi_bindgen::interface::DefaultValue;
+
+    use crate::gen_kotlin_multiplatform::Config;
+
+    #[test]
+    fn bare_default_rejected_for_objects() {
+        // An object's generated constructor takes an internal handle, so there is no public
+        // no-argument constructor to synthesize a default from. A bare `#[uniffi(default)]` must
+        // therefore fail at generation time rather than emit uncompilable `Widget()`.
+        let ci = ComponentInterface::from_webidl(
+            r#"
+namespace test {};
+
+interface Widget {
+    constructor();
+};
+"#,
+            "test",
+        )
+        .expect("valid UDL fixture");
+        let code_type = ObjectCodeType::new("Widget".to_string(), ObjectImpl::Struct);
+        let error = code_type
+            .default(&DefaultValue::Default, &ci, &Config::default())
+            .expect_err("objects must reject a bare default");
+        assert!(
+            error.to_string().contains("Widget"),
+            "error should name the offending object, got: {error}"
+        );
+    }
+}

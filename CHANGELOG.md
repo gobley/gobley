@@ -2,6 +2,20 @@
 
 ## [Unreleased](https://github.com/gobley/gobley/compare/v0.3.7...HEAD)
 
+### Dependencies
+
+- Upgraded the targeted UniFFI version from 0.29.5 to 0.31.2.
+
+### Behavior Changes
+
+- Migrated `gobley-uniffi-bindgen` to the UniFFI 0.31 object ABI. Object and trait/callback interface
+  instances now cross the FFI as opaque 64-bit handles (Kotlin `Long`) instead of pointers, the
+  callback interface VTable layout was reordered to `free, clone, methods…` and gained a `clone`
+  entry, and foreign-implemented handles are now disambiguated from Rust handles via the lowest bit.
+  This is a breaking change for generated bindings: consumers must regenerate their bindings and
+  rebuild the matching Rust scaffolding together. The bindgen and Gradle plugin version is bumped to
+  0.4.0 accordingly.
+
 ## [0.3.7](https://github.com/gobley/gobley/releases/tag/v0.3.7) - 2025-10-08
 
 ### Fixes

@@ -10,7 +10,7 @@ crate-type = ["staticlib", "cdylib"]
 path = "src/commonMain/rust/lib.rs"
 
 [dependencies]
-uniffi = { workspace = true }
+uniffi = { workspace = true, features = ["wasm-unstable-single-threaded"] }
 once_cell = { workspace = true }
 thiserror = { workspace = true }
 
