@@ -7,7 +7,6 @@
 package gobley.gradle.android
 
 import com.android.build.api.dsl.ApplicationBuildType
-import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
@@ -119,50 +118,32 @@ private class GobleyAndroidExtensionDelegateImpl(project: Project) :
         proguardFile: RegularFile,
         generationTask: TaskProvider<*>,
     ) {
-        androidExtension.buildTypes.configureEach { buildType ->
-            addProguardFilesToBuildType(project, proguardFile, buildType, generationTask)
-        }
-    }
-
-    private fun addProguardFilesToBuildType(
-        project: Project,
-        proguardFile: RegularFile,
-        buildType: BuildType,
-        generationTask: TaskProvider<*>,
-    ) {
         // For some reason, androidExtension.buildTypes.getByName returns a internal BuildType
         // that implements both ApplicationBuildType and LibraryBuildType.
-
-        if (buildType is ApplicationBuildType) {
-            buildType.proguardFile(proguardFile)
+        androidExtension.buildTypes.configureEach { buildType ->
+            if (buildType is ApplicationBuildType) {
+                buildType.proguardFile(proguardFile)
+            }
+            if (buildType is LibraryBuildType) {
+                buildType.consumerProguardFile(proguardFile)
+            }
         }
 
         // extractProguardFiles
-        project.tasks.withType<ExtractProguardFiles> {
-            dependsOn(generationTask)
+        project.tasks.withType<ExtractProguardFiles>().configureEach { task ->
+            task.dependsOn(generationTask)
         }
         // lintVitalAnalyze<variant>
-        project.tasks.withType<AndroidLintAnalysisTask> {
-            if (name.lowercase().contains(buildType.name.lowercase())) {
-                dependsOn(generationTask)
-            }
+        project.tasks.withType<AndroidLintAnalysisTask>().configureEach { task ->
+            task.dependsOn(generationTask)
         }
-
-        if (buildType is LibraryBuildType) {
-            buildType.consumerProguardFile(proguardFile)
-        }
-
         // merge<variant>ConsumerProguardFiles
-        project.tasks.withType<MergeConsumerProguardFilesTask> {
-            if (name.lowercase().contains(buildType.name.lowercase())) {
-                dependsOn(generationTask)
-            }
+        project.tasks.withType<MergeConsumerProguardFilesTask>().configureEach { task ->
+            task.dependsOn(generationTask)
         }
         // generate<variant>LintModel
-        project.tasks.withType<LintModelWriterTask> {
-            if (name.lowercase().contains(buildType.name.lowercase())) {
-                dependsOn(generationTask)
-            }
+        project.tasks.withType<LintModelWriterTask>().configureEach { task ->
+            task.dependsOn(generationTask)
         }
     }
 }
