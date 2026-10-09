@@ -45,4 +45,13 @@ fn take_bytes(v: Vec<u8>) -> Vec<u8> {
     v
 }
 
+// A custom type over u16 whose Kotlin binding maps it to Int (see uniffi.toml).
+pub struct Port(pub u16);
+uniffi::custom_newtype!(Port, u16);
+
+#[uniffi::export]
+fn take_port(v: Port) -> Port {
+    v
+}
+
 uniffi::include_scaffolding!("type-limits");

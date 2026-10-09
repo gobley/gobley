@@ -1,1 +1,6 @@
 package_name = "type_limits"
+
+[custom_types.Port]
+type_name = "Int"
+lift = "{}.toInt()"
+lower = "{}.toUShort()"

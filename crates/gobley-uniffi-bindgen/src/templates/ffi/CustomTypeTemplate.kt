@@ -7,6 +7,7 @@
 {%- when Some(config) %}
 
 {%- let ffi_type_name=builtin|ffi_type|ref|ffi_type_name_by_value(ci) %}
+{%- let direct_return_type_name=builtin|ffi_type|ref|ffi_type_name_for_direct_return(ci) %}
 
 {# When the config specifies a different type name, create a typealias for it #}
 
@@ -23,6 +24,13 @@
         val builtinValue = {{ builtin|lift_fn }}(value)
         return {{ config.lift("builtinValue") }}
     }
+
+    {%- if direct_return_type_name != ffi_type_name %}
+
+    {{ visibility() }}fun lift(value: {{ direct_return_type_name }}): {{ type_name }} {
+        return lift(value.to{{ ffi_type_name }}())
+    }
+    {%- endif %}
 
     override fun lower(value: {{ type_name }}): {{ ffi_type_name }} {
         val builtinValue = {{ config.lower("value") }}
