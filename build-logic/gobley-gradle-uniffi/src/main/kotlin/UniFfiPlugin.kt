@@ -15,6 +15,8 @@ import gobley.gradle.cargo.dsl.CargoExtension
 import gobley.gradle.cargo.dsl.CargoJvmBuild
 import gobley.gradle.cargo.dsl.CargoNativeBuild
 import gobley.gradle.kotlin.GobleyKotlinExtensionDelegate
+import gobley.gradle.kotlin.gobleyPlatformType
+import gobley.gradle.kotlin.isGobleyAndroidTarget
 import gobley.gradle.rust.CrateType
 import gobley.gradle.rust.targets.RustTarget
 import gobley.gradle.rust.targets.RustWasmTarget
@@ -48,7 +50,6 @@ import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
@@ -58,6 +59,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 private const val TASK_GROUP = "uniffi"
 
+@OptIn(InternalGobleyGradleApi::class)
 class UniFfiPlugin : Plugin<Project> {
     private lateinit var uniFfiExtension: UniFfiExtension
     private lateinit var bindingsGeneration: BindingsGeneration
@@ -138,13 +140,13 @@ class UniFfiPlugin : Plugin<Project> {
     @OptIn(InternalGobleyGradleApi::class)
     private fun Project.checkKotlinTargets() {
         val hasJsTargets =
-            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.js }
+            kotlinExtensionDelegate.targets.any { it.gobleyPlatformType == KotlinPlatformType.js }
         if (hasJsTargets) {
             project.logger.warn("JS targets are added, but the UniFFI plugin does not support JS targets yet.")
         }
 
         val hasWasmTargets =
-            kotlinExtensionDelegate.targets.any { it.platformType == KotlinPlatformType.wasm }
+            kotlinExtensionDelegate.targets.any { it.gobleyPlatformType == KotlinPlatformType.wasm }
         if (hasWasmTargets) {
             project.logger.warn("WASM targets are added, but the UniFFI plugin does not support WASM targets yet.")
         }
@@ -159,7 +161,7 @@ class UniFfiPlugin : Plugin<Project> {
 
             @OptIn(InternalGobleyGradleApi::class)
             val hasJvmTarget = kotlinExtensionDelegate.targets.any {
-                it is KotlinJvmTarget || it is KotlinWithJavaTarget<*, *>
+                (it is KotlinJvmTarget || it is KotlinWithJavaTarget<*, *>) && !it.isGobleyAndroidTarget
             }
 
             val jvmTargetsToBuild = when {
@@ -191,10 +193,10 @@ class UniFfiPlugin : Plugin<Project> {
             ?: throw GradleException("Cargo build for $buildRustTarget not available")
 
         val availableVariants = build.kotlinTargets.flatMap {
-            when (it) {
-                is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
-                is KotlinAndroidTarget -> Variant.values().toList()
-                is KotlinNativeTarget -> listOf((build as CargoNativeBuild<*>).nativeVariant.get())
+            when (it.gobleyPlatformType) {
+                KotlinPlatformType.jvm -> listOf((build as CargoJvmBuild<*>).jvmVariant.get())
+                KotlinPlatformType.androidJvm -> Variant.values().toList()
+                KotlinPlatformType.native -> listOf((build as CargoNativeBuild<*>).nativeVariant.get())
                 else -> emptyList<Variant>()
             }
         }.distinct()
@@ -253,11 +255,11 @@ class UniFfiPlugin : Plugin<Project> {
             @OptIn(InternalGobleyGradleApi::class)
             kotlinTargets.set(
                 kotlinExtensionDelegate.targets.mapNotNull {
-                    when (it) {
-                        is KotlinMetadataTarget -> null
-                        is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> "jvm"
-                        is KotlinAndroidTarget -> "android"
-                        is KotlinNativeTarget -> "native"
+                    when {
+                        it is KotlinMetadataTarget -> null
+                        it.gobleyPlatformType == KotlinPlatformType.jvm -> "jvm"
+                        it.gobleyPlatformType == KotlinPlatformType.androidJvm -> "android"
+                        it is KotlinNativeTarget -> "native"
                         else -> "stub"
                     }
                 }
@@ -387,23 +389,23 @@ class UniFfiPlugin : Plugin<Project> {
 
         @OptIn(InternalGobleyGradleApi::class)
         kotlinExtensionDelegate.targets.configureEach {
-            when (this) {
-                is KotlinMetadataTarget -> configureKotlinCommonTarget()
-                is KotlinJvmTarget, is KotlinWithJavaTarget<*, *> -> {
+            when {
+                this is KotlinMetadataTarget -> configureKotlinCommonTarget()
+                gobleyPlatformType == KotlinPlatformType.jvm -> {
                     if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_JVM) {
                         configureKotlinCommonTarget()
                     }
                     configureKotlinJvmTarget()
                 }
 
-                is KotlinAndroidTarget -> {
+                gobleyPlatformType == KotlinPlatformType.androidJvm -> {
                     if (kotlinExtensionDelegate.pluginId == PluginIds.KOTLIN_ANDROID) {
                         configureKotlinCommonTarget()
                     }
                     configureKotlinAndroidTarget()
                 }
 
-                is KotlinNativeTarget -> configureKotlinNativeTarget(
+                this is KotlinNativeTarget -> configureKotlinNativeTarget(
                     this,
                     dummyDefFile,
                     generateDummyDefFileTask,

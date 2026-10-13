@@ -1,0 +1,14 @@
+[package]
+name = "gobley-fixture-gradle-android-kmp-library"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "gobley_fixture_gradle_android_kmp_library"
+crate-type = ["cdylib"]
+path = "src/main/rust/lib.rs"
+
+[dependencies]
+
+[workspace]

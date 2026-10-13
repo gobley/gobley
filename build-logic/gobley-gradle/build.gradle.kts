@@ -30,6 +30,7 @@ dependencies {
     compileOnly(plugin(libs.plugins.kotlin.multiplatform))
     compileOnly(plugin(libs.plugins.android.application))
     compileOnly(plugin(libs.plugins.android.library))
+    compileOnly(plugin(libs.plugins.android.kotlin.multiplatform.library))
 
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.semver)
@@ -82,6 +83,7 @@ buildConfig {
         buildConfigField("String", "KOTLIN_SERIALIZATION", "\"${libs.plugins.kotlin.serialization.get().pluginId}\"")
         buildConfigField("String", "ANDROID_APPLICATION", "\"${libs.plugins.android.application.get().pluginId}\"")
         buildConfigField("String", "ANDROID_LIBRARY", "\"${libs.plugins.android.library.get().pluginId}\"")
+        buildConfigField("String", "ANDROID_KOTLIN_MULTIPLATFORM_LIBRARY", "\"${libs.plugins.android.kotlin.multiplatform.library.get().pluginId}\"")
         buildConfigField("String", "GOBLEY_RUST", "\"dev.gobley.rust\"")
         buildConfigField("String", "GOBLEY_CARGO", "\"dev.gobley.cargo\"")
         buildConfigField("String", "GOBLEY_UNIFFI", "\"dev.gobley.uniffi\"")

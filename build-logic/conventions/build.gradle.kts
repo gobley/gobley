@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation(plugin(libs.plugins.kotlin.multiplatform))
     implementation(plugin(libs.plugins.kotlin.atomicfu))
+    implementation(plugin(libs.plugins.android.library))
 
     implementation(project(":gobley-gradle-uniffi"))
 
