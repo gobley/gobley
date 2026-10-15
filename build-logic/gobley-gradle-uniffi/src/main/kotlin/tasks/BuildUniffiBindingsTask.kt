@@ -88,6 +88,14 @@ abstract class BuildUniffiBindingsTask : CargoPackageTask() {
     val crateName: Provider<String> = cargoPackage.map { it.libraryCrateName }
 
     /**
+     * When true and in library mode, generate bindings for all namespaces/crates
+     * found in the library, not just the main crate.
+     */
+    @get:Input
+    @get:Optional
+    abstract val generateAllNamespaces: Property<Boolean>
+
+    /**
      * Path to the UDL file, or cdylib if `library-mode` is specified
      */
     @get:InputFile
@@ -137,7 +145,9 @@ abstract class BuildUniffiBindingsTask : CargoPackageTask() {
             if (libraryMode.get()) {
                 arguments("--library")
             }
-            if (crateName.isPresent) {
+            // Only pass --crate if we're not generating all namespaces
+            val shouldGenerateAllNamespaces = generateAllNamespaces.orNull ?: false
+            if (crateName.isPresent && !shouldGenerateAllNamespaces) {
                 arguments("--crate", crateName.get())
             }
             if (formatCode.isPresent && formatCode.get()) {

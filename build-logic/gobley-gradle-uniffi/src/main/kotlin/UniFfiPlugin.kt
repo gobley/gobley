@@ -317,6 +317,7 @@ class UniFfiPlugin : Plugin<Project> {
                 is BindingsGenerationFromLibrary -> {
                     libraryMode.set(true)
                     source.set(bindingsOutputFile)
+                    generateAllNamespaces.set(bindingsGeneration.generateAllNamespaces)
                 }
             }
             dependsOn(cargoBuildTaskForBindings, installBindgen, mergeUniffiConfig)
