@@ -152,26 +152,7 @@ abstract class CargoBuildTask : CargoPackageTask() {
         for (message in messages) {
             when (message) {
                 is CargoMessage.BuildScriptExecuted -> {
-                    val buildScriptOutput = File(message.outDir).parentFile?.resolve("output")
-                        ?.readLines(Charsets.UTF_8)
-                    if (buildScriptOutput != null) {
-                        for (line in buildScriptOutput) {
-                            val searchPath = line
-                                .substringAfter("cargo:", "")
-                                .trim(':')
-                                .substringAfter("rustc-link-search=", "")
-                                .takeIf(String::isNotEmpty)
-                                ?.replace("\\", "/")
-                                ?.split('=')
-                            when (searchPath?.size) {
-                                1 -> librarySearchPaths.add(searchPath[0])
-                                2 -> if (searchPath[1] != "crate" && searchPath[1] != "dependency") {
-                                    librarySearchPaths.add(searchPath[1])
-                                }
-                            }
-                        }
-                    }
-
+                    librarySearchPaths.addAll(message.librarySearchPaths())
                 }
 
                 is CargoMessage.CompilerMessage -> {
@@ -236,6 +217,21 @@ abstract class CargoBuildTask : CargoPackageTask() {
                     writer.write(message.outDir)
                 }
             }
+        }
+    }
+}
+
+internal fun CargoMessage.BuildScriptExecuted.librarySearchPaths(): List<String> {
+    return linkedPaths.mapNotNull { linkedPath ->
+        val searchPath = linkedPath.replace("\\", "/").split('=')
+        when (searchPath.size) {
+            1 -> searchPath[0]
+            2 -> if (searchPath[0] != "crate" && searchPath[0] != "dependency") {
+                searchPath[1]
+            } else {
+                null
+            }
+            else -> null
         }
     }
 }
