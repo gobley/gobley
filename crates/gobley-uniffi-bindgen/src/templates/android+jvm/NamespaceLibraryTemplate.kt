@@ -69,8 +69,39 @@ private fun findLibraryName(componentName: String): String {
     if (libOverride != null) {
         return libOverride
     }
+    {%- if module_name == "jvm" %}
+    bundledLibrary.value?.let { return it.absolutePath }
+    {%- endif %}
     return "{{ config.cdylib_name() }}"
 }
+{%- if module_name == "jvm" %}
+
+// The library bundled in the class path, extracted to a temporary file when it is inside a JAR file.
+// JNA looks a library up in the system library paths before the class path, and on macOS and Windows
+// these include the working directory, so a library with the same name placed there would be loaded
+// instead of the bundled one. Loading the bundled library by its absolute path skips that lookup.
+// Without a bundled library for the platform, the library is looked up by name as before.
+private val bundledLibrary: Lazy<java.io.File?> = lazy {
+    try {
+        Native.extractFromResourcePath("{{ config.cdylib_name() }}", UniffiLib::class.java.classLoader)
+    } catch (_: java.io.IOException) {
+        null
+    }
+}
+
+// Deletes the temporary file JNA extracted the bundled library to once the library is loaded, as JNA
+// does for the libraries it extracts itself. Windows can't delete a loaded library: the marker file
+// makes JNA delete it the next time it starts.
+private fun deleteExtractedBundledLibrary() {
+    if (!bundledLibrary.isInitialized()) return
+    val library = bundledLibrary.value ?: return
+    if (!Regex("jna-?\\d+\\.(tmp|dll)").matches(library.name) || library.delete()) return
+    try {
+        java.io.File(library.parentFile, library.name + ".x").createNewFile()
+    } catch (_: java.io.IOException) {
+    }
+}
+{%- endif %}
 
 {%- if config.enable_jna_interface_mapping() %}
 private inline fun <reified Lib : Library> loadIndirect(componentName: String): Lib {
@@ -279,7 +310,11 @@ internal interface UniffiLib : Library {
             )
             {%- endif %}
             IntegrityCheckingUniffiLib
+            {%- if module_name == "jvm" %}
+            loadIndirect<UniffiLib>("{{ ci.namespace() }}").also { deleteExtractedBundledLibrary() }
+            {%- else %}
             loadIndirect("{{ ci.namespace() }}")
+            {%- endif %}
         }
     ) {
         init {
@@ -303,6 +338,9 @@ internal object UniffiLib : Library {
         {%- endif %}
         IntegrityCheckingUniffiLib
         Native.register(UniffiLib::class.java, findLibraryName("{{ ci.namespace() }}"))
+        {%- if module_name == "jvm" %}
+        deleteExtractedBundledLibrary()
+        {%- endif %}
         // No need to check the contract version and checksums, since 
         // we already did that with `IntegrityCheckingUniffiLib` above.
         {%- for init_fn in self.initialization_fns(ci) %}
